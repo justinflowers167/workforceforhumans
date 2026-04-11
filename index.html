@@ -337,8 +337,8 @@ footer{background:#0a1120;padding:4rem 0 2rem;}
 </head>
 <body>
 <script>
-const SUPABASE_URL='https://YOUR_PROJECT.supabase.co';
-const SUPABASE_ANON='YOUR_ANON_KEY';
+const SUPABASE_URL='https://dbomfjqijyrkidptrrfi.supabase.co';
+const SUPABASE_ANON='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRib21manFpanlya2lkcHRycmZpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU0MDE2OTMsImV4cCI6MjA5MDk3NzY5M30.Vvv94m3O0DVZsNU5gjoexksmkoYG6r8Kq5dXKAE1gZc';
 const {createClient}=supabase;
 const db=createClient(SUPABASE_URL,SUPABASE_ANON);
 </script>
@@ -349,11 +349,12 @@ const db=createClient(SUPABASE_URL,SUPABASE_ANON);
     <ul class="nav-links">
       <li><a href="jobs.html">Find Jobs</a></li>
       <li><a href="learn.html">Level Up</a></li>
-      <li><a href="#resources">Resources</a></li>
+      <li><a href="feed.html">Intelligence</a></li>
+      <li><a href="kb.html">Resources</a></li>
       <li><a href="#employers">For Employers</a></li>
     </ul>
     <div class="nav-actions">
-      <a href="#" class="btn-ghost">Sign In</a>
+      <a href="mailto:employers@workforceforhumans.com" class="btn-ghost">Post a Job</a>
       <a href="jobs.html" class="btn-amber">Find Work →</a>
     </div>
   </div>
@@ -578,43 +579,43 @@ const db=createClient(SUPABASE_URL,SUPABASE_ANON);
       <div class="fb">Workforce<span class="dot">.</span>for<span class="dot">Humans</span></div>
       <p class="fd">The platform for displaced workers, career changers, and anyone building their next chapter. Find Work. Level Up. Move Forward.</p>
       <div class="fsoc">
-        <a href="#">in</a><a href="#">𝕏</a><a href="#">f</a><a href="#">ig</a>
+        <a href="mailto:hello@workforceforhumans.com" title="Email us">✉</a>
       </div>
     </div>
     <div>
       <div class="fc-title">Find Work</div>
       <ul class="fc-links">
         <li><a href="jobs.html">Browse Jobs</a></li>
-        <li><a href="jobs.html">Entry Level</a></li>
-        <li><a href="jobs.html">Remote Jobs</a></li>
-        <li><a href="jobs.html">50+ Friendly</a></li>
-        <li><a href="jobs.html">Apprenticeships</a></li>
+        <li><a href="jobs.html?q=entry">Entry Level</a></li>
+        <li><a href="jobs.html?state=remote">Remote Jobs</a></li>
+        <li><a href="jobs.html?q=50%2B+friendly">50+ Friendly</a></li>
+        <li><a href="jobs.html?q=apprenticeship">Apprenticeships</a></li>
       </ul>
     </div>
     <div>
       <div class="fc-title">Level Up</div>
       <ul class="fc-links">
         <li><a href="learn.html">Learning Paths</a></li>
-        <li><a href="learn.html">Healthcare</a></li>
-        <li><a href="learn.html">Technology</a></li>
-        <li><a href="learn.html">Skilled Trades</a></li>
-        <li><a href="learn.html">Career Coaching</a></li>
+        <li><a href="learn.html#healthcare">Healthcare</a></li>
+        <li><a href="learn.html#tech">Technology</a></li>
+        <li><a href="learn.html#trades">Skilled Trades</a></li>
+        <li><a href="learn.html#coaching">Career Coaching</a></li>
       </ul>
     </div>
     <div>
-      <div class="fc-title">Company</div>
+      <div class="fc-title">Resources</div>
       <ul class="fc-links">
-        <li><a href="#">About Us</a></li>
+        <li><a href="kb.html">Knowledge Base</a></li>
+        <li><a href="feed.html">Intelligence Feed</a></li>
         <li><a href="#employers">For Employers</a></li>
-        <li><a href="#">Blog</a></li>
-        <li><a href="#">Contact</a></li>
+        <li><a href="mailto:hello@workforceforhumans.com">Contact</a></li>
         <li><a href="mailto:employers@workforceforhumans.com">Post a Job</a></li>
       </ul>
     </div>
   </div>
   <div class="footer-bot">
     <div class="fcopy">© 2025 WorkforceForHumans LLC · Colorado, USA</div>
-    <div class="flegal"><a href="#">Privacy</a><a href="#">Terms</a><a href="#">Accessibility</a></div>
+    <div class="flegal"><a href="mailto:privacy@workforceforhumans.com">Privacy</a><a href="mailto:legal@workforceforhumans.com">Terms</a><a href="mailto:access@workforceforhumans.com">Accessibility</a></div>
   </div>
 </footer>
 

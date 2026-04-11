@@ -305,8 +305,8 @@ footer{background:#0a1120;padding:3rem 0 1.5rem;}
 </head>
 <body>
 <script>
-const SUPABASE_URL='https://YOUR_PROJECT.supabase.co';
-const SUPABASE_ANON='YOUR_ANON_KEY';
+const SUPABASE_URL='https://dbomfjqijyrkidptrrfi.supabase.co';
+const SUPABASE_ANON='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRib21manFpanlya2lkcHRycmZpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU0MDE2OTMsImV4cCI6MjA5MDk3NzY5M30.Vvv94m3O0DVZsNU5gjoexksmkoYG6r8Kq5dXKAE1gZc';
 const {createClient}=supabase;
 const db=createClient(SUPABASE_URL,SUPABASE_ANON);
 </script>
@@ -317,10 +317,12 @@ const db=createClient(SUPABASE_URL,SUPABASE_ANON);
     <ul class="nav-links">
       <li><a href="jobs.html">Find Jobs</a></li>
       <li><a href="learn.html" class="active">Level Up</a></li>
+      <li><a href="feed.html">Intelligence</a></li>
+      <li><a href="kb.html">Resources</a></li>
       <li><a href="index.html#employers">For Employers</a></li>
     </ul>
     <div class="nav-actions">
-      <a href="#" class="btn-ghost">Sign In</a>
+      <a href="mailto:employers@workforceforhumans.com" class="btn-ghost">Post a Job</a>
       <a href="jobs.html" class="btn-amber">Find Work →</a>
     </div>
   </div>
@@ -356,8 +358,8 @@ const db=createClient(SUPABASE_URL,SUPABASE_ANON);
     <a href="#tech" class="pt-tab">💻 Technology</a>
     <a href="#trades" class="pt-tab">⚙️ Skilled Trades</a>
     <a href="#energy" class="pt-tab">🌱 Green Energy</a>
-    <a href="#logistics" class="pt-tab">📦 Logistics</a>
-    <a href="#finance" class="pt-tab">💼 Finance</a>
+    <a href="jobs.html?q=logistics" class="pt-tab">📦 Logistics</a>
+    <a href="jobs.html?q=finance" class="pt-tab">💼 Finance</a>
     <a href="#coaching" class="pt-tab">🎯 Career Coaching</a>
   </div>
 </div>
@@ -446,14 +448,14 @@ const db=createClient(SUPABASE_URL,SUPABASE_ANON);
         <div class="ps-tags"><span class="ps-tag">Solar NABCEP</span><span class="ps-tag">Wind Tech</span><span class="ps-tag">Energy Audit</span></div>
         <div class="ps-arrow">Explore Path</div>
       </a>
-      <a href="#logistics" class="path-sm rv">
+      <a href="jobs.html?q=logistics" class="path-sm rv">
         <div class="ps-icon">📦</div>
         <div class="ps-title">Logistics & Supply Chain</div>
         <div class="ps-meta">274 open roles · avg $19/hr</div>
         <div class="ps-tags"><span class="ps-tag">Forklift Cert</span><span class="ps-tag">CDL</span><span class="ps-tag">APICS</span></div>
         <div class="ps-arrow">Explore Path</div>
       </a>
-      <a href="#finance" class="path-sm rv d1">
+      <a href="jobs.html?q=finance" class="path-sm rv d1">
         <div class="ps-icon">💼</div>
         <div class="ps-title">Finance & Accounting</div>
         <div class="ps-meta">132 open roles · avg $30/hr</div>
@@ -611,8 +613,10 @@ const db=createClient(SUPABASE_URL,SUPABASE_ANON);
     <div class="flinks">
       <a href="index.html">Home</a>
       <a href="jobs.html">Find Jobs</a>
+      <a href="feed.html">Intelligence</a>
+      <a href="kb.html">Resources</a>
       <a href="index.html#employers">Employers</a>
-      <a href="#">Privacy</a>
+      <a href="mailto:privacy@workforceforhumans.com">Privacy</a>
     </div>
   </div>
 </footer>
@@ -697,8 +701,8 @@ async function doSub(e){
   }catch{msg.textContent='Please try again.';}
 }
 
-// Tab highlight on scroll
-const tabTargets=['healthcare','tech','trades','energy','logistics','finance','coaching'];
+// Tab highlight on scroll (only in-page anchor sections)
+const tabTargets=['healthcare','tech','trades','energy','coaching'];
 const tabs=document.querySelectorAll('.pt-tab');
 window.addEventListener('scroll',()=>{
   let cur='';

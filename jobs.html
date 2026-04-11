@@ -178,12 +178,10 @@ nav{background:var(--navy);padding:1rem 5vw;display:flex;align-items:center;just
 </head>
 <body>
 
-<!-- ─── CONFIG: Replace with your Supabase credentials ─── -->
+<!-- ─── Supabase connection ─── -->
 <script>
-  // TODO: Replace these with your actual Supabase project values
-  // Found at: supabase.com → your project → Settings → API
-  const SUPABASE_URL  = 'https://YOUR_PROJECT.supabase.co';
-  const SUPABASE_ANON = 'YOUR_ANON_KEY';
+  const SUPABASE_URL  = 'https://dbomfjqijyrkidptrrfi.supabase.co';
+  const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRib21manFpanlya2lkcHRycmZpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU0MDE2OTMsImV4cCI6MjA5MDk3NzY5M30.Vvv94m3O0DVZsNU5gjoexksmkoYG6r8Kq5dXKAE1gZc';
 
   const { createClient } = supabase;
   const db = createClient(SUPABASE_URL, SUPABASE_ANON);
@@ -194,10 +192,11 @@ nav{background:var(--navy);padding:1rem 5vw;display:flex;align-items:center;just
   <a href="index.html" class="nav-logo">Workforce<span>.</span>for<span>Humans</span></a>
   <ul class="nav-links">
     <li><a href="jobs.html" class="active">Find Jobs</a></li>
-    <li><a href="#">Level Up</a></li>
-    <li><a href="#">Resources</a></li>
-    <li><a href="#">For Employers</a></li>
-    <li><a href="#" class="nav-cta">Post a Job</a></li>
+    <li><a href="learn.html">Level Up</a></li>
+    <li><a href="feed.html">Intelligence</a></li>
+    <li><a href="kb.html">Resources</a></li>
+    <li><a href="index.html#employers">For Employers</a></li>
+    <li><a href="mailto:employers@workforceforhumans.com" class="nav-cta">Post a Job</a></li>
   </ul>
 </nav>
 
@@ -356,6 +355,22 @@ nav{background:var(--navy);padding:1rem 5vw;display:flex;align-items:center;just
   </div>
 </div>
 
+<!-- FOOTER -->
+<div style="background:var(--navy);padding:2.5rem 5vw;margin-top:3rem;text-align:center;">
+  <p style="color:rgba(255,255,255,0.45);font-size:0.88rem;margin-bottom:0.75rem;">
+    <a href="index.html" style="color:var(--amber);text-decoration:none;font-weight:600;">Workforce.for.Humans</a>
+    &nbsp;·&nbsp;
+    <a href="learn.html" style="color:rgba(255,255,255,0.6);text-decoration:none;">Level Up</a>
+    &nbsp;·&nbsp;
+    <a href="feed.html" style="color:rgba(255,255,255,0.6);text-decoration:none;">Intelligence</a>
+    &nbsp;·&nbsp;
+    <a href="kb.html" style="color:rgba(255,255,255,0.6);text-decoration:none;">Resources</a>
+    &nbsp;·&nbsp;
+    <a href="index.html#employers" style="color:rgba(255,255,255,0.6);text-decoration:none;">For Employers</a>
+  </p>
+  <p style="color:rgba(255,255,255,0.3);font-size:0.78rem;">© 2025 WorkforceForHumans LLC · Colorado, USA</p>
+</div>
+
 <script>
 // ─── STATE ───────────────────────────────────────────────
 const PAGE_SIZE = 15;
@@ -368,8 +383,23 @@ let categories = [];
 document.addEventListener('DOMContentLoaded', async () => {
   await loadCategories();
   await loadStats();
+  applyUrlParams();
   await loadJobs();
 });
+
+// ─── URL PARAM HANDLING ──────────────────────────────────
+// Supports deep-links like jobs.html?q=entry&state=CO from other pages
+function applyUrlParams() {
+  const p = new URLSearchParams(location.search);
+  const q = p.get('q');
+  const st = p.get('state');
+  if (q) document.getElementById('search-input').value = q;
+  if (st === 'remote') {
+    document.getElementById('location-filter').value = 'remote';
+  } else if (st) {
+    document.getElementById('location-filter').value = st;
+  }
+}
 
 // ─── LOAD STATS ──────────────────────────────────────────
 async function loadStats() {
