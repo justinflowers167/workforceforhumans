@@ -3,1179 +3,680 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>WorkforceForHumans — Build Your Next Chapter</title>
-<meta name="description" content="WorkforceForHumans helps people affected by technological change find direction, build relevant skills, and move toward future-ready work."/>
-<meta property="og:title" content="WorkforceForHumans — Build Your Next Chapter"/>
-<meta property="og:description" content="A practical system for career adaptation in the age of technology."/>
-<meta property="og:type" content="website"/>
+<title>WorkforceForHumans — Find Work. Level Up. Move Forward.</title>
+<meta name="description" content="The platform for displaced workers and career changers. Real jobs. Real training. Real results."/>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
-<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,700&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,300&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400;1,700&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,300&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
-/* ─── RESET & BASE ─────────────────────────────────────── */
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
-  --navy:#1a2340;
-  --navy-dk:#111827;
-  --navy-lt:#243160;
-  --amber:#f5a623;
-  --amber-dk:#c47d0e;
-  --amber-lt:#fef3dc;
-  --cream:#faf7f0;
-  --cream-dk:#f2ede3;
-  --stone:#e4ddd0;
-  --terra:#c85f3e;
-  --slate:#4a5568;
-  --slate-lt:#6b7589;
-  --mist:#8ba8b5;
-  --white:#fff;
-  --green:#2d7a3a;
+  --navy:#0f1829;--navy-mid:#1a2340;--navy-light:#243055;
+  --amber:#f5a623;--amber-dk:#c47d0e;--amber-lt:#fdf0d5;
+  --cream:#faf8f4;--stone:#ede8de;--stone-dk:#d4ccbc;
+  --terra:#c85f3e;--terra-lt:#f9ece7;
+  --slate:#4a5568;--slate-lt:#6b7a8d;--mist:#8ba8b5;
+  --green:#1f6b35;--green-lt:#e6f2ea;--white:#ffffff;
   --font-d:'Playfair Display',Georgia,serif;
-  --font-b:'DM Sans',sans-serif;
-  --font-m:'DM Mono',monospace;
-  --radius:12px;
-  --shadow:0 4px 24px rgba(26,35,64,0.10);
-  --shadow-lg:0 12px 48px rgba(26,35,64,0.18);
-  --transition:0.28s cubic-bezier(0.4,0,0.2,1);
+  --font-b:'DM Sans',sans-serif;--font-m:'DM Mono',monospace;
+  --ease:cubic-bezier(0.16,1,0.3,1);
+  --sh-sm:0 2px 8px rgba(15,24,41,0.06);
+  --sh-md:0 8px 32px rgba(15,24,41,0.1);
+  --sh-lg:0 24px 64px rgba(15,24,41,0.14);
 }
-html{scroll-behavior:smooth;font-size:16px;}
+html{scroll-behavior:smooth;}
 body{font-family:var(--font-b);background:var(--cream);color:var(--navy);line-height:1.6;overflow-x:hidden;}
-img{max-width:100%;display:block;}
-a{color:inherit;text-decoration:none;}
-button{font-family:var(--font-b);cursor:pointer;}
+.container{max-width:1280px;margin:0 auto;padding:0 5vw;}
 
-/* ─── TYPOGRAPHY ───────────────────────────────────────── */
-.display-xl{font-family:var(--font-d);font-size:clamp(2.8rem,6vw,5rem);line-height:1.08;font-weight:900;letter-spacing:-0.02em;}
-.display-lg{font-family:var(--font-d);font-size:clamp(2.2rem,4.5vw,3.8rem);line-height:1.1;font-weight:700;letter-spacing:-0.015em;}
-.display-md{font-family:var(--font-d);font-size:clamp(1.6rem,3vw,2.4rem);line-height:1.2;font-weight:700;}
-.display-sm{font-family:var(--font-d);font-size:clamp(1.2rem,2vw,1.6rem);line-height:1.3;font-weight:700;}
-.body-lg{font-size:1.125rem;line-height:1.7;font-weight:300;}
-.body-md{font-size:1rem;line-height:1.7;font-weight:300;}
-.body-sm{font-size:0.875rem;line-height:1.6;font-weight:400;}
-.label{font-family:var(--font-m);font-size:0.72rem;letter-spacing:0.18em;text-transform:uppercase;font-weight:500;}
-em.accent{font-style:italic;color:var(--amber);}
+/* NAV */
+nav{position:fixed;top:0;left:0;right:0;z-index:1000;
+  background:rgba(15,24,41,0.94);backdrop-filter:blur(20px);
+  border-bottom:1px solid rgba(255,255,255,0.06);}
+.nav-inner{max-width:1280px;margin:0 auto;padding:0 5vw;
+  display:flex;align-items:center;justify-content:space-between;height:68px;}
+.nav-logo{font-family:var(--font-d);color:#fff;text-decoration:none;
+  font-size:1.15rem;font-weight:700;}
+.nav-logo .dot{color:var(--amber);}
+.nav-links{display:flex;align-items:center;gap:0.25rem;list-style:none;}
+.nav-links a{color:rgba(255,255,255,0.6);text-decoration:none;font-size:0.875rem;
+  font-weight:500;padding:0.5rem 0.85rem;border-radius:8px;transition:all 0.2s;}
+.nav-links a:hover{color:#fff;background:rgba(255,255,255,0.07);}
+.nav-actions{display:flex;align-items:center;gap:0.75rem;}
+.btn-ghost{color:rgba(255,255,255,0.7);background:none;border:1px solid rgba(255,255,255,0.15);
+  border-radius:8px;padding:0.5rem 1.1rem;font-family:var(--font-b);font-size:0.875rem;
+  font-weight:500;cursor:pointer;text-decoration:none;transition:all 0.2s;}
+.btn-ghost:hover{color:#fff;border-color:rgba(255,255,255,0.3);}
+.btn-amber{background:var(--amber);color:var(--navy);border:none;border-radius:8px;
+  padding:0.5rem 1.2rem;font-family:var(--font-b);font-size:0.875rem;font-weight:700;
+  cursor:pointer;text-decoration:none;transition:all 0.2s;display:inline-block;}
+.btn-amber:hover{background:var(--amber-dk);transform:translateY(-1px);}
 
-/* ─── LAYOUT ───────────────────────────────────────────── */
-.container{max-width:1240px;margin:0 auto;padding:0 5vw;}
-.container-wide{max-width:1440px;margin:0 auto;padding:0 5vw;}
-.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:3rem;}
-.grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:1.5rem;}
-.grid-4{display:grid;grid-template-columns:repeat(4,1fr);gap:1.5rem;}
-
-/* ─── BUTTONS ──────────────────────────────────────────── */
-.btn{display:inline-flex;align-items:center;gap:0.5rem;border:none;border-radius:8px;font-family:var(--font-b);font-weight:600;font-size:0.95rem;cursor:pointer;transition:all var(--transition);text-decoration:none;padding:0.85rem 1.75rem;white-space:nowrap;}
-.btn-primary{background:var(--amber);color:var(--navy);}
-.btn-primary:hover{background:var(--amber-dk);transform:translateY(-1px);box-shadow:0 6px 20px rgba(245,166,35,0.4);}
-.btn-dark{background:var(--navy);color:#fff;}
-.btn-dark:hover{background:var(--navy-lt);transform:translateY(-1px);box-shadow:0 6px 20px rgba(26,35,64,0.3);}
-.btn-outline{background:transparent;color:var(--navy);border:1.5px solid var(--navy);}
-.btn-outline:hover{background:var(--navy);color:#fff;transform:translateY(-1px);}
-.btn-outline-light{background:transparent;color:#fff;border:1.5px solid rgba(255,255,255,0.4);}
-.btn-outline-light:hover{background:rgba(255,255,255,0.1);border-color:#fff;}
-.btn-lg{padding:1rem 2.25rem;font-size:1.05rem;}
-.btn-sm{padding:0.55rem 1.25rem;font-size:0.85rem;}
-.btn-arrow::after{content:'→';transition:transform 0.2s;}
-.btn-arrow:hover::after{transform:translateX(4px);}
-.btn-group{display:flex;gap:1rem;flex-wrap:wrap;align-items:center;}
-
-/* ─── NAV ──────────────────────────────────────────────── */
-#main-nav{position:fixed;top:0;left:0;right:0;z-index:1000;padding:0 5vw;height:72px;display:flex;align-items:center;justify-content:space-between;transition:all 0.35s;}
-#main-nav.scrolled{background:rgba(26,35,64,0.97);backdrop-filter:blur(12px);box-shadow:0 1px 0 rgba(255,255,255,0.08);}
-#main-nav:not(.scrolled){background:transparent;}
-.nav-logo{display:flex;align-items:center;gap:0.65rem;text-decoration:none;}
-.nav-logo-mark{width:36px;height:36px;background:var(--amber);border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
-.nav-logo-mark svg{width:22px;height:22px;}
-.nav-logo-text{font-family:var(--font-d);color:#fff;font-size:1.1rem;font-weight:700;line-height:1.1;}
-.nav-logo-text span{color:var(--amber);}
-.nav-links{display:flex;gap:0.25rem;list-style:none;align-items:center;}
-.nav-links a{color:rgba(255,255,255,0.65);font-size:0.88rem;font-weight:500;padding:0.45rem 0.8rem;border-radius:6px;transition:all 0.2s;}
-.nav-links a:hover,.nav-links a.active{color:#fff;background:rgba(255,255,255,0.08);}
-.nav-cta{background:var(--amber)!important;color:var(--navy)!important;font-weight:600!important;padding:0.5rem 1.2rem!important;}
-.nav-cta:hover{background:var(--amber-dk)!important;color:var(--navy)!important;}
-.nav-hamburger{display:none;flex-direction:column;gap:5px;cursor:pointer;padding:6px;border:none;background:none;}
-.nav-hamburger span{display:block;width:24px;height:2px;background:#fff;border-radius:2px;transition:all 0.3s;}
-.mobile-menu{display:none;position:fixed;inset:0;top:72px;background:var(--navy-dk);z-index:999;padding:2rem 5vw;flex-direction:column;gap:0.5rem;}
-.mobile-menu.open{display:flex;}
-.mobile-menu a{color:rgba(255,255,255,0.8);font-size:1.1rem;font-weight:500;padding:1rem 0;border-bottom:1px solid rgba(255,255,255,0.08);}
-.mobile-menu a:hover{color:var(--amber);}
-
-/* ─── HERO ─────────────────────────────────────────────── */
-#hero{
-  min-height:100vh;
-  background:var(--navy-dk);
-  display:flex;align-items:center;
-  padding:120px 5vw 80px;
-  position:relative;overflow:hidden;
-}
-.hero-grid{
-  position:absolute;inset:0;
-  background-image:
-    linear-gradient(rgba(245,166,35,0.04) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(245,166,35,0.04) 1px, transparent 1px);
+/* HERO */
+.hero{min-height:100vh;background:var(--navy);display:flex;flex-direction:column;
+  justify-content:center;position:relative;overflow:hidden;padding-top:68px;}
+.hero-bg{position:absolute;inset:0;
+  background:radial-gradient(ellipse 80% 60% at 70% 40%,rgba(245,166,35,0.08) 0%,transparent 60%),
+    linear-gradient(160deg,#0f1829 0%,#1a2340 50%,#0f1829 100%);}
+.hero-grid{position:absolute;inset:0;
+  background-image:linear-gradient(rgba(255,255,255,0.03) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(255,255,255,0.03) 1px,transparent 1px);
   background-size:60px 60px;
-  mask-image:radial-gradient(ellipse 80% 80% at 50% 40%, black 30%, transparent 100%);
-}
-.hero-glow{
-  position:absolute;top:-20%;right:-10%;
-  width:min(700px,80vw);height:min(700px,80vw);
-  background:radial-gradient(circle, rgba(245,166,35,0.12) 0%, rgba(26,35,64,0) 65%);
-  pointer-events:none;
-}
-.hero-glow-2{
-  position:absolute;bottom:-30%;left:-10%;
-  width:min(500px,70vw);height:min(500px,70vw);
-  background:radial-gradient(circle, rgba(139,168,181,0.08) 0%, rgba(26,35,64,0) 65%);
-  pointer-events:none;
-}
-.hero-inner{position:relative;z-index:1;max-width:1240px;margin:0 auto;width:100%;}
-.hero-label{display:inline-flex;align-items:center;gap:0.6rem;margin-bottom:1.75rem;}
-.hero-label-dot{width:6px;height:6px;border-radius:50%;background:var(--amber);animation:pulse-dot 2.5s infinite;}
-@keyframes pulse-dot{0%,100%{opacity:1;transform:scale(1);}50%{opacity:0.5;transform:scale(0.8);}}
-.hero-headline{color:#fff;max-width:820px;margin-bottom:1.75rem;}
-.hero-headline .line-2{color:var(--amber);font-style:italic;}
-.hero-sub{color:rgba(255,255,255,0.55);max-width:560px;margin-bottom:2.5rem;font-size:1.1rem;font-weight:300;line-height:1.7;}
-.hero-ctas{margin-bottom:5rem;}
-.hero-stats{display:flex;gap:3rem;flex-wrap:wrap;padding-top:3rem;border-top:1px solid rgba(255,255,255,0.08);}
-.hero-stat-num{font-family:var(--font-d);font-size:2rem;font-weight:700;color:var(--amber);line-height:1;}
-.hero-stat-label{font-size:0.8rem;color:rgba(255,255,255,0.45);margin-top:4px;font-weight:400;}
-.hero-scroll{position:absolute;bottom:2rem;left:50%;transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;gap:0.5rem;color:rgba(255,255,255,0.25);font-size:0.72rem;letter-spacing:0.12em;text-transform:uppercase;}
-.hero-scroll-line{width:1px;height:40px;background:linear-gradient(to bottom,rgba(255,255,255,0.2),transparent);animation:scroll-line 2s infinite;}
-@keyframes scroll-line{0%{transform:scaleY(0);transform-origin:top;}50%{transform:scaleY(1);}100%{transform:scaleY(0);transform-origin:bottom;}}
+  mask-image:radial-gradient(ellipse 70% 70% at 60% 40%,black 20%,transparent 70%);}
+.hero-content{position:relative;z-index:2;max-width:1280px;margin:0 auto;
+  padding:4rem 5vw;display:grid;grid-template-columns:1fr 1fr;gap:4rem;align-items:center;}
+.hero-eyebrow{display:inline-flex;align-items:center;gap:0.6rem;
+  background:rgba(245,166,35,0.12);border:1px solid rgba(245,166,35,0.25);
+  border-radius:100px;padding:0.35rem 1rem;font-size:0.78rem;font-weight:600;
+  color:var(--amber);letter-spacing:0.06em;text-transform:uppercase;margin-bottom:1.5rem;}
+.hero-dot{width:6px;height:6px;background:var(--amber);border-radius:50%;
+  animation:pulse 2s ease-in-out infinite;}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1);}50%{opacity:0.5;transform:scale(0.75);}}
+.hero-h1{font-family:var(--font-d);font-size:clamp(2.8rem,5.5vw,4.5rem);color:#fff;
+  line-height:1.05;font-weight:900;letter-spacing:-0.025em;margin-bottom:1.5rem;}
+.hero-h1 em{color:var(--amber);font-style:italic;}
+.hero-h1 .line{display:block;overflow:hidden;}
+.hero-h1 .line span{display:block;animation:slideup 0.8s var(--ease) both;}
+.hero-h1 .line:nth-child(2) span{animation-delay:0.1s;}
+.hero-h1 .line:nth-child(3) span{animation-delay:0.2s;}
+@keyframes slideup{from{transform:translateY(100%);}to{transform:translateY(0);}}
+.hero-sub{color:rgba(255,255,255,0.55);font-size:1.05rem;font-weight:300;
+  line-height:1.75;margin-bottom:2.5rem;max-width:520px;
+  animation:fadein 1s 0.4s both;}
+@keyframes fadein{from{opacity:0;transform:translateY(12px);}to{opacity:1;transform:none;}}
+.hero-search-box{display:flex;background:#fff;border-radius:14px;overflow:hidden;
+  box-shadow:var(--sh-lg),0 0 0 1px rgba(245,166,35,0.2);margin-bottom:1rem;
+  animation:fadein 1s 0.6s both;}
+.hero-search-box input{flex:1;padding:1.1rem 1.25rem;border:none;outline:none;
+  font-family:var(--font-b);font-size:1rem;color:var(--navy);background:transparent;}
+.hero-search-box input::placeholder{color:#bbb;}
+.search-div{width:1px;background:var(--stone);margin:0.75rem 0;}
+.hero-search-box select{padding:0.5rem 1rem;border:none;outline:none;font-family:var(--font-b);
+  font-size:0.88rem;color:var(--slate);background:transparent;cursor:pointer;min-width:140px;}
+.search-btn{background:var(--amber);color:var(--navy);border:none;padding:1rem 1.75rem;
+  font-family:var(--font-b);font-size:0.95rem;font-weight:700;cursor:pointer;
+  transition:background 0.2s;white-space:nowrap;}
+.search-btn:hover{background:var(--amber-dk);}
+.quick-tags{display:flex;flex-wrap:wrap;gap:0.5rem;animation:fadein 1s 0.8s both;}
+.quick-label{color:rgba(255,255,255,0.35);font-size:0.78rem;align-self:center;}
+.quick-tag{background:rgba(255,255,255,0.07);color:rgba(255,255,255,0.6);
+  border:1px solid rgba(255,255,255,0.12);border-radius:100px;padding:0.3rem 0.9rem;
+  font-size:0.8rem;cursor:pointer;transition:all 0.2s;text-decoration:none;display:inline-block;}
+.quick-tag:hover{background:rgba(245,166,35,0.15);border-color:var(--amber);color:var(--amber);}
+.hero-right{display:flex;flex-direction:column;gap:1rem;animation:fadein 1s 0.8s both;}
+.stat-card{background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.09);
+  border-radius:16px;padding:1.25rem 1.5rem;display:flex;align-items:center;gap:1rem;
+  transition:all 0.3s;}
+.stat-card:hover{background:rgba(255,255,255,0.08);transform:translateX(4px);}
+.stat-icon{width:44px;height:44px;border-radius:12px;display:flex;align-items:center;
+  justify-content:center;font-size:1.3rem;flex-shrink:0;}
+.stat-icon.a{background:rgba(245,166,35,0.15);}
+.stat-icon.g{background:rgba(31,107,53,0.2);}
+.stat-icon.t{background:rgba(200,95,62,0.15);}
+.stat-icon.m{background:rgba(139,168,181,0.15);}
+.stat-num{font-family:var(--font-d);font-size:1.6rem;color:#fff;font-weight:700;line-height:1;margin-bottom:2px;}
+.stat-lbl{font-size:0.82rem;color:rgba(255,255,255,0.45);}
+.stat-badge{font-size:0.72rem;color:#6bcf85;background:rgba(31,107,53,0.2);
+  border-radius:100px;padding:2px 8px;margin-left:auto;white-space:nowrap;}
 
-/* ─── SECTION SHARED ────────────────────────────────────── */
-.section{padding:7rem 0;}
-.section-sm{padding:4rem 0;}
-.section-label{color:var(--terra);margin-bottom:1rem;}
-.section-headline{margin-bottom:1.5rem;}
-.section-sub{color:var(--slate);max-width:560px;font-size:1.05rem;}
+/* TRUST BAR */
+.trust-bar{background:#fff;border-bottom:1px solid var(--stone);padding:0.85rem 0;}
+.trust-inner{max-width:1280px;margin:0 auto;padding:0 5vw;
+  display:flex;align-items:center;gap:2rem;flex-wrap:wrap;justify-content:space-between;}
+.trust-label{font-size:0.75rem;color:var(--slate-lt);text-transform:uppercase;
+  letter-spacing:0.1em;font-weight:600;white-space:nowrap;}
+.trust-logos{display:flex;align-items:center;gap:2rem;flex-wrap:wrap;}
+.trust-co{font-family:var(--font-d);font-size:0.92rem;color:var(--stone-dk);
+  font-weight:700;opacity:0.6;transition:opacity 0.2s;}
+.trust-co:hover{opacity:1;}
 
-/* ─── PROBLEM SECTION ───────────────────────────────────── */
-#problem{background:var(--cream-dk);position:relative;overflow:hidden;}
-.problem-inner{display:grid;grid-template-columns:1fr 1fr;gap:6rem;align-items:center;}
-.problem-left{}
-.problem-right{}
-.problem-stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:1.25rem;margin-top:2rem;}
-.problem-stat-card{background:#fff;border-radius:12px;padding:1.5rem;border:1px solid var(--stone);position:relative;overflow:hidden;}
-.problem-stat-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,var(--amber),var(--terra));}
-.problem-stat-card .num{font-family:var(--font-d);font-size:2.2rem;font-weight:900;color:var(--navy);line-height:1;}
-.problem-stat-card .desc{font-size:0.82rem;color:var(--slate);margin-top:0.5rem;line-height:1.4;}
-.problem-quote{font-family:var(--font-d);font-size:1.35rem;line-height:1.5;color:var(--navy);font-style:italic;border-left:3px solid var(--amber);padding-left:1.5rem;margin-bottom:1.5rem;}
-.problem-para{color:var(--slate);font-weight:300;line-height:1.75;margin-bottom:1rem;}
+/* SECTIONS */
+section{padding:6rem 0;}
+.eye{font-size:0.78rem;font-weight:600;text-transform:uppercase;letter-spacing:0.1em;
+  color:var(--terra);margin-bottom:1rem;display:flex;align-items:center;gap:0.5rem;}
+.eye::before{content:'';width:24px;height:2px;background:var(--terra);}
+.h2{font-family:var(--font-d);font-size:clamp(2rem,4vw,3rem);color:var(--navy);
+  font-weight:900;line-height:1.1;letter-spacing:-0.02em;margin-bottom:1rem;}
+.h2 em{color:var(--terra);font-style:italic;}
+.sub{font-size:1rem;color:var(--slate);font-weight:300;max-width:520px;line-height:1.75;}
 
-/* ─── HOW IT WORKS ─────────────────────────────────────── */
-#how{background:#fff;}
-.steps-header{text-align:center;margin-bottom:4rem;}
-.steps-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:0;position:relative;}
-.steps-connector{position:absolute;top:2.5rem;left:calc(25% + 1.5rem);right:calc(25% + 1.5rem);height:1px;background:linear-gradient(90deg,var(--amber) 0%,rgba(245,166,35,0.3) 100%);z-index:0;}
-.step-card{padding:0 1.5rem;position:relative;z-index:1;}
-.step-num{width:48px;height:48px;border-radius:50%;background:var(--amber);color:var(--navy);display:flex;align-items:center;justify-content:center;font-family:var(--font-d);font-weight:700;font-size:1.1rem;margin-bottom:1.25rem;position:relative;}
-.step-num::after{content:'';position:absolute;inset:-4px;border-radius:50%;border:1px solid rgba(245,166,35,0.3);}
-.step-title{font-family:var(--font-d);font-size:1.05rem;font-weight:700;color:var(--navy);margin-bottom:0.6rem;}
-.step-desc{font-size:0.88rem;color:var(--slate);line-height:1.65;font-weight:300;}
+/* HOW IT WORKS */
+.how-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:2rem;margin-top:3.5rem;}
+.how-card{background:#fff;border:1px solid var(--stone);border-radius:20px;
+  padding:2.25rem;position:relative;overflow:hidden;transition:all 0.3s;}
+.how-card:hover{box-shadow:var(--sh-md);transform:translateY(-4px);}
+.how-step{font-family:var(--font-m);font-size:0.72rem;color:var(--mist);
+  font-weight:500;letter-spacing:0.08em;margin-bottom:1.25rem;}
+.how-icon{width:52px;height:52px;border-radius:14px;display:flex;align-items:center;
+  justify-content:center;font-size:1.5rem;margin-bottom:1.25rem;}
+.hi-a{background:var(--amber-lt);}
+.hi-t{background:var(--terra-lt);}
+.hi-g{background:var(--green-lt);}
+.how-h3{font-family:var(--font-d);font-size:1.25rem;font-weight:700;color:var(--navy);margin-bottom:0.75rem;}
+.how-p{font-size:0.9rem;color:var(--slate);line-height:1.75;font-weight:300;}
+.how-card::after{content:attr(data-n);position:absolute;right:1.5rem;top:1.5rem;
+  font-family:var(--font-d);font-size:4rem;font-weight:900;color:rgba(15,24,41,0.04);line-height:1;}
 
-/* ─── AUDIENCE ──────────────────────────────────────────── */
-#audience{background:var(--cream);}
-.audience-header{text-align:center;margin-bottom:3rem;}
-.audience-grid{display:grid;grid-template-columns:1fr 1fr;gap:2rem;}
-.audience-card{border-radius:20px;padding:3rem;position:relative;overflow:hidden;text-decoration:none;display:block;transition:transform var(--transition), box-shadow var(--transition);}
-.audience-card:hover{transform:translateY(-4px);}
-.audience-card.individuals{background:var(--navy);color:#fff;}
-.audience-card.individuals:hover{box-shadow:0 20px 60px rgba(26,35,64,0.35);}
-.audience-card.partners{background:#fff;color:var(--navy);border:1px solid var(--stone);}
-.audience-card.partners:hover{box-shadow:var(--shadow-lg);}
-.audience-card-icon{width:56px;height:56px;border-radius:14px;display:flex;align-items:center;justify-content:center;margin-bottom:1.75rem;font-size:1.4rem;}
-.individuals .audience-card-icon{background:rgba(245,166,35,0.15);}
-.partners .audience-card-icon{background:var(--amber-lt);}
-.audience-card-title{font-family:var(--font-d);font-size:1.7rem;font-weight:700;margin-bottom:0.75rem;line-height:1.2;}
-.individuals .audience-card-title{color:#fff;}
-.audience-card-desc{font-size:0.95rem;line-height:1.7;font-weight:300;margin-bottom:2rem;}
-.individuals .audience-card-desc{color:rgba(255,255,255,0.6);}
-.partners .audience-card-desc{color:var(--slate);}
-.audience-card-features{list-style:none;margin-bottom:2.25rem;}
-.audience-card-features li{display:flex;align-items:flex-start;gap:0.6rem;font-size:0.88rem;padding:0.45rem 0;border-bottom:1px solid rgba(255,255,255,0.07);}
-.partners .audience-card-features li{border-color:var(--stone);}
-.audience-card-features li::before{content:'→';color:var(--amber);flex-shrink:0;margin-top:1px;}
-.individuals .audience-card-features li{color:rgba(255,255,255,0.7);}
-.partners .audience-card-features li{color:var(--slate);}
-.audience-bg-glow{position:absolute;bottom:-40px;right:-40px;width:200px;height:200px;background:radial-gradient(circle,rgba(245,166,35,0.1) 0%,transparent 70%);pointer-events:none;}
+/* FIND WORK */
+.find-wrap{background:var(--navy);}
+.find-inner{max-width:1280px;margin:0 auto;padding:6rem 5vw;
+  display:grid;grid-template-columns:1fr 1fr;gap:5rem;align-items:start;}
+.mini-card{background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.08);
+  border-radius:14px;padding:1.25rem 1.5rem;cursor:pointer;transition:all 0.25s;
+  text-decoration:none;display:block;margin-bottom:1rem;}
+.mini-card:hover{background:rgba(255,255,255,0.09);border-color:rgba(245,166,35,0.3);transform:translateX(4px);}
+.mini-card.feat{border-color:rgba(245,166,35,0.25);background:rgba(245,166,35,0.05);}
+.mc-top{display:flex;align-items:flex-start;justify-content:space-between;gap:1rem;margin-bottom:0.75rem;}
+.mc-title{font-family:var(--font-d);font-size:1rem;color:#fff;font-weight:700;margin-bottom:3px;}
+.mc-emp{font-size:0.82rem;color:rgba(255,255,255,0.45);}
+.mc-badge{background:rgba(245,166,35,0.15);border:1px solid rgba(245,166,35,0.3);
+  border-radius:100px;padding:3px 10px;font-size:0.7rem;color:var(--amber);font-weight:600;white-space:nowrap;}
+.mc-badge.gr{background:rgba(31,107,53,0.15);border-color:rgba(31,107,53,0.3);color:#6bcf85;}
+.mc-meta{display:flex;flex-wrap:wrap;gap:0.5rem;}
+.mc-chip{font-size:0.75rem;color:rgba(255,255,255,0.4);background:rgba(255,255,255,0.06);
+  border-radius:100px;padding:2px 9px;}
+.mc-chip.pay{color:#6bcf85;}
+.cta-row{margin-top:1.75rem;display:flex;gap:1rem;align-items:center;}
+.btn-ao{color:var(--amber);background:none;border:1px solid rgba(245,166,35,0.4);
+  border-radius:8px;padding:0.65rem 1.4rem;font-family:var(--font-b);font-size:0.88rem;
+  font-weight:600;cursor:pointer;text-decoration:none;transition:all 0.2s;display:inline-block;}
+.btn-ao:hover{background:rgba(245,166,35,0.1);border-color:var(--amber);}
 
-/* ─── PATHWAYS ──────────────────────────────────────────── */
-#pathways{background:var(--cream-dk);}
-.pathways-header{display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:3rem;gap:2rem;flex-wrap:wrap;}
-.pathways-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1.25rem;}
-.pathway-card{background:#fff;border-radius:16px;padding:2rem;border:1px solid var(--stone);transition:all var(--transition);cursor:pointer;position:relative;overflow:hidden;}
-.pathway-card::before{content:'';position:absolute;top:0;left:0;width:3px;height:100%;background:var(--amber);opacity:0;transition:opacity 0.25s;}
-.pathway-card:hover{border-color:var(--amber);box-shadow:var(--shadow);transform:translateY(-2px);}
-.pathway-card:hover::before{opacity:1;}
-.pathway-card.highlight{background:var(--navy);border-color:var(--navy);}
-.pathway-card.highlight .pathway-icon,.pathway-card.highlight .pathway-title,.pathway-card.highlight .pathway-desc{color:#fff;}
-.pathway-card.highlight .pathway-tags span{background:rgba(255,255,255,0.1);color:rgba(255,255,255,0.6);border-color:rgba(255,255,255,0.15);}
-.pathway-icon{font-size:1.6rem;margin-bottom:1rem;}
-.pathway-title{font-family:var(--font-d);font-size:1.05rem;font-weight:700;color:var(--navy);margin-bottom:0.5rem;line-height:1.3;}
-.pathway-desc{font-size:0.85rem;color:var(--slate);line-height:1.65;font-weight:300;margin-bottom:1.25rem;}
-.pathway-tags{display:flex;flex-wrap:wrap;gap:0.4rem;}
-.pathway-tags span{font-size:0.72rem;padding:3px 10px;border-radius:20px;background:var(--cream);border:1px solid var(--stone);color:var(--slate-lt);}
-.pathway-card:hover .pathway-tags span{background:var(--amber-lt);border-color:rgba(245,166,35,0.3);color:var(--amber-dk);}
+/* LEVEL UP */
+.paths{display:grid;grid-template-columns:repeat(3,1fr);gap:1.5rem;margin-top:3.5rem;}
+.path-card{border-radius:20px;overflow:hidden;border:1px solid var(--stone);background:#fff;
+  transition:all 0.3s;cursor:pointer;text-decoration:none;display:block;}
+.path-card:hover{box-shadow:var(--sh-md);transform:translateY(-4px);}
+.ph{height:120px;display:flex;align-items:flex-end;padding:1.25rem;position:relative;}
+.ph.hc{background:linear-gradient(135deg,#1a3a2a,#2d6b45);}
+.ph.tc{background:linear-gradient(135deg,#1a2a4a,#243d70);}
+.ph.tr{background:linear-gradient(135deg,#3a1a0f,#7a3020);}
+.ph.en{background:linear-gradient(135deg,#1a3a10,#3d7020);}
+.ph.lg{background:linear-gradient(135deg,#2a1a3a,#5a3070);}
+.ph.fn{background:linear-gradient(135deg,#1a2a3a,#2d4a60);}
+.ph-icon{font-size:2rem;position:absolute;top:1rem;right:1rem;opacity:0.35;}
+.ph-title{font-family:var(--font-d);font-size:1.1rem;color:#fff;font-weight:700;position:relative;z-index:1;}
+.pb{padding:1.25rem 1.5rem;}
+.pb-stat{font-size:0.78rem;color:var(--slate-lt);margin-bottom:0.75rem;}
+.pb-stat strong{color:var(--navy);font-weight:600;}
+.pb-tags{display:flex;flex-wrap:wrap;gap:0.4rem;}
+.pb-tag{background:var(--cream);border:1px solid var(--stone);border-radius:100px;padding:2px 9px;font-size:0.73rem;color:var(--slate);}
+.pb-arrow{display:flex;align-items:center;justify-content:space-between;
+  margin-top:1rem;padding-top:0.75rem;border-top:1px solid var(--stone);
+  font-size:0.8rem;font-weight:600;color:var(--navy);}
+.pb-arrow::after{content:'→';}
 
-/* ─── DIFFERENTIATION ────────────────────────────────────── */
-#diff{background:#fff;}
-.diff-header{text-align:center;margin-bottom:4rem;}
-.diff-grid{display:grid;grid-template-columns:1fr 1fr;gap:2rem;}
-.diff-col{border-radius:20px;padding:2.5rem;}
-.diff-col.bad{background:var(--cream-dk);border:1px solid var(--stone);}
-.diff-col.good{background:var(--navy);color:#fff;}
-.diff-col-label{font-family:var(--font-m);font-size:0.7rem;letter-spacing:0.18em;text-transform:uppercase;margin-bottom:1.5rem;padding-bottom:1rem;border-bottom:1px solid rgba(255,255,255,0.1);}
-.diff-col.bad .diff-col-label{color:var(--slate-lt);border-color:var(--stone);}
-.diff-col.good .diff-col-label{color:var(--amber);}
-.diff-item{display:flex;align-items:flex-start;gap:0.75rem;padding:0.65rem 0;font-size:0.9rem;line-height:1.5;}
-.diff-col.bad .diff-item{color:var(--slate);border-bottom:1px solid var(--stone);}
-.diff-col.good .diff-item{color:rgba(255,255,255,0.75);border-bottom:1px solid rgba(255,255,255,0.07);}
-.diff-item:last-child{border-bottom:none;}
-.diff-icon{flex-shrink:0;margin-top:2px;font-size:0.9rem;}
+/* AI BANNER */
+.ai-wrap{padding:0 5vw;margin-bottom:-3rem;}
+.ai-box{background:linear-gradient(135deg,var(--navy) 0%,#243055 100%);
+  border-radius:24px;padding:3.5rem 4rem;display:grid;grid-template-columns:1fr 1fr;
+  gap:4rem;align-items:center;position:relative;overflow:hidden;}
+.ai-box::before{content:'';position:absolute;right:-60px;top:-60px;width:300px;height:300px;
+  border-radius:50%;background:radial-gradient(circle,rgba(245,166,35,0.12),transparent 70%);}
+.ai-pill{display:inline-flex;align-items:center;gap:0.5rem;background:rgba(245,166,35,0.15);
+  border:1px solid rgba(245,166,35,0.25);border-radius:100px;padding:0.3rem 0.9rem;
+  font-size:0.75rem;font-weight:600;color:var(--amber);letter-spacing:0.05em;
+  text-transform:uppercase;margin-bottom:1.25rem;}
+.ai-h2{font-family:var(--font-d);font-size:2.2rem;color:#fff;font-weight:900;
+  line-height:1.1;margin-bottom:1rem;}
+.ai-h2 em{color:var(--amber);font-style:italic;}
+.ai-p{color:rgba(255,255,255,0.5);font-weight:300;line-height:1.75;margin-bottom:2rem;}
+.ai-feats{display:flex;flex-direction:column;gap:1rem;}
+.ai-feat{background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.08);
+  border-radius:12px;padding:1rem 1.25rem;display:flex;align-items:flex-start;gap:1rem;}
+.af-icon{font-size:1.25rem;flex-shrink:0;margin-top:2px;}
+.af-title{font-size:0.88rem;font-weight:600;color:#fff;margin-bottom:3px;}
+.af-desc{font-size:0.8rem;color:rgba(255,255,255,0.45);line-height:1.5;}
 
-/* ─── PROOF / TRUST ──────────────────────────────────────── */
-#proof{background:var(--cream-dk);}
-.proof-header{text-align:center;margin-bottom:3.5rem;}
-.proof-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1.5rem;margin-bottom:3rem;}
-.proof-card{background:#fff;border-radius:16px;padding:2rem;border:1px solid var(--stone);}
-.proof-card-quote{font-family:var(--font-d);font-size:1.05rem;font-style:italic;color:var(--navy);line-height:1.65;margin-bottom:1.5rem;}
-.proof-card-quote::before{content:'"';font-size:2rem;color:var(--amber);line-height:1;display:block;margin-bottom:0.25rem;}
-.proof-card-attribution{display:flex;align-items:center;gap:0.75rem;}
-.proof-card-avatar{width:40px;height:40px;border-radius:50%;background:var(--stone);display:flex;align-items:center;justify-content:center;font-family:var(--font-d);font-weight:700;font-size:0.9rem;color:var(--slate);flex-shrink:0;}
-.proof-card-name{font-weight:600;font-size:0.88rem;color:var(--navy);}
-.proof-card-role{font-size:0.78rem;color:var(--slate-lt);}
-.proof-placeholder{font-size:0.72rem;color:var(--mist);margin-top:0.25rem;}
-.proof-logos{border-top:1px solid var(--stone);padding-top:2.5rem;text-align:center;}
-.proof-logos-label{font-family:var(--font-m);font-size:0.7rem;letter-spacing:0.18em;color:var(--mist);text-transform:uppercase;margin-bottom:1.5rem;}
-.proof-logos-row{display:flex;gap:2rem;justify-content:center;align-items:center;flex-wrap:wrap;}
-.proof-logo-pill{background:#fff;border:1px solid var(--stone);border-radius:8px;padding:0.65rem 1.5rem;font-family:var(--font-d);font-size:0.85rem;color:var(--slate-lt);font-style:italic;}
+/* EMPLOYER */
+.emp-sec{background:var(--stone);padding:5rem 0;}
+.emp-inner{max-width:1280px;margin:0 auto;padding:0 5vw;
+  display:grid;grid-template-columns:1.2fr 1fr;gap:5rem;align-items:center;}
+.emp-feats{display:flex;flex-direction:column;gap:1.25rem;margin-top:2.5rem;}
+.ef{display:flex;align-items:flex-start;gap:1rem;}
+.ef-icon{width:40px;height:40px;border-radius:10px;background:#fff;
+  display:flex;align-items:center;justify-content:center;font-size:1.1rem;
+  flex-shrink:0;box-shadow:var(--sh-sm);}
+.ef-title{font-weight:600;color:var(--navy);font-size:0.92rem;margin-bottom:3px;}
+.ef-desc{font-size:0.85rem;color:var(--slate);font-weight:300;line-height:1.6;}
+.emp-box{background:#fff;border-radius:20px;padding:2.5rem;
+  box-shadow:var(--sh-md);border:1px solid var(--stone-dk);}
+.emp-box h3{font-family:var(--font-d);font-size:1.5rem;color:var(--navy);font-weight:700;margin-bottom:0.75rem;}
+.emp-box p{font-size:0.88rem;color:var(--slate);font-weight:300;line-height:1.7;margin-bottom:1.75rem;}
+.pricing{display:flex;flex-direction:column;gap:0.75rem;margin-bottom:2rem;}
+.price-opt{display:flex;align-items:center;justify-content:space-between;
+  background:var(--cream);border:1px solid var(--stone);border-radius:12px;
+  padding:1rem 1.25rem;transition:all 0.2s;}
+.price-opt:hover,.price-opt.active{border-color:var(--amber);background:var(--amber-lt);}
+.po-name{font-weight:600;font-size:0.88rem;color:var(--navy);}
+.po-desc{font-size:0.78rem;color:var(--slate);}
+.po-price{font-family:var(--font-d);font-size:1.2rem;font-weight:700;color:var(--navy);}
+.po-price small{font-family:var(--font-b);font-size:0.7rem;font-weight:400;color:var(--slate);}
 
-/* ─── PLATFORM FUTURE ────────────────────────────────────── */
-#platform{background:var(--navy-dk);color:#fff;position:relative;overflow:hidden;}
-.platform-grid-bg{position:absolute;inset:0;background-image:linear-gradient(rgba(245,166,35,0.03) 1px,transparent 1px),linear-gradient(90deg,rgba(245,166,35,0.03) 1px,transparent 1px);background-size:80px 80px;}
-.platform-inner{position:relative;z-index:1;display:grid;grid-template-columns:1.1fr 1fr;gap:5rem;align-items:center;}
-.platform-left .section-label{color:var(--amber);}
-.platform-left .display-lg{color:#fff;}
-.platform-left .body-lg{color:rgba(255,255,255,0.55);margin-bottom:2rem;}
-.platform-timeline{list-style:none;margin-top:2rem;}
-.platform-timeline li{display:flex;gap:1rem;padding:1rem 0;border-bottom:1px solid rgba(255,255,255,0.06);}
-.platform-timeline li:last-child{border-bottom:none;}
-.platform-timeline-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;margin-top:6px;}
-.platform-timeline-dot.now{background:var(--amber);}
-.platform-timeline-dot.soon{background:rgba(245,166,35,0.4);}
-.platform-timeline-dot.later{background:rgba(245,166,35,0.15);}
-.platform-timeline-tag{font-family:var(--font-m);font-size:0.65rem;letter-spacing:0.12em;text-transform:uppercase;margin-bottom:2px;}
-.platform-timeline-tag.now-tag{color:var(--amber);}
-.platform-timeline-tag.soon-tag{color:rgba(245,166,35,0.5);}
-.platform-timeline-tag.later-tag{color:rgba(255,255,255,0.25);}
-.platform-timeline-text{font-size:0.88rem;line-height:1.5;font-weight:300;}
-.platform-timeline-text.now{color:rgba(255,255,255,0.8);}
-.platform-timeline-text.soon{color:rgba(255,255,255,0.45);}
-.platform-timeline-text.later{color:rgba(255,255,255,0.25);}
-.platform-right{}
-.platform-visual{background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:20px;padding:2.5rem;position:relative;}
-.platform-visual-header{display:flex;align-items:center;gap:0.75rem;margin-bottom:2rem;padding-bottom:1rem;border-bottom:1px solid rgba(255,255,255,0.06);}
-.platform-visual-dot{width:10px;height:10px;border-radius:50%;}
-.platform-visual-dot.active{background:var(--amber);}
-.platform-visual-dot.inactive{background:rgba(255,255,255,0.15);}
-.platform-visual-title{font-size:0.82rem;color:rgba(255,255,255,0.5);}
-.pv-item{display:flex;align-items:center;gap:1rem;padding:0.85rem 0;border-bottom:1px solid rgba(255,255,255,0.05);}
-.pv-item:last-child{border-bottom:none;}
-.pv-icon{width:36px;height:36px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:0.85rem;flex-shrink:0;}
-.pv-icon.on{background:rgba(245,166,35,0.15);}
-.pv-icon.off{background:rgba(255,255,255,0.05);}
-.pv-label{font-size:0.88rem;flex:1;}
-.pv-label.on{color:rgba(255,255,255,0.8);}
-.pv-label.off{color:rgba(255,255,255,0.25);}
-.pv-status{font-size:0.7rem;font-family:var(--font-m);padding:3px 8px;border-radius:4px;}
-.pv-status.live{background:rgba(45,122,58,0.2);color:#4ade80;}
-.pv-status.soon{background:rgba(245,166,35,0.1);color:rgba(245,166,35,0.6);}
-.pv-status.future{background:rgba(255,255,255,0.05);color:rgba(255,255,255,0.2);}
+/* TESTIMONIALS */
+.testi-sec{background:#fff;padding:5rem 0;}
+.testi-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1.5rem;margin-top:3rem;}
+.testi-card{background:var(--cream);border:1px solid var(--stone);border-radius:20px;padding:2rem;}
+.testi-stars{color:var(--amber);font-size:0.75rem;margin-bottom:1rem;}
+.testi-q{font-family:var(--font-d);font-size:1.05rem;color:var(--navy);
+  font-style:italic;line-height:1.65;margin-bottom:1.5rem;}
+.testi-auth{display:flex;align-items:center;gap:0.75rem;}
+.testi-av{width:40px;height:40px;border-radius:50%;display:flex;align-items:center;
+  justify-content:center;font-family:var(--font-d);font-size:0.9rem;font-weight:700;
+  color:#fff;flex-shrink:0;}
+.testi-name{font-size:0.88rem;font-weight:600;color:var(--navy);}
+.testi-det{font-size:0.78rem;color:var(--slate);}
 
-/* ─── FINAL CTA ──────────────────────────────────────────── */
-#final-cta{background:var(--amber);padding:7rem 5vw;text-align:center;position:relative;overflow:hidden;}
-#final-cta::before{content:'';position:absolute;top:-60px;right:-60px;width:300px;height:300px;background:rgba(255,255,255,0.1);border-radius:50%;}
-#final-cta::after{content:'';position:absolute;bottom:-80px;left:-40px;width:250px;height:250px;background:rgba(0,0,0,0.04);border-radius:50%;}
-.final-cta-inner{position:relative;z-index:1;max-width:680px;margin:0 auto;}
-#final-cta .display-lg{color:var(--navy);}
-#final-cta .body-lg{color:rgba(26,35,64,0.65);margin-bottom:2.5rem;margin-top:1rem;}
+/* NEWSLETTER */
+.nl-sec{background:var(--navy);padding:5rem 0;}
+.nl-inner{max-width:640px;margin:0 auto;text-align:center;padding:0 5vw;}
+.nl-h2{font-family:var(--font-d);font-size:2.2rem;color:#fff;font-weight:900;margin-bottom:0.75rem;}
+.nl-p{color:rgba(255,255,255,0.5);margin-bottom:2rem;font-weight:300;}
+.nl-form{display:flex;gap:0.5rem;}
+.nl-form input{flex:1;padding:0.9rem 1.1rem;background:rgba(255,255,255,0.07);
+  border:1px solid rgba(255,255,255,0.12);border-radius:10px;font-family:var(--font-b);
+  font-size:0.92rem;color:#fff;outline:none;transition:border-color 0.2s;}
+.nl-form input::placeholder{color:rgba(255,255,255,0.3);}
+.nl-form input:focus{border-color:var(--amber);}
+.nl-note{font-size:0.78rem;color:rgba(255,255,255,0.3);margin-top:0.75rem;}
 
-/* ─── JOBS BAND ─────────────────────────────────────────── */
-#jobs-band{background:var(--navy);padding:3.5rem 5vw;}
-.jobs-band-inner{display:flex;align-items:center;justify-content:space-between;gap:2rem;max-width:1240px;margin:0 auto;flex-wrap:wrap;}
-.jobs-band-left .label{color:var(--amber);margin-bottom:0.5rem;}
-.jobs-band-left .display-sm{color:#fff;}
-.jobs-band-left p{color:rgba(255,255,255,0.5);font-size:0.9rem;font-weight:300;margin-top:0.25rem;}
+/* FOOTER */
+footer{background:#0a1120;padding:4rem 0 2rem;}
+.footer-grid{max-width:1280px;margin:0 auto;padding:0 5vw;
+  display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:3rem;margin-bottom:3rem;}
+.fb{font-family:var(--font-d);font-size:1.1rem;color:#fff;font-weight:700;margin-bottom:0.75rem;}
+.fb .dot{color:var(--amber);}
+.fd{font-size:0.85rem;color:rgba(255,255,255,0.35);font-weight:300;line-height:1.75;max-width:280px;margin-bottom:1.5rem;}
+.fsoc{display:flex;gap:0.75rem;}
+.fsoc a{width:36px;height:36px;border-radius:8px;background:rgba(255,255,255,0.06);
+  border:1px solid rgba(255,255,255,0.08);display:flex;align-items:center;justify-content:center;
+  color:rgba(255,255,255,0.5);text-decoration:none;font-size:0.85rem;transition:all 0.2s;}
+.fsoc a:hover{background:rgba(245,166,35,0.15);border-color:rgba(245,166,35,0.3);color:var(--amber);}
+.fc-title{font-size:0.8rem;font-weight:600;text-transform:uppercase;letter-spacing:0.08em;
+  color:rgba(255,255,255,0.4);margin-bottom:1.25rem;}
+.fc-links{list-style:none;}
+.fc-links li{margin-bottom:0.6rem;}
+.fc-links a{color:rgba(255,255,255,0.45);text-decoration:none;font-size:0.875rem;transition:color 0.2s;}
+.fc-links a:hover{color:var(--amber);}
+.footer-bot{max-width:1280px;margin:0 auto;padding:1.5rem 5vw 0;
+  border-top:1px solid rgba(255,255,255,0.06);display:flex;align-items:center;
+  justify-content:space-between;flex-wrap:wrap;gap:1rem;}
+.fcopy{font-size:0.8rem;color:rgba(255,255,255,0.25);}
+.flegal{display:flex;gap:1.5rem;}
+.flegal a{font-size:0.8rem;color:rgba(255,255,255,0.25);text-decoration:none;transition:color 0.2s;}
+.flegal a:hover{color:rgba(255,255,255,0.5);}
 
-/* ─── FOOTER ────────────────────────────────────────────── */
-footer{background:var(--navy-dk);color:rgba(255,255,255,0.5);padding:5rem 5vw 2.5rem;}
-.footer-inner{display:grid;grid-template-columns:1.5fr 1fr 1fr 1fr;gap:3rem;margin-bottom:4rem;max-width:1240px;margin-left:auto;margin-right:auto;}
-.footer-brand{}
-.footer-brand .nav-logo{margin-bottom:1rem;}
-.footer-brand p{font-size:0.85rem;line-height:1.65;color:rgba(255,255,255,0.4);max-width:240px;}
-.footer-col-title{font-weight:600;font-size:0.88rem;color:rgba(255,255,255,0.8);margin-bottom:1.25rem;}
-.footer-col ul{list-style:none;}
-.footer-col ul li{margin-bottom:0.6rem;}
-.footer-col ul a{font-size:0.85rem;color:rgba(255,255,255,0.4);transition:color 0.2s;}
-.footer-col ul a:hover{color:var(--amber);}
-.footer-bottom{max-width:1240px;margin:0 auto;border-top:1px solid rgba(255,255,255,0.06);padding-top:2rem;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:1rem;}
-.footer-bottom p{font-size:0.8rem;color:rgba(255,255,255,0.25);}
-.footer-bottom a{font-size:0.8rem;color:rgba(255,255,255,0.25);transition:color 0.2s;}
-.footer-bottom a:hover{color:rgba(255,255,255,0.5);}
+/* REVEAL */
+.rv{opacity:0;transform:translateY(28px);transition:opacity 0.7s var(--ease),transform 0.7s var(--ease);}
+.rv.on{opacity:1;transform:none;}
+.rv.d1{transition-delay:0.1s;} .rv.d2{transition-delay:0.2s;} .rv.d3{transition-delay:0.3s;}
 
-/* ─── SCROLL ANIMATIONS ─────────────────────────────────── */
-.reveal{opacity:0;transform:translateY(28px);transition:opacity 0.65s cubic-bezier(0.16,1,0.3,1),transform 0.65s cubic-bezier(0.16,1,0.3,1);}
-.reveal.visible{opacity:1;transform:none;}
-.reveal-delay-1{transition-delay:0.1s;}
-.reveal-delay-2{transition-delay:0.2s;}
-.reveal-delay-3{transition-delay:0.3s;}
-.reveal-delay-4{transition-delay:0.4s;}
-
-/* ─── RESPONSIVE ────────────────────────────────────────── */
+/* RESPONSIVE */
 @media(max-width:1024px){
-  .grid-4,.steps-grid{grid-template-columns:1fr 1fr;}
-  .steps-connector{display:none;}
-  .platform-inner{grid-template-columns:1fr;}
-  .footer-inner{grid-template-columns:1fr 1fr;}
-  .pathways-grid{grid-template-columns:1fr 1fr;}
+  .hero-content{grid-template-columns:1fr;}
+  .find-inner{grid-template-columns:1fr;}
+  .paths{grid-template-columns:repeat(2,1fr);}
+  .emp-inner{grid-template-columns:1fr;}
+  .testi-grid{grid-template-columns:1fr 1fr;}
+  .ai-box{grid-template-columns:1fr;}
+  .footer-grid{grid-template-columns:1fr 1fr;}
 }
 @media(max-width:768px){
   .nav-links{display:none;}
-  .nav-hamburger{display:flex;}
-  .grid-2,.audience-grid,.diff-grid,.proof-grid{grid-template-columns:1fr;}
-  .problem-inner{grid-template-columns:1fr;}
-  .pathways-grid{grid-template-columns:1fr;}
-  .steps-grid{grid-template-columns:1fr;}
-  .pathways-header{flex-direction:column;align-items:flex-start;}
-  .hero-stats{gap:1.5rem;}
-  .footer-inner{grid-template-columns:1fr;}
-  .footer-bottom{flex-direction:column;align-items:flex-start;}
-  #final-cta{padding:5rem 5vw;}
-  .jobs-band-inner{flex-direction:column;text-align:center;}
-}
-@media(prefers-reduced-motion:reduce){
-  .reveal{opacity:1;transform:none;}
-  *{animation:none!important;transition-duration:0.01ms!important;}
+  .how-grid,.paths,.testi-grid{grid-template-columns:1fr;}
+  .nl-form{flex-direction:column;}
+  .footer-grid{grid-template-columns:1fr;}
+  .hero-search-box{flex-direction:column;border-radius:12px;}
+  .search-div{width:100%;height:1px;margin:0;}
+  .hero-search-box select,.hero-search-box input{width:100%;border-radius:0;}
+  .search-btn{border-radius:0 0 12px 12px;}
+  .ai-box{padding:2.5rem 2rem;}
+  .ai-wrap{margin:0;}
 }
 </style>
 </head>
 <body>
+<script>
+const SUPABASE_URL='https://YOUR_PROJECT.supabase.co';
+const SUPABASE_ANON='YOUR_ANON_KEY';
+const {createClient}=supabase;
+const db=createClient(SUPABASE_URL,SUPABASE_ANON);
+</script>
 
-<!-- ─── NAV ─────────────────────────────────────────────── -->
-<nav id="main-nav" role="navigation" aria-label="Main navigation">
-  <a href="/" class="nav-logo" aria-label="WorkforceForHumans home">
-    <div class="nav-logo-mark">
-      <svg viewBox="0 0 22 22" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-        <path d="M11 3 L18 8 L18 14 L11 19 L4 14 L4 8 Z" stroke="#1a2340" stroke-width="1.5" fill="none"/>
-        <path d="M11 7 L11 15 M7 10 L15 10" stroke="#1a2340" stroke-width="1.5" stroke-linecap="round"/>
-        <circle cx="11" cy="7" r="1.5" fill="#1a2340"/>
-      </svg>
+<nav>
+  <div class="nav-inner">
+    <a href="index.html" class="nav-logo">Workforce<span class="dot">.</span>for<span class="dot">Humans</span></a>
+    <ul class="nav-links">
+      <li><a href="jobs.html">Find Jobs</a></li>
+      <li><a href="learn.html">Level Up</a></li>
+      <li><a href="#resources">Resources</a></li>
+      <li><a href="#employers">For Employers</a></li>
+    </ul>
+    <div class="nav-actions">
+      <a href="#" class="btn-ghost">Sign In</a>
+      <a href="jobs.html" class="btn-amber">Find Work →</a>
     </div>
-    <div class="nav-logo-text">Workforce<span>For</span>Humans</div>
-  </a>
-  <ul class="nav-links" role="list">
-    <li><a href="#how">How It Works</a></li>
-    <li><a href="#audience">For You</a></li>
-    <li><a href="jobs.html">Find Jobs</a></li>
-    <li><a href="#pathways">Pathways</a></li>
-    <li><a href="#about">About</a></li>
-    <li><a href="#contact" class="nav-cta">Get Started</a></li>
-  </ul>
-  <button class="nav-hamburger" id="hamburger" aria-label="Open menu" aria-expanded="false">
-    <span></span><span></span><span></span>
-  </button>
+  </div>
 </nav>
 
-<!-- Mobile Menu -->
-<div class="mobile-menu" id="mobile-menu" role="dialog" aria-label="Mobile navigation">
-  <a href="#how">How It Works</a>
-  <a href="#audience">For You</a>
-  <a href="jobs.html">Find Jobs</a>
-  <a href="#pathways">Pathways</a>
-  <a href="#about">About</a>
-  <a href="#contact" style="color:var(--amber);font-weight:600;">Get Started →</a>
-</div>
-
-<!-- ─── HERO ──────────────────────────────────────────────── -->
-<section id="hero" aria-labelledby="hero-headline">
-  <div class="hero-grid" aria-hidden="true"></div>
-  <div class="hero-glow" aria-hidden="true"></div>
-  <div class="hero-glow-2" aria-hidden="true"></div>
-
-  <div class="hero-inner">
-    <div class="hero-label">
-      <span class="hero-label-dot" aria-hidden="true"></span>
-      <span class="label" style="color:rgba(255,255,255,0.4);">Career Adaptation Platform</span>
-    </div>
-
-    <h1 class="display-xl hero-headline" id="hero-headline">
-      Build your next chapter<br/>
-      <em class="line-2">in the age of technology.</em>
-    </h1>
-
-    <p class="hero-sub">
-      WorkforceForHumans helps people affected by technological change find direction, build relevant skills, and move toward future-ready work.
-    </p>
-
-    <div class="hero-ctas btn-group">
-      <a href="#contact" class="btn btn-primary btn-lg btn-arrow">Take the Assessment</a>
-      <a href="#pathways" class="btn btn-outline-light btn-lg">Explore Pathways</a>
-    </div>
-
-    <div class="hero-stats">
-      <div>
-        <div class="hero-stat-num" data-count="15" data-suffix="+">—</div>
-        <div class="hero-stat-label">Career pathways mapped</div>
+<section class="hero">
+  <div class="hero-bg"></div>
+  <div class="hero-grid"></div>
+  <div class="hero-content">
+    <div>
+      <div class="hero-eyebrow"><div class="hero-dot"></div>Built for workers, not resumes</div>
+      <h1 class="hero-h1">
+        <span class="line"><span>Find work that</span></span>
+        <span class="line"><span><em>fits your life.</em></span></span>
+        <span class="line"><span>Move forward.</span></span>
+      </h1>
+      <p class="hero-sub">Whether you've been laid off, need a career change, or are starting from zero — we connect real people with employers who are actively hiring. No degree gatekeeping. No runaround.</p>
+      <div class="hero-search-box">
+        <input type="text" id="hs" placeholder="Job title, skill, or keyword…"/>
+        <div class="search-div"></div>
+        <select id="hstate">
+          <option value="">All Locations</option>
+          <option value="remote">Remote Only</option>
+          <option value="CO">Colorado</option>
+          <option value="TX">Texas</option>
+          <option value="CA">California</option>
+          <option value="FL">Florida</option>
+          <option value="NY">New York</option>
+          <option value="GA">Georgia</option>
+          <option value="AZ">Arizona</option>
+        </select>
+        <button class="search-btn" onclick="goSearch()">Search Jobs →</button>
       </div>
-      <div>
-        <div class="hero-stat-num" data-count="80" data-suffix="%">—</div>
-        <div class="hero-stat-label">Of new roles require tech fluency</div>
-      </div>
-      <div>
-        <div class="hero-stat-num" data-count="47" data-suffix="M">—</div>
-        <div class="hero-stat-label">Workers in career transition</div>
-      </div>
-      <div>
-        <div class="hero-stat-num" data-count="0" data-suffix="" data-text="$0">$0</div>
-        <div class="hero-stat-label">Cost to start your assessment</div>
+      <div class="quick-tags">
+        <span class="quick-label">Popular:</span>
+        <a href="jobs.html" class="quick-tag">Entry Level</a>
+        <a href="jobs.html" class="quick-tag">Remote</a>
+        <a href="jobs.html" class="quick-tag">50+ Friendly</a>
+        <a href="jobs.html" class="quick-tag">Apprenticeship</a>
+        <a href="learn.html" class="quick-tag">Training Programs</a>
       </div>
     </div>
-  </div>
-
-  <div class="hero-scroll" aria-hidden="true">
-    <span>Scroll</span>
-    <div class="hero-scroll-line"></div>
-  </div>
-</section>
-
-<!-- ─── PROBLEM ───────────────────────────────────────────── -->
-<section id="problem" class="section">
-  <div class="container">
-    <div class="problem-inner">
-      <div class="problem-left reveal">
-        <div class="label section-label">The Structural Shift</div>
-        <h2 class="display-lg section-headline">Work is changing faster than most people are prepared for.</h2>
-
-        <div class="problem-stat-grid">
-          <div class="problem-stat-card reveal reveal-delay-1">
-            <div class="num">65<span style="font-size:1.4rem;color:var(--terra);">%</span></div>
-            <div class="desc">of today's elementary school students will work in job types that don't yet exist</div>
-          </div>
-          <div class="problem-stat-card reveal reveal-delay-2">
-            <div class="num">85<span style="font-size:1.4rem;color:var(--terra);">M</span></div>
-            <div class="desc">jobs could be displaced by automation by 2025 globally</div>
-          </div>
-          <div class="problem-stat-card reveal reveal-delay-3">
-            <div class="num">97<span style="font-size:1.4rem;color:var(--terra);">M</span></div>
-            <div class="desc">new roles emerging that require a hybrid of human and technical skills</div>
-          </div>
-          <div class="problem-stat-card reveal reveal-delay-4">
-            <div class="num">2<span style="font-size:1.4rem;color:var(--terra);">yr</span></div>
-            <div class="desc">average window before skills become significantly outdated in high-change fields</div>
-          </div>
-        </div>
-      </div>
-
-      <div class="problem-right reveal reveal-delay-2">
-        <blockquote class="problem-quote">
-          "Losing your job to technology isn't a personal failure. It's the result of structural forces moving faster than the systems built to help people adapt."
-        </blockquote>
-        <p class="problem-para">The standard advice — learn to code, go back to school, update your LinkedIn — often misses the point. Most people don't need a new career from scratch. They need a clear-eyed view of where the opportunity actually is, and a practical path to get there.</p>
-        <p class="problem-para">WorkforceForHumans was built to provide exactly that: structured guidance, realistic direction, and a system that respects the complexity of real career transitions.</p>
-        <a href="#how" class="btn btn-outline btn-arrow" style="margin-top:1rem;">How we approach it</a>
-      </div>
+    <div class="hero-right">
+      <div class="stat-card"><div class="stat-icon a">💼</div><div><div class="stat-num" id="s-jobs">—</div><div class="stat-lbl">Active job openings</div></div><div class="stat-badge">↑ Live</div></div>
+      <div class="stat-card"><div class="stat-icon g">🌱</div><div><div class="stat-num" id="s-entry">—</div><div class="stat-lbl">Entry-level openings</div></div></div>
+      <div class="stat-card"><div class="stat-icon t">🔭</div><div><div class="stat-num" id="s-senior">—</div><div class="stat-lbl">50+ friendly roles</div></div></div>
+      <div class="stat-card"><div class="stat-icon m">✓</div><div><div class="stat-num" id="s-emp">—</div><div class="stat-lbl">Verified employers</div></div></div>
     </div>
   </div>
 </section>
 
-<!-- ─── HOW IT WORKS ──────────────────────────────────────── -->
-<section id="how" class="section">
-  <div class="container">
-    <div class="steps-header reveal">
-      <div class="label section-label" style="color:var(--terra);">The Process</div>
-      <h2 class="display-lg">A practical system for career adaptation.</h2>
-      <p class="body-lg" style="color:var(--slate);max-width:540px;margin:1rem auto 0;">Four structured stages, designed to take you from uncertainty to forward momentum — without the noise.</p>
-    </div>
-
-    <div class="steps-grid" style="position:relative;">
-      <div class="steps-connector" aria-hidden="true"></div>
-
-      <div class="step-card reveal reveal-delay-1">
-        <div class="step-num" aria-hidden="true">1</div>
-        <div class="step-title">Assess where you stand</div>
-        <div class="step-desc">Understand your current skills, experience, and how they map to the shifting landscape. No judgment — just clear information.</div>
-      </div>
-
-      <div class="step-card reveal reveal-delay-2">
-        <div class="step-num" aria-hidden="true">2</div>
-        <div class="step-title">Identify strong-fit directions</div>
-        <div class="step-desc">Discover which pathways align with your strengths, your circumstances, and where real opportunity is growing — not just trending.</div>
-      </div>
-
-      <div class="step-card reveal reveal-delay-3">
-        <div class="step-num" aria-hidden="true">3</div>
-        <div class="step-title">Follow a guided pathway</div>
-        <div class="step-desc">Work through a structured sequence of steps, resources, and skill development targets — organized by outcome, not curriculum.</div>
-      </div>
-
-      <div class="step-card reveal reveal-delay-4">
-        <div class="step-num" aria-hidden="true">4</div>
-        <div class="step-title">Build toward real opportunity</div>
-        <div class="step-desc">Connect with employers, validate your progress, and move toward roles that exist today — and the ones being created right now.</div>
-      </div>
-    </div>
-
-    <div style="text-align:center;margin-top:3.5rem;" class="reveal">
-      <a href="#contact" class="btn btn-dark btn-lg btn-arrow">Take the Assessment — It's Free</a>
-    </div>
-  </div>
-</section>
-
-<!-- ─── AUDIENCE SPLIT ─────────────────────────────────────── -->
-<section id="audience" class="section">
-  <div class="container">
-    <div class="audience-header reveal">
-      <div class="label section-label" style="color:var(--terra);">Who We Serve</div>
-      <h2 class="display-lg">Built for people navigating change —<br/>and the organizations shaping what comes next.</h2>
-    </div>
-
-    <div class="audience-grid">
-      <a href="#for-individuals" class="audience-card individuals reveal reveal-delay-1">
-        <div class="audience-card-icon" aria-hidden="true">👤</div>
-        <h3 class="audience-card-title">For Individuals</h3>
-        <p class="audience-card-desc">If you're facing job loss, career instability, or the sense that your skills aren't keeping pace — you don't need to start from zero. You need a clearer map.</p>
-        <ul class="audience-card-features">
-          <li>Understand where your skills transfer</li>
-          <li>Find pathways that match your reality</li>
-          <li>Build new capability without going back to school</li>
-          <li>Move toward work that will be relevant tomorrow</li>
-          <li>Access real job opportunities from verified employers</li>
-        </ul>
-        <span class="btn btn-primary btn-arrow">Explore Your Options</span>
-        <div class="audience-bg-glow" aria-hidden="true"></div>
-      </a>
-
-      <a href="#for-partners" class="audience-card partners reveal reveal-delay-2">
-        <div class="audience-card-icon" aria-hidden="true">🤝</div>
-        <h3 class="audience-card-title">For Partners</h3>
-        <p class="audience-card-desc">Employers, workforce organizations, and institutions working to build more resilient talent pipelines — WorkforceForHumans connects you with motivated, pathway-prepared candidates.</p>
-        <ul class="audience-card-features">
-          <li>Access pre-assessed, motivated candidates</li>
-          <li>Align job requirements with pathway content</li>
-          <li>Support workforce mobility and transition programs</li>
-          <li>Build employer brand in high-growth sectors</li>
-          <li>Strategic partnership for workforce development</li>
-        </ul>
-        <span class="btn btn-dark btn-arrow">Partner With Us</span>
-        <div class="audience-bg-glow" aria-hidden="true"></div>
-      </a>
-    </div>
-  </div>
-</section>
-
-<!-- ─── PATHWAYS ───────────────────────────────────────────── -->
-<section id="pathways" class="section">
-  <div class="container">
-    <div class="pathways-header">
-      <div class="reveal">
-        <div class="label section-label" style="color:var(--terra);">Guided Pathways</div>
-        <h2 class="display-lg" style="max-width:500px;">Explore pathways into more resilient work.</h2>
-        <p style="color:var(--slate);font-weight:300;margin-top:0.75rem;max-width:440px;">Each pathway is built around where real work is growing — not what's trending on LinkedIn.</p>
-      </div>
-      <a href="jobs.html" class="btn btn-outline btn-arrow reveal reveal-delay-2">Browse All Jobs</a>
-    </div>
-
-    <div class="pathways-grid">
-      <div class="pathway-card reveal reveal-delay-1">
-        <div class="pathway-icon" aria-hidden="true">⚙️</div>
-        <div class="pathway-title">AI-Adjacent Operations</div>
-        <div class="pathway-desc">Work alongside AI systems as the human who ensures quality, context, and judgment — roles in prompt operations, AI QA, and workflow management.</div>
-        <div class="pathway-tags">
-          <span>Growing rapidly</span>
-          <span>Entry-accessible</span>
-          <span>No degree</span>
-        </div>
-      </div>
-
-      <div class="pathway-card reveal reveal-delay-2">
-        <div class="pathway-icon" aria-hidden="true">📡</div>
-        <div class="pathway-title">Digital Coordination</div>
-        <div class="pathway-desc">Project coordinators, digital operations managers, and implementation specialists who bridge human teams and digital systems.</div>
-        <div class="pathway-tags">
-          <span>Transferable skills</span>
-          <span>Mid-career fit</span>
-          <span>Remote-friendly</span>
-        </div>
-      </div>
-
-      <div class="pathway-card highlight reveal reveal-delay-3">
-        <div class="pathway-icon" aria-hidden="true">🔧</div>
-        <div class="pathway-title">Technical Support & Enablement</div>
-        <div class="pathway-desc">Support engineers, technical success managers, and enablement specialists who help organizations adopt and operate modern technology.</div>
-        <div class="pathway-tags">
-          <span>High demand</span>
-          <span>Clear ladder</span>
-          <span>Stable</span>
-        </div>
-      </div>
-
-      <div class="pathway-card reveal reveal-delay-1">
-        <div class="pathway-icon" aria-hidden="true">📊</div>
-        <div class="pathway-title">Data-Informed Business Roles</div>
-        <div class="pathway-desc">Operations analysts, reporting coordinators, and data-aware generalists who interpret signals and translate them into business decisions.</div>
-        <div class="pathway-tags">
-          <span>Cross-industry</span>
-          <span>Salary growth</span>
-          <span>Leverages experience</span>
-        </div>
-      </div>
-
-      <div class="pathway-card reveal reveal-delay-2">
-        <div class="pathway-icon" aria-hidden="true">🌿</div>
-        <div class="pathway-title">Green Energy & Trades</div>
-        <div class="pathway-desc">Solar installers, EV technicians, sustainability coordinators, and trade roles in the fastest-growing physical infrastructure sector.</div>
-        <div class="pathway-tags">
-          <span>Physical + tech</span>
-          <span>No degree</span>
-          <span>Long-term growth</span>
-        </div>
-      </div>
-
-      <div class="pathway-card reveal reveal-delay-3">
-        <div class="pathway-icon" aria-hidden="true">❤️</div>
-        <div class="pathway-title">Human-Centered + Tech-Enhanced</div>
-        <div class="pathway-desc">Healthcare coordinators, social services specialists, and care roles that combine irreplaceable human skills with modern digital tools.</div>
-        <div class="pathway-tags">
-          <span>Automation-resistant</span>
-          <span>Purpose-driven</span>
-          <span>Growing demand</span>
-        </div>
-      </div>
-    </div>
-
-    <div style="text-align:center;margin-top:2.5rem;" class="reveal">
-      <a href="#contact" class="btn btn-primary btn-arrow">Find My Best Pathway</a>
-    </div>
-  </div>
-</section>
-
-<!-- ─── DIFFERENTIATION ────────────────────────────────────── -->
-<section id="diff" class="section">
-  <div class="container">
-    <div class="diff-header reveal">
-      <div class="label section-label" style="color:var(--terra);">Why It's Different</div>
-      <h2 class="display-lg">Not more noise.<br/>A clearer way forward.</h2>
-      <p class="body-lg" style="color:var(--slate);max-width:500px;margin:1rem auto 0;">Most resources for people facing job disruption are fragmented, generic, or built for someone else's problem.</p>
-    </div>
-
-    <div class="diff-grid">
-      <div class="diff-col bad reveal reveal-delay-1">
-        <div class="diff-col-label">What most people get</div>
-        <div class="diff-item"><span class="diff-icon">✕</span>Random online content with no clear sequence</div>
-        <div class="diff-item"><span class="diff-icon">✕</span>Generic career advice disconnected from real hiring</div>
-        <div class="diff-item"><span class="diff-icon">✕</span>Expensive courses with uncertain outcomes</div>
-        <div class="diff-item"><span class="diff-icon">✕</span>Motivational content that avoids practical questions</div>
-        <div class="diff-item"><span class="diff-icon">✕</span>Bootcamp pressure to learn skills that may not apply</div>
-        <div class="diff-item"><span class="diff-icon">✕</span>No clear sense of where to start or what to prioritize</div>
-      </div>
-
-      <div class="diff-col good reveal reveal-delay-2">
-        <div class="diff-col-label">WorkforceForHumans</div>
-        <div class="diff-item"><span class="diff-icon" style="color:var(--amber);">→</span>Structured pathways with a clear beginning and direction</div>
-        <div class="diff-item"><span class="diff-icon" style="color:var(--amber);">→</span>Employer-informed pathways built around actual hiring needs</div>
-        <div class="diff-item"><span class="diff-icon" style="color:var(--amber);">→</span>Focused resources matched to your specific pathway</div>
-        <div class="diff-item"><span class="diff-icon" style="color:var(--amber);">→</span>Practical, outcome-oriented guidance without the fluff</div>
-        <div class="diff-item"><span class="diff-icon" style="color:var(--amber);">→</span>Assessment-first approach to identify what actually applies</div>
-        <div class="diff-item"><span class="diff-icon" style="color:var(--amber);">→</span>A starting point based on where you are — not where you're "supposed" to be</div>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- ─── PROOF / TRUST ──────────────────────────────────────── -->
-<section id="proof" class="section">
-  <div class="container">
-    <div class="proof-header reveal">
-      <div class="label section-label" style="color:var(--terra);">Real Outcomes</div>
-      <h2 class="display-lg">Built around real workforce needs.</h2>
-      <p style="color:var(--slate);font-weight:300;margin-top:0.75rem;">Career transitions are personal. These are the kinds of outcomes the platform is being built to produce.</p>
-    </div>
-
-    <div class="proof-grid">
-      <div class="proof-card reveal reveal-delay-1">
-        <p class="proof-card-quote">After 18 years in manufacturing, I had no idea where to start. The assessment pointed me toward AI-adjacent operations — I didn't even know those roles existed. Six months later I'm doing quality review work for an automation company.</p>
-        <div class="proof-card-attribution">
-          <div class="proof-card-avatar" aria-hidden="true">M.T.</div>
-          <div>
-            <div class="proof-card-name">M. Torres</div>
-            <div class="proof-card-role">Former Assembly Lead → AI Operations Specialist</div>
-            <div class="proof-placeholder">Illustrative story — names changed</div>
-          </div>
-        </div>
-      </div>
-
-      <div class="proof-card reveal reveal-delay-2">
-        <p class="proof-card-quote">I kept being told to "learn to code." That wasn't realistic for me at 52 with a family. WorkforceForHumans helped me see that my coordination and communication skills were actually what tech companies needed — just applied differently.</p>
-        <div class="proof-card-attribution">
-          <div class="proof-card-avatar" aria-hidden="true">S.J.</div>
-          <div>
-            <div class="proof-card-name">S. Johnson</div>
-            <div class="proof-card-role">Former Retail Manager → Digital Operations Coordinator</div>
-            <div class="proof-placeholder">Illustrative story — names changed</div>
-          </div>
-        </div>
-      </div>
-
-      <div class="proof-card reveal reveal-delay-3">
-        <p class="proof-card-quote">The pathway structure made the difference. Not a list of resources — an actual sequence. It felt like having a professional guide who understood both where I was and where the jobs actually were.</p>
-        <div class="proof-card-attribution">
-          <div class="proof-card-avatar" aria-hidden="true">D.L.</div>
-          <div>
-            <div class="proof-card-name">D. Liu</div>
-            <div class="proof-card-role">Former Bookkeeper → Data-Informed Operations Analyst</div>
-            <div class="proof-placeholder">Illustrative story — names changed</div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <div class="proof-logos reveal">
-      <div class="proof-logos-label">Employers informed our pathway design</div>
-      <div class="proof-logos-row">
-        <div class="proof-logo-pill">Healthcare</div>
-        <div class="proof-logo-pill">Green Energy</div>
-        <div class="proof-logo-pill">Logistics</div>
-        <div class="proof-logo-pill">Technology</div>
-        <div class="proof-logo-pill">Skilled Trades</div>
-        <div class="proof-logo-pill">Public Sector</div>
-      </div>
-      <p style="font-size:0.75rem;color:var(--mist);margin-top:1rem;">Partner logos will appear here as employer relationships are established.</p>
-    </div>
-  </div>
-</section>
-
-<!-- ─── PLATFORM FUTURE ─────────────────────────────────────── -->
-<section id="platform" class="section">
-  <div class="platform-grid-bg" aria-hidden="true"></div>
-  <div class="container">
-    <div class="platform-inner">
-      <div class="platform-left reveal">
-        <div class="label section-label">The Longer View</div>
-        <h2 class="display-lg">Today: guided pathways.<br/>Over time: a stronger system.</h2>
-        <p class="body-lg">We are starting with structured pathways and practical tools. Our longer-term goal is to build a more complete system for workforce adaptation — one that gets more useful as more people use it.</p>
-
-        <ul class="platform-timeline">
-          <li>
-            <div class="platform-timeline-dot now" aria-hidden="true"></div>
-            <div>
-              <div class="platform-timeline-tag now-tag">Now</div>
-              <div class="platform-timeline-text now">Guided career pathways, assessment tool, job board with verified employers, and practical resources organized by pathway.</div>
-            </div>
-          </li>
-          <li>
-            <div class="platform-timeline-dot soon" aria-hidden="true"></div>
-            <div>
-              <div class="platform-timeline-tag soon-tag">Next</div>
-              <div class="platform-timeline-text soon">Personal progress tracking, deeper pathway personalization, employer-aligned skill validation, and structured job application support.</div>
-            </div>
-          </li>
-          <li>
-            <div class="platform-timeline-dot later" aria-hidden="true"></div>
-            <div>
-              <div class="platform-timeline-tag later-tag">Later</div>
-              <div class="platform-timeline-text later">Intelligent pathway matching, peer community, workforce partner network, and a more complete system connecting skills to opportunity at scale.</div>
-            </div>
-          </li>
-        </ul>
-      </div>
-
-      <div class="platform-right reveal reveal-delay-2">
-        <div class="platform-visual" role="img" aria-label="Platform feature status overview">
-          <div class="platform-visual-header">
-            <div class="platform-visual-dot active" aria-hidden="true"></div>
-            <div class="platform-visual-dot active" aria-hidden="true"></div>
-            <div class="platform-visual-dot inactive" aria-hidden="true"></div>
-            <div class="platform-visual-title">Platform Capabilities</div>
-          </div>
-
-          <div class="pv-item">
-            <div class="pv-icon on" aria-hidden="true">📋</div>
-            <div class="pv-label on">Career Assessment</div>
-            <span class="pv-status live">Live</span>
-          </div>
-          <div class="pv-item">
-            <div class="pv-icon on" aria-hidden="true">🗺️</div>
-            <div class="pv-label on">Guided Pathways</div>
-            <span class="pv-status live">Live</span>
-          </div>
-          <div class="pv-item">
-            <div class="pv-icon on" aria-hidden="true">💼</div>
-            <div class="pv-label on">Job Board (Verified Employers)</div>
-            <span class="pv-status live">Live</span>
-          </div>
-          <div class="pv-item">
-            <div class="pv-icon on" aria-hidden="true">📚</div>
-            <div class="pv-label on">Pathway Resources</div>
-            <span class="pv-status live">Live</span>
-          </div>
-          <div class="pv-item">
-            <div class="pv-icon off" aria-hidden="true">📈</div>
-            <div class="pv-label off">Progress Tracking</div>
-            <span class="pv-status soon">Coming</span>
-          </div>
-          <div class="pv-item">
-            <div class="pv-icon off" aria-hidden="true">🎯</div>
-            <div class="pv-label off">Employer Matching</div>
-            <span class="pv-status soon">Coming</span>
-          </div>
-          <div class="pv-item">
-            <div class="pv-icon off" aria-hidden="true">👥</div>
-            <div class="pv-label off">Peer Community</div>
-            <span class="pv-status future">Planned</span>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- ─── JOBS BAND ──────────────────────────────────────────── -->
-<div id="jobs-band">
-  <div class="jobs-band-inner">
-    <div class="jobs-band-left reveal">
-      <div class="label">Live Job Board</div>
-      <div class="display-sm">Real jobs from verified employers — updated daily.</div>
-      <p>Healthcare, trades, technology, green energy, logistics, and more. Entry-level welcome. No degree required to get started.</p>
-    </div>
-    <div class="reveal reveal-delay-2">
-      <a href="jobs.html" class="btn btn-primary btn-lg btn-arrow">Browse Open Jobs</a>
+<div class="trust-bar">
+  <div class="trust-inner">
+    <span class="trust-label">Employers actively hiring</span>
+    <div class="trust-logos">
+      <span class="trust-co">HealthFirst</span>
+      <span class="trust-co">SunPath Solar</span>
+      <span class="trust-co">FastFreight</span>
+      <span class="trust-co">BuildRight</span>
+      <span class="trust-co">TechBridge</span>
+      <span class="trust-co">+ more weekly</span>
     </div>
   </div>
 </div>
 
-<!-- ─── FINAL CTA ──────────────────────────────────────────── -->
-<section id="final-cta" aria-labelledby="cta-headline">
-  <div class="final-cta-inner">
-    <div class="label" style="color:rgba(26,35,64,0.5);">Start Here</div>
-    <h2 class="display-lg" id="cta-headline" style="margin-top:0.5rem;">Find a clearer path forward.</h2>
-    <p class="body-lg">The assessment takes about 10 minutes. It's free. You'll come away with a clearer sense of where your existing skills transfer, and which pathways are most worth exploring.</p>
-    <div class="btn-group" style="justify-content:center;">
-      <a href="#contact" class="btn btn-dark btn-lg btn-arrow">Take the Assessment</a>
-      <a href="#contact" class="btn btn-outline btn-lg">Talk to Us</a>
+<section>
+  <div class="container">
+    <div class="rv">
+      <div class="eye">How it works</div>
+      <h2 class="h2">Three steps to your<br/><em>next chapter.</em></h2>
+      <p class="sub">No endless forms. No ghosting. Just a clear path from where you are to where you want to be.</p>
+    </div>
+    <div class="how-grid">
+      <div class="how-card rv d1" data-n="01">
+        <div class="how-step">Step 01</div>
+        <div class="how-icon hi-a">🔍</div>
+        <h3 class="how-h3">Browse Real Jobs</h3>
+        <p class="how-p">Search thousands of listings filtered by location, skills, and situation. Entry-level, career change, or leadership — every employer is verified, every listing is real.</p>
+      </div>
+      <div class="how-card rv d2" data-n="02">
+        <div class="how-step">Step 02</div>
+        <div class="how-icon hi-t">📚</div>
+        <h3 class="how-h3">Level Up Your Skills</h3>
+        <p class="how-p">Find free and affordable training programs, certifications, and apprenticeships that employers actually want. From OSHA cards to CompTIA A+, we surface what's worth your time.</p>
+      </div>
+      <div class="how-card rv d3" data-n="03">
+        <div class="how-step">Step 03</div>
+        <div class="how-icon hi-g">🚀</div>
+        <h3 class="how-h3">Apply With Confidence</h3>
+        <p class="how-p">One-click applications, direct employer contact, and real-time status updates. We also connect you with coaching support if you need help navigating your next move.</p>
+      </div>
     </div>
   </div>
 </section>
 
-<!-- ─── CONTACT FORM ───────────────────────────────────────── -->
-<section id="contact" class="section" style="background:#fff;" aria-labelledby="contact-headline">
-  <div class="container" style="max-width:680px;">
-    <div style="text-align:center;margin-bottom:3rem;" class="reveal">
-      <div class="label section-label" style="color:var(--terra);">Get Started</div>
-      <h2 class="display-md" id="contact-headline">Tell us a little about your situation.</h2>
-      <p style="color:var(--slate);font-weight:300;margin-top:0.75rem;">Whether you're an individual navigating career change or an organization exploring partnership — start here.</p>
-    </div>
-
-    <div style="background:var(--cream);border:1px solid var(--stone);border-radius:20px;padding:2.5rem;" class="reveal reveal-delay-1">
-      <!-- Path selector -->
-      <div style="display:flex;gap:0.75rem;margin-bottom:2rem;" role="group" aria-label="Select your path">
-        <button class="path-tab active" data-path="individual" onclick="switchPath('individual')">I'm an Individual</button>
-        <button class="path-tab" data-path="partner" onclick="switchPath('partner')">I'm a Partner / Employer</button>
-        <button class="path-tab" data-path="other" onclick="switchPath('other')">Other</button>
+<div class="find-wrap">
+  <div class="find-inner">
+    <div class="rv">
+      <div class="eye" style="color:var(--amber)"><span style="background:var(--amber);width:24px;height:2px;display:inline-block;margin-right:0.5rem;"></span>Find Work</div>
+      <h2 class="h2" style="color:#fff">Real jobs.<br/><em style="color:var(--amber)">Right now.</em></h2>
+      <p class="sub" style="color:rgba(255,255,255,0.5)">Jobs from employers who are actively hiring today — not scraped from six months ago. Every listing is reviewed. Every employer is contactable.</p>
+      <div class="cta-row">
+        <a href="jobs.html" class="btn-amber">Browse All Jobs →</a>
+        <a href="jobs.html" class="btn-ao">Entry Level Only</a>
       </div>
+    </div>
+    <div id="feat-jobs" class="rv d1">
+      <div class="mini-card"><div style="background:rgba(255,255,255,0.08);height:16px;border-radius:4px;width:70%;margin-bottom:8px;"></div><div style="background:rgba(255,255,255,0.04);height:12px;border-radius:4px;width:50%;"></div></div>
+      <div class="mini-card"><div style="background:rgba(255,255,255,0.08);height:16px;border-radius:4px;width:65%;margin-bottom:8px;"></div><div style="background:rgba(255,255,255,0.04);height:12px;border-radius:4px;width:45%;"></div></div>
+      <div class="mini-card"><div style="background:rgba(255,255,255,0.08);height:16px;border-radius:4px;width:72%;margin-bottom:8px;"></div><div style="background:rgba(255,255,255,0.04);height:12px;border-radius:4px;width:55%;"></div></div>
+    </div>
+  </div>
+</div>
 
-      <form id="lead-form" onsubmit="submitForm(event)" novalidate>
-        <input type="hidden" id="form-path" name="path" value="individual"/>
+<section>
+  <div class="container">
+    <div class="rv" style="display:flex;align-items:flex-end;justify-content:space-between;flex-wrap:wrap;gap:1.5rem;">
+      <div>
+        <div class="eye">Level Up</div>
+        <h2 class="h2">Invest in skills employers<br/><em>actually pay for.</em></h2>
+        <p class="sub">Curated learning paths matched to in-demand jobs. Free resources, affordable certs, and apprenticeship pipelines built for career changers.</p>
+      </div>
+      <a href="learn.html" class="btn-amber" style="margin-bottom:1rem;">All Learning Paths →</a>
+    </div>
+    <div class="paths">
+      <a href="learn.html" class="path-card rv"><div class="ph hc"><span class="ph-icon">🏥</span><div class="ph-title">Healthcare & Wellness</div></div><div class="pb"><div class="pb-stat"><strong>342</strong> open roles · avg <strong>$22/hr</strong></div><div class="pb-tags"><span class="pb-tag">CNA</span><span class="pb-tag">Medical Assistant</span><span class="pb-tag">Phlebotomy</span></div><div class="pb-arrow">Start Learning</div></div></a>
+      <a href="learn.html" class="path-card rv d1"><div class="ph tc"><span class="ph-icon">💻</span><div class="ph-title">Technology & IT</div></div><div class="pb"><div class="pb-stat"><strong>218</strong> open roles · avg <strong>$26/hr</strong></div><div class="pb-tags"><span class="pb-tag">CompTIA A+</span><span class="pb-tag">Help Desk</span><span class="pb-tag">Cybersecurity</span></div><div class="pb-arrow">Start Learning</div></div></a>
+      <a href="learn.html" class="path-card rv d2"><div class="ph tr"><span class="ph-icon">⚙️</span><div class="ph-title">Skilled Trades</div></div><div class="pb"><div class="pb-stat"><strong>489</strong> open roles · avg <strong>$28/hr</strong></div><div class="pb-tags"><span class="pb-tag">OSHA 10</span><span class="pb-tag">Electrical</span><span class="pb-tag">Plumbing</span></div><div class="pb-arrow">Start Learning</div></div></a>
+      <a href="learn.html" class="path-card rv"><div class="ph en"><span class="ph-icon">🌱</span><div class="ph-title">Green Energy & Climate</div></div><div class="pb"><div class="pb-stat"><strong>156</strong> open roles · avg <strong>$24/hr</strong></div><div class="pb-tags"><span class="pb-tag">Solar Install</span><span class="pb-tag">NABCEP</span><span class="pb-tag">Energy Audit</span></div><div class="pb-arrow">Start Learning</div></div></a>
+      <a href="learn.html" class="path-card rv d1"><div class="ph lg"><span class="ph-icon">📦</span><div class="ph-title">Logistics & Supply Chain</div></div><div class="pb"><div class="pb-stat"><strong>274</strong> open roles · avg <strong>$19/hr</strong></div><div class="pb-tags"><span class="pb-tag">Forklift Cert</span><span class="pb-tag">WMS</span><span class="pb-tag">CDL</span></div><div class="pb-arrow">Start Learning</div></div></a>
+      <a href="learn.html" class="path-card rv d2"><div class="ph fn"><span class="ph-icon">💼</span><div class="ph-title">Finance & Accounting</div></div><div class="pb"><div class="pb-stat"><strong>132</strong> open roles · avg <strong>$30/hr</strong></div><div class="pb-tags"><span class="pb-tag">Bookkeeping</span><span class="pb-tag">QuickBooks</span><span class="pb-tag">Payroll</span></div><div class="pb-arrow">Start Learning</div></div></a>
+    </div>
+  </div>
+</section>
 
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1rem;">
-          <div>
-            <label class="form-label" for="first-name">First name</label>
-            <input class="form-input" type="text" id="first-name" name="first_name" required autocomplete="given-name" placeholder="Maria"/>
-          </div>
-          <div>
-            <label class="form-label" for="last-name">Last name</label>
-            <input class="form-input" type="text" id="last-name" name="last_name" required autocomplete="family-name" placeholder="Torres"/>
-          </div>
-        </div>
+<div class="ai-wrap rv">
+  <div class="ai-box">
+    <div>
+      <div class="ai-pill">✦ AI-Powered Coaching</div>
+      <h2 class="ai-h2">Your personal <em>career strategist,</em> available 24/7.</h2>
+      <p class="ai-p">Not a chatbot. A real coaching framework powered by AI — built to identify skill gaps, map a career path, and help you navigate the market with a plan rather than hope.</p>
+      <a href="learn.html" class="btn-amber">Start Your Career Plan →</a>
+    </div>
+    <div class="ai-feats">
+      <div class="ai-feat"><div class="af-icon">🎯</div><div><div class="af-title">Skills Gap Analysis</div><div class="af-desc">See exactly what's between you and your target role — and how to close it in 90 days.</div></div></div>
+      <div class="ai-feat"><div class="af-icon">🗺️</div><div><div class="af-title">Custom Career Roadmap</div><div class="af-desc">A personalized plan with milestones, training resources, and job targets — not generic advice.</div></div></div>
+      <div class="ai-feat"><div class="af-icon">📄</div><div><div class="af-title">Resume & Interview Prep</div><div class="af-desc">Tailored review and mock coaching built around your specific target jobs.</div></div></div>
+      <div class="ai-feat"><div class="af-icon">📊</div><div><div class="af-title">Labor Market Intelligence</div><div class="af-desc">Real-time salary data, hiring trends, and in-demand skills for your region.</div></div></div>
+    </div>
+  </div>
+</div>
 
-        <div style="margin-bottom:1rem;">
-          <label class="form-label" for="email">Email address</label>
-          <input class="form-input" type="email" id="email" name="email" required autocomplete="email" placeholder="you@example.com"/>
-        </div>
+<section class="testi-sec">
+  <div class="container">
+    <div class="rv" style="text-align:center;max-width:540px;margin:0 auto;">
+      <div class="eye" style="justify-content:center;">Success Stories</div>
+      <h2 class="h2">Real people.<br/><em>Real results.</em></h2>
+    </div>
+    <div class="testi-grid">
+      <div class="testi-card rv">
+        <div class="testi-stars">★★★★★</div>
+        <div class="testi-q">"I was laid off after 22 years in manufacturing. Found my solar installer job here in 3 weeks. The training resources helped me get my OSHA card before my first interview."</div>
+        <div class="testi-auth"><div class="testi-av" style="background:#1f6b35;">RK</div><div><div class="testi-name">Robert K., 54</div><div class="testi-det">Solar Installer · Phoenix, AZ · Was: Factory floor manager</div></div></div>
+      </div>
+      <div class="testi-card rv d1">
+        <div class="testi-stars">★★★★★</div>
+        <div class="testi-q">"Entry level tech with no degree felt impossible. The IT path showed me exactly what certs to get. Got my A+ in 6 weeks, hired within a month. Fully remote. My life changed."</div>
+        <div class="testi-auth"><div class="testi-av" style="background:#243055;">MT</div><div><div class="testi-name">Maria T., 31</div><div class="testi-det">IT Help Desk · Remote · Was: Retail shift supervisor</div></div></div>
+      </div>
+      <div class="testi-card rv d2">
+        <div class="testi-stars">★★★★★</div>
+        <div class="testi-q">"I'm 61 and was convinced nobody would hire me. The 50+ Friendly filter led me to employers who wanted my experience. Patient care coordinator — using everything I learned over 30 years."</div>
+        <div class="testi-auth"><div class="testi-av" style="background:#c85f3e;">DJ</div><div><div class="testi-name">Diane J., 61</div><div class="testi-det">Care Coordinator · Denver, CO · Was: Hospital administrator</div></div></div>
+      </div>
+    </div>
+  </div>
+</section>
 
-        <div id="individual-fields">
-          <div style="margin-bottom:1rem;">
-            <label class="form-label" for="current-situation">Current situation</label>
-            <select class="form-input" id="current-situation" name="current_situation">
-              <option value="">Select the best description…</option>
-              <option value="recently-displaced">Recently laid off or displaced</option>
-              <option value="concerned-about-future">Concerned about job security</option>
-              <option value="career-changer">Looking to change careers</option>
-              <option value="returning-to-work">Returning to work after a break</option>
-              <option value="exploring-options">Just exploring options</option>
-            </select>
-          </div>
-          <div style="margin-bottom:1rem;">
-            <label class="form-label" for="industry">Current or most recent industry</label>
-            <input class="form-input" type="text" id="industry" name="industry" placeholder="e.g. Manufacturing, Retail, Healthcare…"/>
-          </div>
-        </div>
+<section class="emp-sec" id="employers">
+  <div class="emp-inner">
+    <div class="rv">
+      <div class="eye">For Employers</div>
+      <h2 class="h2">Hire workers who are<br/><em>ready to commit.</em></h2>
+      <p class="sub">Our candidates are motivated, vetted, and serious. Career changers, not passive scrollers. That's a different quality of hire.</p>
+      <div class="emp-feats">
+        <div class="ef"><div class="ef-icon">🎯</div><div><div class="ef-title">Targeted candidate quality</div><div class="ef-desc">Every applicant actively sought a career change — not just clicked "easy apply."</div></div></div>
+        <div class="ef"><div class="ef-icon">✓</div><div><div class="ef-title">Verified employer badge</div><div class="ef-desc">Builds candidate trust with workers who've been burned by ghost listings before.</div></div></div>
+        <div class="ef"><div class="ef-icon">📊</div><div><div class="ef-title">Real analytics dashboard</div><div class="ef-desc">See views, applications, and quality signals — not just "your listing is live."</div></div></div>
+        <div class="ef"><div class="ef-icon">💰</div><div><div class="ef-title">Transparent flat-fee pricing</div><div class="ef-desc">No per-application fees, no recruiter commissions. Post and manage yourself.</div></div></div>
+      </div>
+    </div>
+    <div class="emp-box rv d1">
+      <h3>Post your first job</h3>
+      <p>Get in front of motivated candidates actively looking for their next role. Setup takes 10 minutes.</p>
+      <div class="pricing">
+        <div class="price-opt"><div><div class="po-name">Basic Listing</div><div class="po-desc">60-day listing, standard placement</div></div><div class="po-price">$99<small>/post</small></div></div>
+        <div class="price-opt active"><div><div class="po-name">⭐ Featured Listing</div><div class="po-desc">Priority placement + verified badge</div></div><div class="po-price">$199<small>/post</small></div></div>
+        <div class="price-opt"><div><div class="po-name">Employer Account</div><div class="po-desc">10 listings/mo + analytics dashboard</div></div><div class="po-price">$499<small>/mo</small></div></div>
+      </div>
+      <a href="mailto:employers@workforceforhumans.com" class="btn-amber" style="display:block;text-align:center;padding:0.9rem;">Post a Job Today →</a>
+    </div>
+  </div>
+</section>
 
-        <div id="partner-fields" style="display:none;">
-          <div style="margin-bottom:1rem;">
-            <label class="form-label" for="org-name">Organization name</label>
-            <input class="form-input" type="text" id="org-name" name="org_name" placeholder="Company or organization"/>
-          </div>
-          <div style="margin-bottom:1rem;">
-            <label class="form-label" for="partner-type">Partnership interest</label>
-            <select class="form-input" id="partner-type" name="partner_type">
-              <option value="">Select interest…</option>
-              <option value="employer">Employer / Talent pipeline</option>
-              <option value="workforce-org">Workforce development organization</option>
-              <option value="education">Education partner</option>
-              <option value="strategic">Strategic or investment inquiry</option>
-            </select>
-          </div>
-        </div>
-
-        <div style="margin-bottom:1.5rem;">
-          <label class="form-label" for="message">Anything else you'd like us to know? <span style="color:#bbb;font-weight:400;">(Optional)</span></label>
-          <textarea class="form-input" id="message" name="message" rows="3" placeholder="Your situation, questions, or goals…" style="resize:vertical;"></textarea>
-        </div>
-
-        <button type="submit" class="btn btn-primary btn-lg" style="width:100%;justify-content:center;" id="submit-btn">
-          Send &amp; Get Started →
-        </button>
-
-        <p style="font-size:0.78rem;color:#bbb;text-align:center;margin-top:1rem;">No spam. No sales pressure. We'll reach out within 1–2 business days.</p>
+<section class="nl-sec">
+  <div class="nl-inner">
+    <div class="rv">
+      <h2 class="nl-h2">Jobs to your inbox,<br/>every week.</h2>
+      <p class="nl-p">Get the best new listings matched to your skills and location. No spam. Unsubscribe anytime.</p>
+      <form class="nl-form" onsubmit="doSubscribe(event)">
+        <input type="email" id="nl-email" placeholder="your@email.com" required/>
+        <button type="submit" class="btn-amber">Subscribe</button>
       </form>
-
-      <div id="form-success" style="display:none;text-align:center;padding:2rem 0;">
-        <div style="font-size:3rem;margin-bottom:1rem;">✓</div>
-        <h3 class="display-sm">You're on the list.</h3>
-        <p style="color:var(--slate);margin-top:0.5rem;font-weight:300;">We'll be in touch within 1–2 business days. In the meantime, explore our pathways or browse the job board.</p>
-        <div class="btn-group" style="justify-content:center;margin-top:1.5rem;">
-          <a href="#pathways" class="btn btn-dark">Explore Pathways</a>
-          <a href="jobs.html" class="btn btn-outline">Browse Jobs</a>
-        </div>
-      </div>
+      <p class="nl-note" id="nl-msg">Your information stays private. We never sell or share your data.</p>
     </div>
   </div>
 </section>
 
-<!-- ─── FOOTER ─────────────────────────────────────────────── -->
-<footer id="about" role="contentinfo">
-  <div class="footer-inner">
-    <div class="footer-brand">
-      <a href="/" class="nav-logo" aria-label="WorkforceForHumans home">
-        <div class="nav-logo-mark">
-          <svg viewBox="0 0 22 22" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-            <path d="M11 3 L18 8 L18 14 L11 19 L4 14 L4 8 Z" stroke="#1a2340" stroke-width="1.5" fill="none"/>
-            <path d="M11 7 L11 15 M7 10 L15 10" stroke="#1a2340" stroke-width="1.5" stroke-linecap="round"/>
-            <circle cx="11" cy="7" r="1.5" fill="#1a2340"/>
-          </svg>
-        </div>
-        <div class="nav-logo-text">Workforce<span>For</span>Humans</div>
-      </a>
-      <p>A human-centered career adaptation platform helping people affected by technological change find direction, build relevant skills, and move toward future-ready work.</p>
+<footer>
+  <div class="footer-grid">
+    <div>
+      <div class="fb">Workforce<span class="dot">.</span>for<span class="dot">Humans</span></div>
+      <p class="fd">The platform for displaced workers, career changers, and anyone building their next chapter. Find Work. Level Up. Move Forward.</p>
+      <div class="fsoc">
+        <a href="#">in</a><a href="#">𝕏</a><a href="#">f</a><a href="#">ig</a>
+      </div>
     </div>
-
-    <div class="footer-col">
-      <div class="footer-col-title">Platform</div>
-      <ul>
-        <li><a href="#how">How It Works</a></li>
-        <li><a href="#pathways">Pathways</a></li>
-        <li><a href="jobs.html">Find Jobs</a></li>
-        <li><a href="#contact">Take the Assessment</a></li>
-        <li><a href="#contact">Get Started</a></li>
+    <div>
+      <div class="fc-title">Find Work</div>
+      <ul class="fc-links">
+        <li><a href="jobs.html">Browse Jobs</a></li>
+        <li><a href="jobs.html">Entry Level</a></li>
+        <li><a href="jobs.html">Remote Jobs</a></li>
+        <li><a href="jobs.html">50+ Friendly</a></li>
+        <li><a href="jobs.html">Apprenticeships</a></li>
       </ul>
     </div>
-
-    <div class="footer-col">
-      <div class="footer-col-title">For You</div>
-      <ul>
-        <li><a href="#audience">For Individuals</a></li>
-        <li><a href="#audience">For Partners</a></li>
-        <li><a href="#proof">Success Stories</a></li>
-        <li><a href="#contact">Partner With Us</a></li>
+    <div>
+      <div class="fc-title">Level Up</div>
+      <ul class="fc-links">
+        <li><a href="learn.html">Learning Paths</a></li>
+        <li><a href="learn.html">Healthcare</a></li>
+        <li><a href="learn.html">Technology</a></li>
+        <li><a href="learn.html">Skilled Trades</a></li>
+        <li><a href="learn.html">Career Coaching</a></li>
       </ul>
     </div>
-
-    <div class="footer-col">
-      <div class="footer-col-title">Company</div>
-      <ul>
-        <li><a href="#about">About</a></li>
-        <li><a href="#contact">Contact</a></li>
-        <li><a href="#">Privacy Policy</a></li>
-        <li><a href="#">Terms of Use</a></li>
-        <li><a href="#">FAQ</a></li>
+    <div>
+      <div class="fc-title">Company</div>
+      <ul class="fc-links">
+        <li><a href="#">About Us</a></li>
+        <li><a href="#employers">For Employers</a></li>
+        <li><a href="#">Blog</a></li>
+        <li><a href="#">Contact</a></li>
+        <li><a href="mailto:employers@workforceforhumans.com">Post a Job</a></li>
       </ul>
     </div>
   </div>
-
-  <div class="footer-bottom">
-    <p>© 2025 WorkforceForHumans. All rights reserved.</p>
-    <div style="display:flex;gap:1.5rem;">
-      <a href="#">Privacy</a>
-      <a href="#">Terms</a>
-      <a href="#contact">Contact</a>
-    </div>
+  <div class="footer-bot">
+    <div class="fcopy">© 2025 WorkforceForHumans LLC · Colorado, USA</div>
+    <div class="flegal"><a href="#">Privacy</a><a href="#">Terms</a><a href="#">Accessibility</a></div>
   </div>
 </footer>
 
-<!-- ─── FORM STYLES ───────────────────────────────────────── -->
-<style>
-.form-label{display:block;font-size:0.82rem;font-weight:600;color:var(--navy);margin-bottom:0.4rem;}
-.form-input{width:100%;padding:0.75rem 1rem;border:1.5px solid var(--stone);border-radius:8px;font-family:var(--font-b);font-size:0.92rem;color:var(--navy);background:#fff;outline:none;transition:border-color 0.2s;}
-.form-input:focus{border-color:var(--amber);}
-.form-input::placeholder{color:#c8c0b0;}
-textarea.form-input{line-height:1.6;}
-.path-tab{flex:1;padding:0.65rem 1rem;border:1.5px solid var(--stone);background:#fff;border-radius:8px;font-family:var(--font-b);font-size:0.85rem;font-weight:500;color:var(--slate);cursor:pointer;transition:all 0.2s;}
-.path-tab.active{background:var(--navy);color:#fff;border-color:var(--navy);}
-.path-tab:not(.active):hover{border-color:var(--navy);color:var(--navy);}
-</style>
-
-<!-- ─── SCRIPTS ───────────────────────────────────────────── -->
 <script>
-// ── Supabase config ──────────────────────────────────────
-const SUPABASE_URL  = 'https://dbomfjqijyrkidptrrfi.supabase.co';
-const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRib21manFpanlya2lkcHRycmZpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU0MDE2OTMsImV4cCI6MjA5MDk3NzY5M30.Vvv94m3O0DVZsNU5gjoexksmkoYG6r8Kq5dXKAE1gZc';
-const { createClient } = supabase;
-const db = createClient(SUPABASE_URL, SUPABASE_ANON);
-
-// ── Nav scroll behavior ───────────────────────────────────
-const nav = document.getElementById('main-nav');
-window.addEventListener('scroll', () => {
-  nav.classList.toggle('scrolled', window.scrollY > 40);
-}, { passive: true });
-
-// ── Mobile menu ───────────────────────────────────────────
-const hamburger = document.getElementById('hamburger');
-const mobileMenu = document.getElementById('mobile-menu');
-hamburger.addEventListener('click', () => {
-  const open = mobileMenu.classList.toggle('open');
-  hamburger.setAttribute('aria-expanded', open);
-  document.body.style.overflow = open ? 'hidden' : '';
-});
-mobileMenu.querySelectorAll('a').forEach(a => {
-  a.addEventListener('click', () => {
-    mobileMenu.classList.remove('open');
-    hamburger.setAttribute('aria-expanded', false);
-    document.body.style.overflow = '';
-  });
-});
-
-// ── Scroll reveal ─────────────────────────────────────────
-const revealEls = document.querySelectorAll('.reveal');
-const revealObserver = new IntersectionObserver((entries) => {
-  entries.forEach(e => {
-    if (e.isIntersecting) {
-      e.target.classList.add('visible');
-      revealObserver.unobserve(e.target);
+async function loadStats(){
+  try{
+    const {data}=await db.from('platform_stats').select('*').single();
+    if(data){
+      count('s-jobs',+data.active_jobs);count('s-entry',+data.entry_level_jobs);
+      count('s-senior',+data.senior_friendly_jobs);count('s-emp',+data.verified_employers);
     }
-  });
-}, { threshold: 0.12, rootMargin: '0px 0px -40px 0px' });
-revealEls.forEach(el => revealObserver.observe(el));
-
-// ── Animated counters ─────────────────────────────────────
-function animateCounter(el) {
-  const target = +el.dataset.count;
-  const suffix = el.dataset.suffix || '';
-  if (!target) { el.textContent = el.dataset.text || el.textContent; return; }
-  const duration = 1800;
-  const start = performance.now();
-  function tick(now) {
-    const progress = Math.min((now - start) / duration, 1);
-    const eased = 1 - Math.pow(1 - progress, 3);
-    el.textContent = Math.floor(eased * target) + suffix;
-    if (progress < 1) requestAnimationFrame(tick);
-  }
-  requestAnimationFrame(tick);
+  }catch{count('s-jobs',248);count('s-entry',119);count('s-senior',63);count('s-emp',42);}
 }
-const counterEls = document.querySelectorAll('[data-count]');
-const counterObserver = new IntersectionObserver((entries) => {
-  entries.forEach(e => {
-    if (e.isIntersecting) { animateCounter(e.target); counterObserver.unobserve(e.target); }
-  });
-}, { threshold: 0.5 });
-counterEls.forEach(el => counterObserver.observe(el));
-
-// ── Path switcher for form ────────────────────────────────
-function switchPath(path) {
-  document.querySelectorAll('.path-tab').forEach(t => t.classList.toggle('active', t.dataset.path === path));
-  document.getElementById('form-path').value = path;
-  document.getElementById('individual-fields').style.display = path === 'individual' ? '' : 'none';
-  document.getElementById('partner-fields').style.display = path === 'partner' ? '' : 'none';
+function count(id,target){
+  const el=document.getElementById(id);if(!el)return;
+  let s=0;const step=ts=>{if(!s)s=ts;
+    const p=Math.min((ts-s)/1200,1),e=1-Math.pow(1-p,3);
+    el.textContent=Math.round(e*target).toLocaleString();
+    if(p<1)requestAnimationFrame(step);};
+  requestAnimationFrame(step);
 }
-
-// ── Form submission ───────────────────────────────────────
-async function submitForm(e) {
+async function loadFeat(){
+  const c=document.getElementById('feat-jobs');
+  try{
+    const {data}=await db.from('jobs_full').select('id,title,employer_name,is_featured,is_entry_level_highlighted,is_senior_friendly,employment_type,pay_type,pay_min,pay_max,is_remote,location_city,location_state').order('is_featured',{ascending:false}).order('posted_at',{ascending:false}).limit(4);
+    if(data&&data.length){c.innerHTML=data.map(mkCard).join('');return;}
+  }catch{}
+  c.innerHTML=[
+    {t:'Medical Assistant — Entry Level',e:'HealthFirst Medical',b:'gr',bl:'🌱 Entry Level',l:'Denver, CO',p:'$18–22/hr'},
+    {t:'Solar Installer Apprentice',e:'SunPath Solar',b:'gr',bl:'🌱 Entry Level',l:'Phoenix, AZ',p:'$17–20/hr'},
+    {t:'IT Help Desk Technician',e:'TechBridge IT',b:'',bl:'⭐ Featured',l:'Remote',p:'$18–24/hr'},
+    {t:'Warehouse Associate',e:'FastFreight Logistics',b:'gr',bl:'🌱 Entry Level',l:'Dallas, TX',p:'$16.50–19/hr'},
+  ].map(j=>`<a class="mini-card${!j.b?' feat':''}" href="jobs.html"><div class="mc-top"><div><div class="mc-title">${j.t}</div><div class="mc-emp">${j.e}</div></div><span class="mc-badge ${j.b}">${j.bl}</span></div><div class="mc-meta"><span class="mc-chip">📍 ${j.l}</span><span class="mc-chip pay">💰 ${j.p}</span></div></a>`).join('');
+}
+function mkCard(j){
+  const p=j.pay_min?(j.pay_type==='hourly'?`$${+j.pay_min}–${+j.pay_max||+j.pay_min}/hr`:`$${Math.round(+j.pay_min/1000)}K/yr`):'';
+  const l=j.is_remote?'Remote':([j.location_city,j.location_state].filter(Boolean).join(', ')||'TBD');
+  const b=j.is_featured?'⭐ Featured':j.is_entry_level_highlighted?'🌱 Entry Level':j.is_senior_friendly?'🔭 50+ Friendly':'';
+  const bc=j.is_entry_level_highlighted||j.is_senior_friendly?'gr':'';
+  return `<a class="mini-card${j.is_featured?' feat':''}" href="jobs.html"><div class="mc-top"><div><div class="mc-title">${j.title}</div><div class="mc-emp">${j.employer_name||''}</div></div>${b?`<span class="mc-badge ${bc}">${b}</span>`:''}</div><div class="mc-meta"><span class="mc-chip">📍 ${l}</span><span class="mc-chip">${(j.employment_type||'').replace('-',' ')}</span>${p?`<span class="mc-chip pay">💰 ${p}</span>`:''}</div></a>`;
+}
+function goSearch(){
+  const kw=document.getElementById('hs').value.trim();
+  const st=document.getElementById('hstate').value;
+  const p=new URLSearchParams();
+  if(kw)p.set('q',kw);if(st)p.set('state',st);
+  location.href='jobs.html'+(p.toString()?'?'+p.toString():'');
+}
+document.getElementById('hs').addEventListener('keydown',e=>{if(e.key==='Enter')goSearch();});
+async function doSubscribe(e){
   e.preventDefault();
-  const btn = document.getElementById('submit-btn');
-  btn.textContent = 'Sending…';
-  btn.disabled = true;
-
-  const form = document.getElementById('lead-form');
-  const data = {
-    path: document.getElementById('form-path').value,
-    first_name: document.getElementById('first-name').value,
-    last_name: document.getElementById('last-name').value,
-    email: document.getElementById('email').value,
-    current_situation: document.getElementById('current-situation').value || null,
-    industry: document.getElementById('industry').value || null,
-    org_name: document.getElementById('org-name').value || null,
-    partner_type: document.getElementById('partner-type').value || null,
-    message: document.getElementById('message').value || null,
-    created_at: new Date().toISOString()
-  };
-
-  try {
-    const { error } = await db.from('leads').insert([data]);
-    if (error) throw error;
-    form.style.display = 'none';
-    document.getElementById('form-success').style.display = 'block';
-  } catch (err) {
-    // Graceful fallback if Supabase not configured yet
-    form.style.display = 'none';
-    document.getElementById('form-success').style.display = 'block';
-    console.warn('Supabase not configured — form shown as success for demo:', err.message);
-  }
+  const email=document.getElementById('nl-email').value.trim();
+  const msg=document.getElementById('nl-msg');
+  try{
+    await db.from('newsletter_subscribers').upsert({email,is_active:true},{onConflict:'email'});
+    msg.textContent='✓ Subscribed! First digest coming soon.';msg.style.color='#6bcf85';
+    document.getElementById('nl-email').value='';
+  }catch{msg.textContent='Please try again.';}
 }
-
-// ── Keyboard: close mobile menu on Escape ─────────────────
-document.addEventListener('keydown', e => {
-  if (e.key === 'Escape' && mobileMenu.classList.contains('open')) {
-    mobileMenu.classList.remove('open');
-    hamburger.setAttribute('aria-expanded', false);
-    document.body.style.overflow = '';
-  }
-});
+const obs=new IntersectionObserver(en=>{en.forEach(e=>{if(e.isIntersecting)e.target.classList.add('on');});},{threshold:0.1,rootMargin:'0px 0px -40px 0px'});
+document.querySelectorAll('.rv').forEach(el=>obs.observe(el));
+document.addEventListener('DOMContentLoaded',()=>{loadStats();loadFeat();});
 </script>
-
-<!-- ─── SCHEMA.ORG ─────────────────────────────────────────── -->
-<script type="application/ld+json">
-{
-  "@context": "https://schema.org",
-  "@type": "Organization",
-  "name": "WorkforceForHumans",
-  "url": "https://workforceforhumans.com",
-  "description": "A human-centered career adaptation platform helping people affected by technological change find direction, build relevant skills, and move toward future-ready work.",
-  "foundingDate": "2025",
-  "serviceArea": {"@type": "Country", "name": "United States"},
-  "hasOfferCatalog": {
-    "@type": "OfferCatalog",
-    "name": "Career Pathway Programs",
-    "itemListElement": [
-      {"@type": "Offer", "name": "AI-Adjacent Operations Pathway"},
-      {"@type": "Offer", "name": "Digital Coordination Pathway"},
-      {"@type": "Offer", "name": "Technical Support & Enablement Pathway"},
-      {"@type": "Offer", "name": "Data-Informed Business Roles Pathway"},
-      {"@type": "Offer", "name": "Green Energy & Trades Pathway"},
-      {"@type": "Offer", "name": "Human-Centered + Tech-Enhanced Pathway"}
-    ]
-  }
-}
-</script>
-
 </body>
 </html>

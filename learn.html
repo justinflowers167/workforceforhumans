@@ -1,0 +1,720 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Level Up — WorkforceForHumans</title>
+<meta name="description" content="Free and affordable training programs, certifications, and learning paths matched to in-demand jobs. Built for career changers."/>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400;1,700&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,300&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --navy:#0f1829;--navy-mid:#1a2340;--navy-light:#243055;
+  --amber:#f5a623;--amber-dk:#c47d0e;--amber-lt:#fdf0d5;
+  --cream:#faf8f4;--stone:#ede8de;--stone-dk:#d4ccbc;
+  --terra:#c85f3e;--terra-lt:#f9ece7;
+  --slate:#4a5568;--slate-lt:#6b7a8d;--mist:#8ba8b5;
+  --green:#1f6b35;--green-lt:#e6f2ea;--purple:#5b3fa0;--purple-lt:#ede8f8;
+  --font-d:'Playfair Display',Georgia,serif;
+  --font-b:'DM Sans',sans-serif;--font-m:'DM Mono',monospace;
+  --ease:cubic-bezier(0.16,1,0.3,1);
+  --sh-sm:0 2px 8px rgba(15,24,41,0.06);
+  --sh-md:0 8px 32px rgba(15,24,41,0.1);
+  --sh-lg:0 24px 64px rgba(15,24,41,0.14);
+}
+html{scroll-behavior:smooth;}
+body{font-family:var(--font-b);background:var(--cream);color:var(--navy);line-height:1.6;overflow-x:hidden;}
+.container{max-width:1280px;margin:0 auto;padding:0 5vw;}
+
+/* NAV */
+nav{position:sticky;top:0;z-index:1000;background:rgba(15,24,41,0.95);
+  backdrop-filter:blur(20px);border-bottom:1px solid rgba(255,255,255,0.06);}
+.nav-inner{max-width:1280px;margin:0 auto;padding:0 5vw;
+  display:flex;align-items:center;justify-content:space-between;height:68px;}
+.nav-logo{font-family:var(--font-d);color:#fff;text-decoration:none;font-size:1.15rem;font-weight:700;}
+.nav-logo .dot{color:var(--amber);}
+.nav-links{display:flex;align-items:center;gap:0.25rem;list-style:none;}
+.nav-links a{color:rgba(255,255,255,0.6);text-decoration:none;font-size:0.875rem;
+  font-weight:500;padding:0.5rem 0.85rem;border-radius:8px;transition:all 0.2s;}
+.nav-links a:hover{color:#fff;background:rgba(255,255,255,0.07);}
+.nav-links a.active{color:var(--amber);}
+.nav-actions{display:flex;align-items:center;gap:0.75rem;}
+.btn-ghost{color:rgba(255,255,255,0.7);background:none;border:1px solid rgba(255,255,255,0.15);
+  border-radius:8px;padding:0.5rem 1.1rem;font-family:var(--font-b);font-size:0.875rem;
+  font-weight:500;cursor:pointer;text-decoration:none;transition:all 0.2s;}
+.btn-ghost:hover{color:#fff;border-color:rgba(255,255,255,0.3);}
+.btn-amber{background:var(--amber);color:var(--navy);border:none;border-radius:8px;
+  padding:0.5rem 1.2rem;font-family:var(--font-b);font-size:0.875rem;font-weight:700;
+  cursor:pointer;text-decoration:none;transition:all 0.2s;display:inline-block;}
+.btn-amber:hover{background:var(--amber-dk);transform:translateY(-1px);}
+
+/* HERO */
+.page-hero{background:var(--navy);padding:5rem 0 4rem;position:relative;overflow:hidden;}
+.ph-bg{position:absolute;inset:0;
+  background:radial-gradient(ellipse 60% 80% at 80% 50%,rgba(91,63,160,0.12),transparent 60%),
+    radial-gradient(ellipse 40% 60% at 20% 80%,rgba(245,166,35,0.07),transparent 50%);}
+.ph-grid{position:absolute;inset:0;
+  background-image:linear-gradient(rgba(255,255,255,0.025) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(255,255,255,0.025) 1px,transparent 1px);
+  background-size:50px 50px;opacity:0.6;}
+.ph-content{position:relative;z-index:2;max-width:1280px;margin:0 auto;padding:0 5vw;
+  display:grid;grid-template-columns:1.1fr 1fr;gap:4rem;align-items:center;}
+.ph-eyebrow{display:inline-flex;align-items:center;gap:0.6rem;
+  background:rgba(91,63,160,0.2);border:1px solid rgba(91,63,160,0.35);
+  border-radius:100px;padding:0.35rem 1rem;font-size:0.78rem;font-weight:600;
+  color:#b89ff0;letter-spacing:0.06em;text-transform:uppercase;margin-bottom:1.5rem;}
+.ph-h1{font-family:var(--font-d);font-size:clamp(2.5rem,5vw,3.8rem);color:#fff;
+  line-height:1.08;font-weight:900;letter-spacing:-0.02em;margin-bottom:1.25rem;}
+.ph-h1 em{color:var(--amber);font-style:italic;}
+.ph-sub{color:rgba(255,255,255,0.5);font-size:1.05rem;font-weight:300;
+  line-height:1.75;margin-bottom:2rem;max-width:500px;}
+.path-search-box{display:flex;background:#fff;border-radius:12px;overflow:hidden;
+  box-shadow:var(--sh-lg);max-width:480px;}
+.path-search-box input{flex:1;padding:0.95rem 1.1rem;border:none;outline:none;
+  font-family:var(--font-b);font-size:0.95rem;color:var(--navy);}
+.path-search-box input::placeholder{color:#bbb;}
+.path-search-btn{background:var(--amber);color:var(--navy);border:none;padding:0.9rem 1.4rem;
+  font-family:var(--font-b);font-size:0.88rem;font-weight:700;cursor:pointer;white-space:nowrap;}
+.path-search-btn:hover{background:var(--amber-dk);}
+.ph-stats{display:grid;grid-template-columns:1fr 1fr;gap:1rem;}
+.ph-stat{background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.09);
+  border-radius:14px;padding:1.25rem;transition:all 0.3s;}
+.ph-stat:hover{background:rgba(255,255,255,0.09);}
+.ph-stat-num{font-family:var(--font-d);font-size:2rem;color:#fff;font-weight:900;
+  line-height:1;margin-bottom:4px;}
+.ph-stat-num span{color:var(--amber);}
+.ph-stat-lbl{font-size:0.82rem;color:rgba(255,255,255,0.45);line-height:1.4;}
+
+/* PATH TABS */
+.path-tabs{background:#fff;border-bottom:1px solid var(--stone);position:sticky;top:68px;z-index:100;}
+.pt-inner{max-width:1280px;margin:0 auto;padding:0 5vw;
+  display:flex;gap:0;overflow-x:auto;-webkit-overflow-scrolling:touch;}
+.pt-tab{padding:1.1rem 1.25rem;font-size:0.85rem;font-weight:500;color:var(--slate-lt);
+  border-bottom:2px solid transparent;cursor:pointer;white-space:nowrap;
+  transition:all 0.2s;text-decoration:none;display:flex;align-items:center;gap:0.5rem;}
+.pt-tab:hover{color:var(--navy);}
+.pt-tab.active{color:var(--amber);border-bottom-color:var(--amber);}
+
+/* FEATURED PATH */
+.feat-path{background:#fff;border-bottom:1px solid var(--stone);padding:3.5rem 0;}
+.fp-inner{max-width:1280px;margin:0 auto;padding:0 5vw;
+  display:grid;grid-template-columns:1fr 1fr;gap:4rem;align-items:center;}
+.fp-badge{display:inline-flex;align-items:center;gap:0.5rem;
+  background:var(--amber-lt);border:1px solid rgba(245,166,35,0.3);
+  border-radius:100px;padding:0.3rem 0.9rem;font-size:0.75rem;font-weight:600;
+  color:var(--amber-dk);margin-bottom:1.25rem;}
+.fp-h2{font-family:var(--font-d);font-size:2rem;font-weight:900;color:var(--navy);
+  line-height:1.15;margin-bottom:0.75rem;}
+.fp-p{font-size:0.9rem;color:var(--slate);font-weight:300;line-height:1.75;margin-bottom:1.5rem;}
+.fp-outcomes{display:flex;flex-direction:column;gap:0.6rem;margin-bottom:1.75rem;}
+.fp-out{display:flex;align-items:center;gap:0.6rem;font-size:0.88rem;color:var(--navy);}
+.fp-out::before{content:'✓';color:var(--green);font-weight:700;font-size:0.8rem;flex-shrink:0;}
+.fp-certs{display:grid;grid-template-columns:1fr 1fr;gap:1rem;}
+.cert-card{background:var(--cream);border:1px solid var(--stone);border-radius:14px;padding:1.25rem;
+  transition:all 0.3s;cursor:pointer;text-decoration:none;display:block;}
+.cert-card:hover{border-color:var(--amber);background:var(--amber-lt);transform:translateY(-2px);}
+.cert-icon{font-size:1.5rem;margin-bottom:0.75rem;}
+.cert-name{font-weight:700;font-size:0.92rem;color:var(--navy);margin-bottom:3px;}
+.cert-time{font-size:0.78rem;color:var(--slate-lt);}
+.cert-cost{font-size:0.8rem;color:var(--green);font-weight:600;margin-top:4px;}
+
+/* LEARNING PATHS GRID */
+.paths-section{padding:4rem 0;}
+.eye{font-size:0.78rem;font-weight:600;text-transform:uppercase;letter-spacing:0.1em;
+  color:var(--terra);margin-bottom:1rem;display:flex;align-items:center;gap:0.5rem;}
+.eye::before{content:'';width:24px;height:2px;background:var(--terra);}
+.sec-h2{font-family:var(--font-d);font-size:clamp(1.8rem,3.5vw,2.5rem);color:var(--navy);
+  font-weight:900;line-height:1.1;letter-spacing:-0.02em;margin-bottom:1rem;}
+.sec-sub{font-size:0.95rem;color:var(--slate);font-weight:300;max-width:520px;line-height:1.75;}
+.paths-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1.5rem;margin-top:2.5rem;}
+.path-big{grid-column:span 2;background:var(--navy);border-radius:20px;overflow:hidden;
+  display:grid;grid-template-columns:1fr 1fr;position:relative;cursor:pointer;
+  text-decoration:none;transition:transform 0.3s;}
+.path-big:hover{transform:translateY(-3px);}
+.pb-content{padding:2.25rem;position:relative;z-index:1;}
+.pb-badge{display:inline-flex;align-items:center;gap:0.4rem;background:rgba(245,166,35,0.15);
+  border:1px solid rgba(245,166,35,0.25);border-radius:100px;padding:0.25rem 0.75rem;
+  font-size:0.72rem;font-weight:600;color:var(--amber);margin-bottom:1rem;}
+.pb-title{font-family:var(--font-d);font-size:1.5rem;font-weight:900;color:#fff;
+  margin-bottom:0.5rem;line-height:1.2;}
+.pb-desc{font-size:0.85rem;color:rgba(255,255,255,0.5);font-weight:300;line-height:1.65;margin-bottom:1.25rem;}
+.pb-pills{display:flex;flex-wrap:wrap;gap:0.4rem;}
+.pb-pill{background:rgba(255,255,255,0.08);border-radius:100px;padding:3px 10px;
+  font-size:0.72rem;color:rgba(255,255,255,0.6);}
+.pb-visual{display:flex;align-items:center;justify-content:center;font-size:5rem;opacity:0.3;}
+.path-sm{background:#fff;border:1px solid var(--stone);border-radius:20px;padding:1.75rem;
+  cursor:pointer;text-decoration:none;display:block;transition:all 0.3s;}
+.path-sm:hover{box-shadow:var(--sh-md);border-color:var(--stone-dk);transform:translateY(-3px);}
+.ps-icon{font-size:2rem;margin-bottom:1rem;}
+.ps-title{font-family:var(--font-d);font-size:1.1rem;font-weight:700;color:var(--navy);margin-bottom:0.5rem;}
+.ps-meta{font-size:0.8rem;color:var(--slate-lt);margin-bottom:0.75rem;}
+.ps-tags{display:flex;flex-wrap:wrap;gap:0.4rem;}
+.ps-tag{background:var(--cream);border:1px solid var(--stone);border-radius:100px;
+  padding:2px 8px;font-size:0.72rem;color:var(--slate);}
+.ps-arrow{font-size:0.8rem;font-weight:600;color:var(--navy);margin-top:1rem;
+  display:flex;align-items:center;justify-content:space-between;
+  padding-top:0.75rem;border-top:1px solid var(--stone);}
+.ps-arrow::after{content:'→';}
+
+/* RESOURCE LIBRARY */
+.resources-section{background:var(--stone);padding:4rem 0;}
+.res-header{display:flex;align-items:flex-end;justify-content:space-between;flex-wrap:wrap;gap:1.5rem;margin-bottom:2.5rem;}
+.res-filters{display:flex;gap:0.5rem;flex-wrap:wrap;}
+.res-filter{background:#fff;border:1px solid var(--stone-dk);border-radius:100px;
+  padding:0.35rem 0.9rem;font-size:0.8rem;font-weight:500;color:var(--slate);
+  cursor:pointer;transition:all 0.2s;}
+.res-filter:hover,.res-filter.on{background:var(--navy);color:#fff;border-color:var(--navy);}
+.resources-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1.25rem;}
+.res-card{background:#fff;border:1px solid var(--stone-dk);border-radius:16px;padding:1.5rem;
+  transition:all 0.3s;cursor:pointer;text-decoration:none;display:block;}
+.res-card:hover{box-shadow:var(--sh-md);transform:translateY(-2px);}
+.res-tag{display:inline-block;border-radius:6px;padding:3px 10px;font-size:0.72rem;
+  font-weight:600;letter-spacing:0.04em;text-transform:uppercase;margin-bottom:0.85rem;}
+.rt-free{background:var(--green-lt);color:var(--green);}
+.rt-cert{background:var(--amber-lt);color:var(--amber-dk);}
+.rt-course{background:var(--purple-lt);color:var(--purple);}
+.rt-guide{background:var(--terra-lt);color:var(--terra);}
+.res-title{font-family:var(--font-d);font-size:1rem;font-weight:700;color:var(--navy);margin-bottom:0.5rem;line-height:1.3;}
+.res-desc{font-size:0.83rem;color:var(--slate);font-weight:300;line-height:1.65;margin-bottom:1rem;}
+.res-meta{display:flex;align-items:center;justify-content:space-between;}
+.res-cost{font-size:0.83rem;font-weight:600;}
+.res-cost.free{color:var(--green);}
+.res-cost.paid{color:var(--navy);}
+.res-time{font-size:0.78rem;color:var(--slate-lt);}
+.res-arrow{font-size:0.8rem;color:var(--mist);}
+
+/* AI COACHING */
+.coaching-section{background:var(--navy);padding:5rem 0;}
+.coach-inner{max-width:1280px;margin:0 auto;padding:0 5vw;
+  display:grid;grid-template-columns:1fr 1fr;gap:5rem;align-items:start;}
+.coach-left .eye{color:var(--amber);}
+.coach-left .eye::before{background:var(--amber);}
+.c-h2{font-family:var(--font-d);font-size:2.5rem;font-weight:900;color:#fff;
+  line-height:1.1;margin-bottom:1rem;}
+.c-h2 em{color:var(--amber);font-style:italic;}
+.c-p{color:rgba(255,255,255,0.5);font-weight:300;line-height:1.8;margin-bottom:2rem;}
+.coach-chat{background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);
+  border-radius:20px;overflow:hidden;}
+.chat-header{background:rgba(255,255,255,0.05);border-bottom:1px solid rgba(255,255,255,0.07);
+  padding:1rem 1.25rem;display:flex;align-items:center;gap:0.75rem;}
+.chat-avatar{width:32px;height:32px;border-radius:50%;background:var(--amber);
+  display:flex;align-items:center;justify-content:center;font-size:0.8rem;font-weight:700;color:var(--navy);}
+.chat-name{font-size:0.88rem;font-weight:600;color:#fff;}
+.chat-status{font-size:0.75rem;color:rgba(255,255,255,0.35);}
+.chat-body{padding:1.25rem;display:flex;flex-direction:column;gap:0.85rem;max-height:340px;overflow-y:auto;}
+.msg{max-width:85%;padding:0.8rem 1rem;border-radius:12px;font-size:0.85rem;line-height:1.6;}
+.msg.ai{background:rgba(255,255,255,0.07);color:rgba(255,255,255,0.8);border-radius:4px 12px 12px 12px;}
+.msg.user{background:var(--amber);color:var(--navy);font-weight:500;border-radius:12px 4px 12px 12px;align-self:flex-end;}
+.chat-input-row{padding:1rem 1.25rem;border-top:1px solid rgba(255,255,255,0.07);
+  display:flex;gap:0.75rem;align-items:center;}
+.chat-input{flex:1;background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.1);
+  border-radius:10px;padding:0.7rem 1rem;font-family:var(--font-b);font-size:0.85rem;
+  color:#fff;outline:none;}
+.chat-input::placeholder{color:rgba(255,255,255,0.25);}
+.chat-send{background:var(--amber);color:var(--navy);border:none;border-radius:8px;
+  padding:0.65rem 1rem;font-family:var(--font-b);font-size:0.82rem;font-weight:700;cursor:pointer;}
+.typing{display:flex;align-items:center;gap:4px;padding:0.8rem 1rem;
+  background:rgba(255,255,255,0.05);border-radius:4px 12px 12px 12px;width:fit-content;}
+.dot-anim{width:6px;height:6px;background:rgba(255,255,255,0.4);border-radius:50%;
+  animation:dotbounce 1.2s ease-in-out infinite;}
+.dot-anim:nth-child(2){animation-delay:0.2s;}
+.dot-anim:nth-child(3){animation-delay:0.4s;}
+@keyframes dotbounce{0%,60%,100%{transform:translateY(0);}30%{transform:translateY(-5px);}}
+
+/* PLANS */
+.plans-section{padding:4rem 0;}
+.plans-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1.5rem;margin-top:2.5rem;}
+.plan-card{background:#fff;border:1px solid var(--stone);border-radius:20px;padding:2rem;
+  position:relative;transition:all 0.3s;}
+.plan-card:hover{box-shadow:var(--sh-md);}
+.plan-card.featured{border:2px solid var(--amber);box-shadow:0 0 0 4px rgba(245,166,35,0.1);}
+.plan-badge{position:absolute;top:-12px;left:50%;transform:translateX(-50%);
+  background:var(--amber);color:var(--navy);border-radius:100px;padding:4px 14px;
+  font-size:0.72rem;font-weight:700;white-space:nowrap;}
+.plan-name{font-size:0.82rem;font-weight:600;text-transform:uppercase;letter-spacing:0.08em;
+  color:var(--slate-lt);margin-bottom:0.75rem;}
+.plan-price{font-family:var(--font-d);font-size:2.5rem;font-weight:900;color:var(--navy);
+  margin-bottom:0.25rem;line-height:1;}
+.plan-price .plan-curr{font-family:var(--font-b);font-size:1.1rem;font-weight:400;color:var(--slate);
+  vertical-align:super;}
+.plan-per{font-size:0.8rem;color:var(--slate-lt);margin-bottom:1.5rem;}
+.plan-feats{list-style:none;margin-bottom:1.75rem;}
+.plan-feats li{font-size:0.88rem;color:var(--slate);padding:0.5rem 0;
+  border-bottom:1px solid var(--stone);display:flex;align-items:flex-start;gap:0.6rem;}
+.plan-feats li:last-child{border-bottom:none;}
+.plan-feats li::before{content:'✓';color:var(--green);font-weight:700;font-size:0.8rem;flex-shrink:0;margin-top:2px;}
+.plan-btn{width:100%;padding:0.85rem;border-radius:10px;font-family:var(--font-b);
+  font-size:0.92rem;font-weight:600;cursor:pointer;transition:all 0.2s;text-align:center;
+  display:block;text-decoration:none;}
+.plan-btn.primary{background:var(--amber);color:var(--navy);border:none;}
+.plan-btn.primary:hover{background:var(--amber-dk);}
+.plan-btn.secondary{background:none;border:1px solid var(--stone);color:var(--navy);}
+.plan-btn.secondary:hover{border-color:var(--amber);color:var(--amber);}
+
+/* NEWSLETTER */
+.nl-sec{background:var(--navy);padding:4rem 0;}
+.nl-inner{max-width:600px;margin:0 auto;text-align:center;padding:0 5vw;}
+.nl-h2{font-family:var(--font-d);font-size:2rem;color:#fff;font-weight:900;margin-bottom:0.75rem;}
+.nl-p{color:rgba(255,255,255,0.5);margin-bottom:2rem;font-weight:300;}
+.nl-form{display:flex;gap:0.5rem;}
+.nl-form input{flex:1;padding:0.9rem 1.1rem;background:rgba(255,255,255,0.07);
+  border:1px solid rgba(255,255,255,0.12);border-radius:10px;font-family:var(--font-b);
+  font-size:0.92rem;color:#fff;outline:none;}
+.nl-form input::placeholder{color:rgba(255,255,255,0.3);}
+.nl-form input:focus{border-color:var(--amber);}
+.nl-note{font-size:0.78rem;color:rgba(255,255,255,0.3);margin-top:0.75rem;}
+
+/* FOOTER */
+footer{background:#0a1120;padding:3rem 0 1.5rem;}
+.footer-bot{max-width:1280px;margin:0 auto;padding:0 5vw;
+  display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:1rem;}
+.fcopy{font-size:0.8rem;color:rgba(255,255,255,0.25);}
+.fn-logo{font-family:var(--font-d);color:rgba(255,255,255,0.3);font-size:0.95rem;font-weight:700;}
+.fn-logo .dot{color:rgba(245,166,35,0.5);}
+.flinks{display:flex;gap:1.5rem;}
+.flinks a{font-size:0.8rem;color:rgba(255,255,255,0.25);text-decoration:none;transition:color 0.2s;}
+.flinks a:hover{color:var(--amber);}
+
+/* REVEAL */
+.rv{opacity:0;transform:translateY(24px);transition:opacity 0.7s var(--ease),transform 0.7s var(--ease);}
+.rv.on{opacity:1;transform:none;}
+.rv.d1{transition-delay:0.1s;}.rv.d2{transition-delay:0.2s;}.rv.d3{transition-delay:0.3s;}
+
+@media(max-width:1024px){
+  .ph-content{grid-template-columns:1fr;}
+  .paths-grid{grid-template-columns:1fr 1fr;}
+  .path-big{grid-column:span 2;}
+  .resources-grid{grid-template-columns:1fr 1fr;}
+  .coach-inner{grid-template-columns:1fr;}
+  .plans-grid{grid-template-columns:1fr 1fr;}
+  .fp-inner{grid-template-columns:1fr;}
+}
+@media(max-width:768px){
+  .nav-links{display:none;}
+  .paths-grid,.path-big{grid-column:span 1 !important;grid-template-columns:1fr !important;}
+  .path-big{display:block;}
+  .pb-visual{display:none;}
+  .resources-grid,.plans-grid{grid-template-columns:1fr;}
+  .nl-form{flex-direction:column;}
+  .fp-certs{grid-template-columns:1fr;}
+}
+</style>
+</head>
+<body>
+<script>
+const SUPABASE_URL='https://YOUR_PROJECT.supabase.co';
+const SUPABASE_ANON='YOUR_ANON_KEY';
+const {createClient}=supabase;
+const db=createClient(SUPABASE_URL,SUPABASE_ANON);
+</script>
+
+<nav>
+  <div class="nav-inner">
+    <a href="index.html" class="nav-logo">Workforce<span class="dot">.</span>for<span class="dot">Humans</span></a>
+    <ul class="nav-links">
+      <li><a href="jobs.html">Find Jobs</a></li>
+      <li><a href="learn.html" class="active">Level Up</a></li>
+      <li><a href="index.html#employers">For Employers</a></li>
+    </ul>
+    <div class="nav-actions">
+      <a href="#" class="btn-ghost">Sign In</a>
+      <a href="jobs.html" class="btn-amber">Find Work →</a>
+    </div>
+  </div>
+</nav>
+
+<!-- HERO -->
+<div class="page-hero">
+  <div class="ph-bg"></div>
+  <div class="ph-grid"></div>
+  <div class="ph-content">
+    <div>
+      <div class="ph-eyebrow">📚 Learning & Development</div>
+      <h1 class="ph-h1">Level up the skills<br/>employers are <em>paying for</em><br/>right now.</h1>
+      <p class="ph-sub">Curated learning paths, free resources, and certification guides — built for career changers, not people who already have it figured out.</p>
+      <div class="path-search-box">
+        <input type="text" id="learn-search" placeholder="Search a skill, cert, or career path…"/>
+        <button class="path-search-btn" onclick="filterResources()">Search →</button>
+      </div>
+    </div>
+    <div class="ph-stats rv">
+      <div class="ph-stat"><div class="ph-stat-num"><span>6</span></div><div class="ph-stat-lbl">Career paths with job-matched training</div></div>
+      <div class="ph-stat"><div class="ph-stat-num"><span>40+</span></div><div class="ph-stat-lbl">Free resources and guides</div></div>
+      <div class="ph-stat"><div class="ph-stat-num"><span>90</span> days</div><div class="ph-stat-lbl">Avg. time to new career with our paths</div></div>
+      <div class="ph-stat"><div class="ph-stat-num"><span>$0</span></div><div class="ph-stat-lbl">Cost to start most paths listed here</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- PATH TABS -->
+<div class="path-tabs" id="healthcare">
+  <div class="pt-inner">
+    <a href="#healthcare" class="pt-tab active">🏥 Healthcare</a>
+    <a href="#tech" class="pt-tab">💻 Technology</a>
+    <a href="#trades" class="pt-tab">⚙️ Skilled Trades</a>
+    <a href="#energy" class="pt-tab">🌱 Green Energy</a>
+    <a href="#logistics" class="pt-tab">📦 Logistics</a>
+    <a href="#finance" class="pt-tab">💼 Finance</a>
+    <a href="#coaching" class="pt-tab">🎯 Career Coaching</a>
+  </div>
+</div>
+
+<!-- FEATURED: HEALTHCARE -->
+<div class="feat-path">
+  <div class="fp-inner container">
+    <div class="rv">
+      <div class="fp-badge">🏥 Most In-Demand Path</div>
+      <h2 class="fp-h2">Healthcare & Wellness — Start Earning in 90 Days</h2>
+      <p class="fp-p">Healthcare is the fastest-growing major sector in the US with 1.3M+ unfilled jobs. Entry points are accessible, training is affordable, and employers will often pay your cert costs if you commit.</p>
+      <div class="fp-outcomes">
+        <div class="fp-out">No 4-year degree required for most entry roles</div>
+        <div class="fp-out">CNA training takes 4–12 weeks, costs $500–$2,000</div>
+        <div class="fp-out">Medical assistants earn $18–$27/hr, demand up 16% by 2033</div>
+        <div class="fp-out">Many employers offer tuition reimbursement toward RN/LPN</div>
+      </div>
+      <a href="jobs.html" class="btn-amber">Browse Healthcare Jobs →</a>
+    </div>
+    <div class="rv d1">
+      <div style="font-size:0.82rem;font-weight:600;color:var(--slate-lt);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:1rem;">Top Certifications to Get Started</div>
+      <div class="fp-certs">
+        <a href="https://www.redcross.org/take-a-class/cna" target="_blank" rel="noopener" class="cert-card">
+          <div class="cert-icon">🏥</div>
+          <div class="cert-name">CNA (Certified Nursing Assistant)</div>
+          <div class="cert-time">4–12 weeks</div>
+          <div class="cert-cost">$500–$2,000 · Often employer-sponsored</div>
+        </a>
+        <a href="https://www.nhanow.com/certifications/medical-assistant" target="_blank" rel="noopener" class="cert-card">
+          <div class="cert-icon">🩺</div>
+          <div class="cert-name">CCMA (Medical Assistant)</div>
+          <div class="cert-time">6–12 months</div>
+          <div class="cert-cost">$150–$400 exam · Training varies</div>
+        </a>
+        <a href="https://www.nhanow.com/certifications/phlebotomy-technician" target="_blank" rel="noopener" class="cert-card">
+          <div class="cert-icon">🩸</div>
+          <div class="cert-name">Phlebotomy Technician (CPT)</div>
+          <div class="cert-time">2–8 weeks</div>
+          <div class="cert-cost">Free–$1,200 · Community colleges</div>
+        </a>
+        <a href="https://www.aapc.com/training/medical-coding-courses.aspx" target="_blank" rel="noopener" class="cert-card">
+          <div class="cert-icon">💻</div>
+          <div class="cert-name">Medical Coder (CPC)</div>
+          <div class="cert-time">3–6 months</div>
+          <div class="cert-cost">$399–$1,500 · Remote work friendly</div>
+        </a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ALL PATHS -->
+<section class="paths-section" id="tech">
+  <div class="container">
+    <div class="rv">
+      <div class="eye">All Learning Paths</div>
+      <h2 class="sec-h2">Choose your industry.<br/>We'll show you the way in.</h2>
+      <p class="sec-sub">Every path includes free starting resources, a recommended certification order, salary data, and matched jobs on our platform.</p>
+    </div>
+    <div class="paths-grid">
+      <a href="#tech" class="path-big rv" style="background:linear-gradient(135deg,#1a2a4a,#243d70);">
+        <div class="pb-content">
+          <div class="pb-badge">⚡ High Growth</div>
+          <div class="pb-title">Technology & IT</div>
+          <div class="pb-desc">Break into tech without a CS degree. CompTIA certifications are the industry standard entry path — fully accessible to motivated career changers.</div>
+          <div class="pb-pills">
+            <span class="pb-pill">CompTIA A+</span>
+            <span class="pb-pill">Help Desk</span>
+            <span class="pb-pill">Network+</span>
+            <span class="pb-pill">Security+</span>
+          </div>
+        </div>
+        <div class="pb-visual">💻</div>
+      </a>
+      <a href="#trades" class="path-sm rv d1">
+        <div class="ps-icon">⚙️</div>
+        <div class="ps-title">Skilled Trades</div>
+        <div class="ps-meta">489 open roles · avg $28/hr</div>
+        <div class="ps-tags"><span class="ps-tag">OSHA 10</span><span class="ps-tag">Electrical</span><span class="ps-tag">Plumbing</span><span class="ps-tag">HVAC</span></div>
+        <div class="ps-arrow">Explore Path</div>
+      </a>
+      <a href="#energy" class="path-sm rv d2">
+        <div class="ps-icon">🌱</div>
+        <div class="ps-title">Green Energy & Climate</div>
+        <div class="ps-meta">156 open roles · avg $24/hr</div>
+        <div class="ps-tags"><span class="ps-tag">Solar NABCEP</span><span class="ps-tag">Wind Tech</span><span class="ps-tag">Energy Audit</span></div>
+        <div class="ps-arrow">Explore Path</div>
+      </a>
+      <a href="#logistics" class="path-sm rv">
+        <div class="ps-icon">📦</div>
+        <div class="ps-title">Logistics & Supply Chain</div>
+        <div class="ps-meta">274 open roles · avg $19/hr</div>
+        <div class="ps-tags"><span class="ps-tag">Forklift Cert</span><span class="ps-tag">CDL</span><span class="ps-tag">APICS</span></div>
+        <div class="ps-arrow">Explore Path</div>
+      </a>
+      <a href="#finance" class="path-sm rv d1">
+        <div class="ps-icon">💼</div>
+        <div class="ps-title">Finance & Accounting</div>
+        <div class="ps-meta">132 open roles · avg $30/hr</div>
+        <div class="ps-tags"><span class="ps-tag">QuickBooks</span><span class="ps-tag">Bookkeeping</span><span class="ps-tag">Tax Prep</span></div>
+        <div class="ps-arrow">Explore Path</div>
+      </a>
+      <a href="index.html#employers" class="path-sm rv d2" style="background:var(--navy);border-color:var(--navy);">
+        <div class="ps-icon">🤝</div>
+        <div class="ps-title" style="color:#fff;">Don't see your field?</div>
+        <div class="ps-meta" style="color:rgba(255,255,255,0.45);">We're adding paths every month</div>
+        <div class="ps-tags"><span class="ps-tag" style="background:rgba(255,255,255,0.08);border-color:rgba(255,255,255,0.12);color:rgba(255,255,255,0.5);">Request a path →</span></div>
+        <div class="ps-arrow" style="color:var(--amber);border-top-color:rgba(255,255,255,0.1);">Suggest a path</div>
+      </a>
+    </div>
+  </div>
+</section>
+
+<!-- RESOURCES -->
+<section class="resources-section" id="trades">
+  <div class="container">
+    <div class="res-header rv">
+      <div>
+        <div class="eye">Resource Library</div>
+        <h2 class="sec-h2">Free tools & guides to<br/>get you job-ready.</h2>
+      </div>
+      <div class="res-filters">
+        <button class="res-filter on" onclick="setFilter(this,'all')">All</button>
+        <button class="res-filter" onclick="setFilter(this,'free')">Free</button>
+        <button class="res-filter" onclick="setFilter(this,'cert')">Certifications</button>
+        <button class="res-filter" onclick="setFilter(this,'course')">Courses</button>
+        <button class="res-filter" onclick="setFilter(this,'guide')">Guides</button>
+      </div>
+    </div>
+    <div class="resources-grid" id="res-grid">
+      <!-- Resources rendered by JS -->
+    </div>
+  </div>
+</section>
+
+<!-- AI COACHING -->
+<section class="coaching-section" id="coaching">
+  <div class="coach-inner">
+    <div class="coach-left rv">
+      <div class="eye">AI Career Coaching</div>
+      <h2 class="c-h2">A coach in your corner,<br/><em>every step of the way.</em></h2>
+      <p class="c-p">Our AI coaching system asks the right questions, identifies your real skill gaps, and produces a custom 90-day action plan — not generic advice you've already seen. It's a tool, not a replacement for human support. But it's available at 2am when you need it.</p>
+      <div style="display:flex;flex-direction:column;gap:1rem;margin-bottom:2rem;">
+        <div style="display:flex;align-items:flex-start;gap:1rem;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.08);border-radius:12px;padding:1rem 1.25rem;">
+          <div style="font-size:1.25rem;flex-shrink:0;">🎯</div>
+          <div><div style="font-size:0.88rem;font-weight:600;color:#fff;margin-bottom:3px;">Skills Gap Analysis</div><div style="font-size:0.8rem;color:rgba(255,255,255,0.45);line-height:1.5;">Tell us your background and target. We'll show you the delta and how to close it.</div></div>
+        </div>
+        <div style="display:flex;align-items:flex-start;gap:1rem;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.08);border-radius:12px;padding:1rem 1.25rem;">
+          <div style="font-size:1.25rem;flex-shrink:0;">📄</div>
+          <div><div style="font-size:0.88rem;font-weight:600;color:#fff;margin-bottom:3px;">Resume Review</div><div style="font-size:0.8rem;color:rgba(255,255,255,0.45);line-height:1.5;">Paste your resume. Get line-by-line feedback matched to real job descriptions.</div></div>
+        </div>
+        <div style="display:flex;align-items:flex-start;gap:1rem;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.08);border-radius:12px;padding:1rem 1.25rem;">
+          <div style="font-size:1.25rem;flex-shrink:0;">🗺️</div>
+          <div><div style="font-size:0.88rem;font-weight:600;color:#fff;margin-bottom:3px;">90-Day Action Plan</div><div style="font-size:0.8rem;color:rgba(255,255,255,0.45);line-height:1.5;">Walk away with a week-by-week plan: what to study, what certs to get, when to apply.</div></div>
+        </div>
+      </div>
+      <a href="#coaching-start" class="btn-amber">Start Your Free Assessment →</a>
+    </div>
+    <div class="rv d1" id="coaching-start">
+      <div class="coach-chat">
+        <div class="chat-header">
+          <div class="chat-avatar">AI</div>
+          <div><div class="chat-name">WorkforceForHumans Coach</div><div class="chat-status">Online · Ready to help</div></div>
+        </div>
+        <div class="chat-body" id="chat-body">
+          <div class="msg ai">Hi! I'm your career coaching assistant. I'll ask you a few questions and then build you a personalized plan. Let's start — what's your current work situation?</div>
+        </div>
+        <div class="chat-input-row">
+          <input type="text" class="chat-input" id="chat-in" placeholder="Type your response…" onkeydown="if(event.key==='Enter')sendMsg()"/>
+          <button class="chat-send" onclick="sendMsg()">Send →</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- PLANS -->
+<section class="plans-section" id="energy">
+  <div class="container">
+    <div class="rv" style="text-align:center;max-width:540px;margin:0 auto;">
+      <div class="eye" style="justify-content:center;">Coaching Plans</div>
+      <h2 class="sec-h2">Get the support you<br/>actually need.</h2>
+      <p class="sec-sub" style="margin:0 auto;">Start free. Upgrade when you need more than a plan — you need a person.</p>
+    </div>
+    <div class="plans-grid" style="margin-top:3rem;">
+      <div class="plan-card rv">
+        <div class="plan-name">Self-Guided</div>
+        <div class="plan-price"><span class="plan-curr">$</span>0</div>
+        <div class="plan-per">Free forever</div>
+        <ul class="plan-feats">
+          <li>AI skills gap analysis</li>
+          <li>Job search on platform</li>
+          <li>All free learning resources</li>
+          <li>Job alert emails</li>
+          <li>Resume tips & templates</li>
+        </ul>
+        <a href="jobs.html" class="plan-btn secondary">Get Started Free</a>
+      </div>
+      <div class="plan-card featured rv d1">
+        <div class="plan-badge">Most Popular</div>
+        <div class="plan-name">Career Boost</div>
+        <div class="plan-price"><span class="plan-curr">$</span>79</div>
+        <div class="plan-per">one-time · 90-day access</div>
+        <ul class="plan-feats">
+          <li>Everything in Free</li>
+          <li>Full AI coaching program</li>
+          <li>Custom 90-day action plan</li>
+          <li>Resume review (2 rounds)</li>
+          <li>Mock interview prep</li>
+          <li>Priority job matching</li>
+        </ul>
+        <a href="mailto:hello@workforceforhumans.com" class="plan-btn primary">Get Started →</a>
+      </div>
+      <div class="plan-card rv d2">
+        <div class="plan-name">1:1 Coaching</div>
+        <div class="plan-price"><span class="plan-curr">$</span>249</div>
+        <div class="plan-per">per month · min 2 months</div>
+        <ul class="plan-feats">
+          <li>Everything in Career Boost</li>
+          <li>2× 60-min 1:1 sessions/mo</li>
+          <li>Real human career coach</li>
+          <li>Job application support</li>
+          <li>Negotiation coaching</li>
+          <li>Ongoing check-ins</li>
+        </ul>
+        <a href="mailto:coaching@workforceforhumans.com" class="plan-btn secondary">Apply for Coaching</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- NEWSLETTER -->
+<section class="nl-sec">
+  <div class="nl-inner">
+    <div class="rv">
+      <h2 class="nl-h2">Weekly career insights<br/>to your inbox.</h2>
+      <p class="nl-p">New certifications worth getting, salary data, hiring trends, and jobs matched to your skills. No fluff.</p>
+      <form class="nl-form" onsubmit="doSub(event)">
+        <input type="email" id="nl-e" placeholder="your@email.com" required/>
+        <button type="submit" class="btn-amber">Subscribe</button>
+      </form>
+      <p class="nl-note" id="nl-m">Privacy first — we never sell your data.</p>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="footer-bot">
+    <div class="fn-logo">Workforce<span class="dot">.</span>for<span class="dot">Humans</span></div>
+    <div class="fcopy">© 2025 WorkforceForHumans LLC · Colorado, USA</div>
+    <div class="flinks">
+      <a href="index.html">Home</a>
+      <a href="jobs.html">Find Jobs</a>
+      <a href="index.html#employers">Employers</a>
+      <a href="#">Privacy</a>
+    </div>
+  </div>
+</footer>
+
+<script>
+// Resources data
+const RESOURCES=[
+  {type:'free',tag:'Free Guide',title:'How to Get Your OSHA 10 Card in One Weekend',desc:'Step-by-step guide covering the fastest ways to complete your OSHA 10 online, what to expect, and how to use it in job applications.',cost:'Free',time:'10 min read',cat:'trades'},
+  {type:'cert',tag:'Certification',title:'CompTIA A+ Complete Study Roadmap',desc:'The exact study order, free resources, practice tests, and exam strategy to pass the CompTIA A+ on your first attempt without a bootcamp.',cost:'Exam: $246',time:'60–90 day prep',cat:'tech'},
+  {type:'course',tag:'Course',title:'Khan Academy: US Healthcare System Basics',desc:'Free foundational knowledge of how US healthcare works — essential context for any entry-level healthcare role.',cost:'Free',time:'8–10 hours',cat:'healthcare'},
+  {type:'guide',tag:'Career Guide',title:'Career Changer\'s Guide: Manufacturing to Solar',desc:'Real stories and a practical roadmap for skilled workers transitioning from traditional manufacturing to green energy careers.',cost:'Free',time:'15 min read',cat:'energy'},
+  {type:'free',tag:'Free Tool',title:'DOL mySkills myFuture — Career Match Tool',desc:'Official US Department of Labor tool that maps your current job to similar careers with better outlook and pay. Start here.',cost:'Free',time:'20 min',cat:'general'},
+  {type:'cert',tag:'Certification',title:'Forklift Operator Certification Guide',desc:'Requirements by state, where to get certified cheaply, and which certification types employers actually require on job postings.',cost:'$50–$150',time:'1 day',cat:'logistics'},
+  {type:'course',tag:'Course',title:'Google Career Certificates — IT Support',desc:'Google\'s foundational IT support certificate, available on Coursera. Recognized by 150+ employers. Financial aid available.',cost:'Free–$49/mo',time:'3–6 months',cat:'tech'},
+  {type:'guide',tag:'Career Guide',title:'The 90-Day New Career Blueprint',desc:'Our in-house framework for career changers: how to assess your transferable skills, choose a target, and get hired within 90 days.',cost:'Free',time:'20 min read',cat:'general'},
+  {type:'free',tag:'Free Resource',title:'CareerOneStop Skills Matcher',desc:'US government resource that identifies career paths matching your skills. Includes salary data, job outlook, and local training programs.',cost:'Free',time:'15 min',cat:'general'},
+];
+
+let activeFilter='all';
+function renderResources(){
+  const q=document.getElementById('learn-search').value.toLowerCase();
+  const filtered=RESOURCES.filter(r=>{
+    const matchFilter=activeFilter==='all'||r.type===activeFilter;
+    const matchSearch=!q||r.title.toLowerCase().includes(q)||r.desc.toLowerCase().includes(q)||r.cat.includes(q);
+    return matchFilter&&matchSearch;
+  });
+  document.getElementById('res-grid').innerHTML=filtered.length?filtered.map(r=>`
+    <div class="res-card rv">
+      <div class="res-tag rt-${r.type}">${r.tag}</div>
+      <div class="res-title">${r.title}</div>
+      <div class="res-desc">${r.desc}</div>
+      <div class="res-meta">
+        <span class="res-cost ${r.cost==='Free'?'free':'paid'}">${r.cost}</span>
+        <span class="res-time">${r.time}</span>
+        <span class="res-arrow">→</span>
+      </div>
+    </div>`).join(''):`<div style="grid-column:span 3;text-align:center;padding:2rem;color:var(--slate-lt);">No resources match that search. Try a broader term.</div>`;
+  document.querySelectorAll('.rv').forEach(el=>obs.observe(el));
+}
+function setFilter(btn,type){
+  document.querySelectorAll('.res-filter').forEach(b=>b.classList.remove('on'));
+  btn.classList.add('on');activeFilter=type;renderResources();
+}
+function filterResources(){renderResources();}
+document.getElementById('learn-search').addEventListener('keydown',e=>{if(e.key==='Enter')filterResources();});
+
+// Chat
+const chatFlow=[
+  {q:"I'm currently unemployed / I was recently laid off",a:"I hear you — that's a tough spot, but it's also a real opportunity to make a move you want rather than just taking whatever's next. What industry or type of work did you most recently do?"},
+  {q:"I worked in [previous field]",a:"Got it. And are you looking to stay in that field, transition to something new, or are you open to either if the pay and stability are right?"},
+  {q:"I'm open to a new field",a:"Great — that opens a lot of doors. What matters most to you in a new role: higher pay, more stability, remote work, physical vs. desk work, or something else?"},
+  {q:"I want higher pay and stability",a:"Those are achievable goals. Based on your situation, I'd suggest starting with one of three paths: healthcare (CNA or Medical Assistant), IT (CompTIA A+), or Skilled Trades (OSHA 10 → apprenticeship). Would you like me to build a 90-day plan for one of these?"},
+];
+let chatStep=0;
+function sendMsg(){
+  const inp=document.getElementById('chat-in');
+  const body=document.getElementById('chat-body');
+  const txt=inp.value.trim();if(!txt)return;
+  body.innerHTML+=`<div class="msg user">${txt}</div>`;
+  inp.value='';body.scrollTop=body.scrollHeight;
+  setTimeout(()=>{
+    body.innerHTML+=`<div class="typing"><div class="dot-anim"></div><div class="dot-anim"></div><div class="dot-anim"></div></div>`;
+    body.scrollTop=body.scrollHeight;
+    setTimeout(()=>{
+      body.querySelector('.typing').remove();
+      const resp=chatStep<chatFlow.length?chatFlow[chatStep].a:"That's really helpful context. Based on what you've shared, I'd recommend starting with a skills assessment. Ready to go deeper? Upgrade to our Career Boost plan and get your full 90-day action plan →";
+      body.innerHTML+=`<div class="msg ai">${resp}</div>`;
+      chatStep++;body.scrollTop=body.scrollHeight;
+    },1200);
+  },300);
+}
+
+// Newsletter
+async function doSub(e){
+  e.preventDefault();
+  const email=document.getElementById('nl-e').value.trim();
+  const msg=document.getElementById('nl-m');
+  try{
+    await db.from('newsletter_subscribers').upsert({email,is_active:true,interests:['learning','jobs']},{onConflict:'email'});
+    msg.textContent='✓ You\'re in! First digest coming soon.';msg.style.color='#6bcf85';
+    document.getElementById('nl-e').value='';
+  }catch{msg.textContent='Please try again.';}
+}
+
+// Tab highlight on scroll
+const tabTargets=['healthcare','tech','trades','energy','logistics','finance','coaching'];
+const tabs=document.querySelectorAll('.pt-tab');
+window.addEventListener('scroll',()=>{
+  let cur='';
+  tabTargets.forEach(id=>{
+    const el=document.getElementById(id);
+    if(el&&el.getBoundingClientRect().top<200)cur=id;
+  });
+  tabs.forEach(t=>{
+    t.classList.toggle('active',t.getAttribute('href')==='#'+cur);
+  });
+});
+
+// Reveal observer
+const obs=new IntersectionObserver(en=>{en.forEach(e=>{if(e.isIntersecting)e.target.classList.add('on');});},{threshold:0.1,rootMargin:'0px 0px -40px 0px'});
+document.querySelectorAll('.rv').forEach(el=>obs.observe(el));
+renderResources();
+</script>
+</body>
+</html>
