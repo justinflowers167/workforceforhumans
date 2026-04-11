@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>KB Admin — Workforce for Humans</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,300&display=swap" rel="stylesheet"/>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --navy:#1a2340;--amber:#f5a623;--amber-dk:#c47d0e;
+  --cream:#faf7f0;--stone:#ede8df;--terra:#c85f3e;
+  --slate:#4a5568;--mist:#8ba8b5;--white:#fff;
+  --green:#2d7a3a;--red:#c0392b;
+  --font-d:'Playfair Display',Georgia,serif;
+  --font-b:'DM Sans',sans-serif;
+}
+body{font-family:var(--font-b);background:var(--cream);color:var(--navy);line-height:1.6}
+nav{background:var(--navy);padding:1rem 5vw;display:flex;align-items:center;justify-content:space-between}
+.nav-logo{font-family:var(--font-d);color:#fff;text-decoration:none;font-size:1.2rem}
+.nav-logo span{color:var(--amber)}
+.nav-badge{background:var(--terra);color:#fff;font-size:.7rem;padding:2px 8px;border-radius:4px;font-weight:600;margin-left:.75rem}
+.nav-right{display:flex;align-items:center;gap:1rem}
+.nav-right a{color:rgba(255,255,255,.6);text-decoration:none;font-size:.85rem}
+.nav-right a:hover{color:var(--amber)}
+
+.admin-layout{max-width:1200px;margin:0 auto;padding:2rem 5vw}
+.admin-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:2rem;flex-wrap:wrap;gap:1rem}
+.admin-header h1{font-family:var(--font-d);font-size:1.6rem}
+.btn{border:none;border-radius:8px;padding:.6rem 1.2rem;font-family:var(--font-b);font-size:.88rem;font-weight:600;cursor:pointer;transition:all .2s;text-decoration:none;display:inline-flex;align-items:center;gap:.4rem}
+.btn-primary{background:var(--amber);color:var(--navy)}
+.btn-primary:hover{background:var(--amber-dk)}
+.btn-secondary{background:#fff;color:var(--navy);border:1px solid var(--stone)}
+.btn-secondary:hover{border-color:var(--navy)}
+.btn-danger{background:none;color:var(--red);border:1px solid rgba(192,57,43,.3)}
+.btn-danger:hover{background:rgba(192,57,43,.08)}
+.btn-sm{padding:.35rem .75rem;font-size:.8rem}
+
+/* ─── ARTICLE LIST TABLE ─── */
+.articles-table{width:100%;background:#fff;border:1px solid var(--stone);border-radius:14px;overflow:hidden}
+.articles-table table{width:100%;border-collapse:collapse}
+.articles-table th{text-align:left;padding:.75rem 1rem;font-size:.75rem;font-weight:600;text-transform:uppercase;letter-spacing:.1em;color:var(--terra);background:var(--cream);border-bottom:1px solid var(--stone)}
+.articles-table td{padding:.75rem 1rem;font-size:.88rem;border-bottom:1px solid var(--stone);vertical-align:middle}
+.articles-table tr:last-child td{border-bottom:none}
+.articles-table tr:hover td{background:rgba(245,166,35,.03)}
+.article-title-cell{font-weight:500;color:var(--navy)}
+.article-title-cell .slug{font-size:.75rem;color:#bbb;font-weight:300}
+.status-badge{font-size:.72rem;font-weight:600;padding:2px 8px;border-radius:12px;text-transform:uppercase;letter-spacing:.05em}
+.status-badge.published{background:rgba(45,122,58,.1);color:var(--green)}
+.status-badge.draft{background:rgba(74,85,104,.1);color:var(--slate)}
+.status-badge.archived{background:rgba(192,57,43,.08);color:var(--red)}
+.actions-cell{display:flex;gap:.4rem}
+
+/* ─── EDITOR ─── */
+.editor-overlay{position:fixed;inset:0;background:rgba(26,35,64,.6);z-index:500;display:none;align-items:flex-start;justify-content:center;padding:2rem 1rem;overflow-y:auto}
+.editor-overlay.open{display:flex}
+.editor-panel{background:#fff;border-radius:20px;width:100%;max-width:860px;margin:auto;overflow:hidden}
+.editor-header{background:var(--navy);padding:1.5rem 2rem;display:flex;align-items:center;justify-content:space-between}
+.editor-header h2{font-family:var(--font-d);color:#fff;font-size:1.3rem}
+.editor-close{background:rgba(255,255,255,.1);border:none;color:#fff;width:32px;height:32px;border-radius:50%;font-size:1.1rem;cursor:pointer;display:flex;align-items:center;justify-content:center}
+.editor-close:hover{background:rgba(255,255,255,.2)}
+.editor-body{padding:2rem;max-height:70vh;overflow-y:auto}
+.field{margin-bottom:1.25rem}
+.field label{display:block;font-size:.82rem;font-weight:600;color:var(--navy);margin-bottom:.35rem}
+.field input,.field select,.field textarea{width:100%;padding:.65rem .9rem;border:1px solid var(--stone);border-radius:8px;font-family:var(--font-b);font-size:.9rem;color:var(--navy);outline:none;transition:border-color .2s}
+.field input:focus,.field select:focus,.field textarea:focus{border-color:var(--amber)}
+.field textarea{min-height:200px;resize:vertical;line-height:1.7}
+.field .hint{font-size:.75rem;color:#bbb;margin-top:.3rem}
+.field-row{display:grid;grid-template-columns:1fr 1fr;gap:1rem}
+.field-row-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:1rem}
+.editor-footer{padding:1.25rem 2rem;background:var(--cream);border-top:1px solid var(--stone);display:flex;gap:.75rem;justify-content:flex-end}
+
+/* ─── TOAST ─── */
+.toast{position:fixed;bottom:2rem;right:2rem;background:var(--navy);color:#fff;padding:.85rem 1.5rem;border-radius:10px;font-size:.88rem;z-index:600;opacity:0;transform:translateY(10px);transition:all .3s;pointer-events:none}
+.toast.show{opacity:1;transform:translateY(0)}
+.toast.success{background:var(--green)}
+.toast.error{background:var(--red)}
+
+/* ─── EMPTY STATE ─── */
+.empty-state{text-align:center;padding:4rem 2rem}
+.empty-state .icon{font-size:3rem;margin-bottom:1rem}
+.empty-state h3{font-family:var(--font-d);font-size:1.3rem;margin-bottom:.5rem}
+.empty-state p{color:var(--slate);font-size:.9rem;font-weight:300}
+
+/* ─── STATS ROW ─── */
+.stats-row{display:flex;gap:1rem;margin-bottom:2rem;flex-wrap:wrap}
+.stat-card{background:#fff;border:1px solid var(--stone);border-radius:12px;padding:1rem 1.5rem;flex:1;min-width:140px}
+.stat-card .num{font-family:var(--font-d);font-size:1.5rem;color:var(--amber);font-weight:700}
+.stat-card .lbl{font-size:.78rem;color:var(--slate)}
+
+@media(max-width:600px){
+  .field-row,.field-row-3{grid-template-columns:1fr}
+  .articles-table{overflow-x:auto}
+}
+</style>
+</head>
+<body>
+
+<script>
+  const SUPABASE_URL  = 'https://YOUR_PROJECT.supabase.co';
+  const SUPABASE_ANON = 'YOUR_ANON_KEY';
+  const { createClient } = supabase;
+  const db = createClient(SUPABASE_URL, SUPABASE_ANON);
+</script>
+
+<nav>
+  <div style="display:flex;align-items:center">
+    <a href="index.html" class="nav-logo">Workforce<span>.</span>for<span>Humans</span></a>
+    <span class="nav-badge">KB Admin</span>
+  </div>
+  <div class="nav-right">
+    <a href="kb.html">← View Knowledge Base</a>
+  </div>
+</nav>
+
+<div class="admin-layout">
+  <!-- Stats -->
+  <div class="stats-row" id="stats-row">
+    <div class="stat-card"><div class="num" id="stat-published">—</div><div class="lbl">Published</div></div>
+    <div class="stat-card"><div class="num" id="stat-drafts">—</div><div class="lbl">Drafts</div></div>
+    <div class="stat-card"><div class="num" id="stat-views">—</div><div class="lbl">Total Views</div></div>
+    <div class="stat-card"><div class="num" id="stat-categories">—</div><div class="lbl">Categories</div></div>
+  </div>
+
+  <div class="admin-header">
+    <h1>Knowledge Base Articles</h1>
+    <button class="btn btn-primary" onclick="openEditor()">+ New Article</button>
+  </div>
+
+  <div class="articles-table" id="articles-table">
+    <table><thead><tr><th>Title</th><th>Category</th><th>Status</th><th>Views</th><th>Updated</th><th>Actions</th></tr></thead>
+    <tbody id="articles-tbody"><tr><td colspan="6" style="text-align:center;padding:3rem;color:#bbb">Loading…</td></tr></tbody></table>
+  </div>
+</div>
+
+<!-- EDITOR MODAL -->
+<div class="editor-overlay" id="editor" onclick="if(event.target===this)closeEditor()">
+  <div class="editor-panel">
+    <div class="editor-header">
+      <h2 id="editor-title">New Article</h2>
+      <button class="editor-close" onclick="closeEditor()">✕</button>
+    </div>
+    <div class="editor-body">
+      <input type="hidden" id="edit-id"/>
+      <div class="field">
+        <label>Title</label>
+        <input type="text" id="edit-article-title" placeholder="e.g. How to Write a Cover Letter"/>
+      </div>
+      <div class="field-row">
+        <div class="field">
+          <label>Category</label>
+          <select id="edit-category"></select>
+        </div>
+        <div class="field">
+          <label>Status</label>
+          <select id="edit-status">
+            <option value="draft">Draft</option>
+            <option value="published">Published</option>
+            <option value="archived">Archived</option>
+          </select>
+        </div>
+      </div>
+      <div class="field">
+        <label>Summary</label>
+        <input type="text" id="edit-summary" placeholder="1-2 sentence preview shown in cards and search"/>
+        <div class="hint">Keep it under 160 characters for best display.</div>
+      </div>
+      <div class="field">
+        <label>Body (HTML)</label>
+        <textarea id="edit-body" placeholder="<h3>Section Title</h3>
+<p>Your content here. Use HTML tags for formatting.</p>"></textarea>
+        <div class="hint">Use &lt;h3&gt; for sections, &lt;p&gt; for paragraphs, &lt;strong&gt; for bold, &lt;ul&gt;/&lt;li&gt; for lists.</div>
+      </div>
+      <div class="field-row-3">
+        <div class="field">
+          <label>Tags (comma-separated)</label>
+          <input type="text" id="edit-tags" placeholder="resume, tips, entry level"/>
+        </div>
+        <div class="field">
+          <label>Reading Time (min)</label>
+          <input type="number" id="edit-reading-time" value="3" min="1" max="30"/>
+        </div>
+        <div class="field">
+          <label>Author</label>
+          <input type="text" id="edit-author" value="Workforce for Humans"/>
+        </div>
+      </div>
+      <div class="field-row">
+        <div class="field">
+          <label><input type="checkbox" id="edit-featured" style="margin-right:.4rem"/>Featured Article</label>
+        </div>
+        <div class="field">
+          <label><input type="checkbox" id="edit-pinned" style="margin-right:.4rem"/>Pin to Top of Category</label>
+        </div>
+      </div>
+    </div>
+    <div class="editor-footer">
+      <button class="btn btn-secondary" onclick="closeEditor()">Cancel</button>
+      <button class="btn btn-primary" id="save-btn" onclick="saveArticle()">Save Article</button>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<script>
+let categories = [];
+
+document.addEventListener('DOMContentLoaded', async () => {
+  await loadCats();
+  await loadStats();
+  await loadArticles();
+});
+
+// ─── LOAD CATEGORIES ─────────────────────────────────
+async function loadCats() {
+  const { data } = await db.from('kb_categories').select('*').order('sort_order');
+  categories = data || [];
+  const sel = document.getElementById('edit-category');
+  sel.innerHTML = categories.map(c => `<option value="${c.id}">${c.icon} ${c.name}</option>`).join('');
+}
+
+// ─── LOAD STATS ──────────────────────────────────────
+async function loadStats() {
+  // We need to query without the RLS published filter, so we count differently
+  // For admin, we use the anon key which only sees published; drafts need auth
+  // For now, show what we can
+  const { count: pub } = await db.from('kb_articles').select('id', { count: 'exact', head: true }).eq('status', 'published');
+  const { count: draft } = await db.from('kb_articles').select('id', { count: 'exact', head: true }).eq('status', 'draft');
+  const { data: viewData } = await db.from('kb_articles').select('view_count');
+  const totalViews = (viewData || []).reduce((s, a) => s + (a.view_count || 0), 0);
+
+  document.getElementById('stat-published').textContent = pub || 0;
+  document.getElementById('stat-drafts').textContent = draft || 0;
+  document.getElementById('stat-views').textContent = totalViews.toLocaleString();
+  document.getElementById('stat-categories').textContent = categories.length;
+}
+
+// ─── LOAD ARTICLES ───────────────────────────────────
+async function loadArticles() {
+  const { data, error } = await db.from('kb_articles').select('*').order('updated_at', { ascending: false });
+
+  const tbody = document.getElementById('articles-tbody');
+  if (error || !data) {
+    tbody.innerHTML = `<tr><td colspan="6"><div class="empty-state"><div class="icon">⚠️</div><h3>Connection error</h3><p>Check your Supabase credentials.</p></div></td></tr>`;
+    return;
+  }
+  if (data.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="6"><div class="empty-state"><div class="icon">📝</div><h3>No articles yet</h3><p>Click "New Article" to create your first knowledge base article.</p></div></td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = data.map(a => {
+    const cat = categories.find(c => c.id === a.category_id);
+    const updated = new Date(a.updated_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+    return `<tr>
+      <td class="article-title-cell">${a.title}<br><span class="slug">/${a.slug}</span></td>
+      <td>${cat ? cat.icon + ' ' + cat.name : '—'}</td>
+      <td><span class="status-badge ${a.status}">${a.status}</span></td>
+      <td>${(a.view_count || 0).toLocaleString()}</td>
+      <td style="font-size:.82rem;color:var(--slate)">${updated}</td>
+      <td><div class="actions-cell">
+        <button class="btn btn-secondary btn-sm" onclick="editArticle('${a.id}')">Edit</button>
+        <button class="btn btn-danger btn-sm" onclick="deleteArticle('${a.id}','${a.title.replace(/'/g,"\\'")}')">Delete</button>
+      </div></td>
+    </tr>`;
+  }).join('');
+}
+
+// ─── EDITOR ──────────────────────────────────────────
+function openEditor(article = null) {
+  document.getElementById('edit-id').value = article ? article.id : '';
+  document.getElementById('editor-title').textContent = article ? 'Edit Article' : 'New Article';
+  document.getElementById('edit-article-title').value = article ? article.title : '';
+  document.getElementById('edit-category').value = article ? article.category_id : (categories[0]?.id || '');
+  document.getElementById('edit-status').value = article ? article.status : 'draft';
+  document.getElementById('edit-summary').value = article ? (article.summary || '') : '';
+  document.getElementById('edit-body').value = article ? (article.body || '') : '';
+  document.getElementById('edit-tags').value = article ? (article.tags || []).join(', ') : '';
+  document.getElementById('edit-reading-time').value = article ? (article.reading_time_min || 3) : 3;
+  document.getElementById('edit-author').value = article ? (article.author_name || 'Workforce for Humans') : 'Workforce for Humans';
+  document.getElementById('edit-featured').checked = article ? article.is_featured : false;
+  document.getElementById('edit-pinned').checked = article ? article.is_pinned : false;
+
+  document.getElementById('editor').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeEditor() {
+  document.getElementById('editor').classList.remove('open');
+  document.body.style.overflow = '';
+}
+
+async function editArticle(id) {
+  const { data } = await db.from('kb_articles').select('*').eq('id', id).single();
+  if (data) openEditor(data);
+}
+
+// ─── SAVE ────────────────────────────────────────────
+async function saveArticle() {
+  const id = document.getElementById('edit-id').value;
+  const title = document.getElementById('edit-article-title').value.trim();
+  if (!title) { toast('Title is required', 'error'); return; }
+
+  const slug = id ? undefined : title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+  const status = document.getElementById('edit-status').value;
+  const tags = document.getElementById('edit-tags').value.split(',').map(t => t.trim()).filter(Boolean);
+
+  const payload = {
+    title,
+    category_id: parseInt(document.getElementById('edit-category').value),
+    status,
+    summary: document.getElementById('edit-summary').value.trim(),
+    body: document.getElementById('edit-body').value,
+    tags,
+    reading_time_min: parseInt(document.getElementById('edit-reading-time').value) || 3,
+    author_name: document.getElementById('edit-author').value.trim() || 'Workforce for Humans',
+    is_featured: document.getElementById('edit-featured').checked,
+    is_pinned: document.getElementById('edit-pinned').checked,
+    published_at: status === 'published' ? new Date().toISOString() : null,
+  };
+
+  let result;
+  if (id) {
+    result = await db.from('kb_articles').update(payload).eq('id', id);
+  } else {
+    payload.slug = slug;
+    result = await db.from('kb_articles').insert(payload);
+  }
+
+  if (result.error) {
+    toast('Error: ' + result.error.message, 'error');
+    return;
+  }
+
+  toast(id ? 'Article updated!' : 'Article created!', 'success');
+  closeEditor();
+  await loadArticles();
+  await loadStats();
+}
+
+// ─── DELETE ──────────────────────────────────────────
+async function deleteArticle(id, title) {
+  if (!confirm(`Delete "${title}"? This cannot be undone.`)) return;
+  const { error } = await db.from('kb_articles').delete().eq('id', id);
+  if (error) { toast('Error deleting: ' + error.message, 'error'); return; }
+  toast('Article deleted', 'success');
+  await loadArticles();
+  await loadStats();
+}
+
+// ─── TOAST ───────────────────────────────────────────
+function toast(msg, type = '') {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.className = 'toast show ' + type;
+  setTimeout(() => { el.className = 'toast'; }, 3000);
+}
+
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeEditor(); });
+</script>
+</body>
+</html>
