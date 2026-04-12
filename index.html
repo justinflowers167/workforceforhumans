@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8"/>
@@ -482,7 +482,7 @@ const db=createClient(SUPABASE_URL,SUPABASE_ANON);
     <div class="paths">
       <a href="learn.html" class="path-card rv"><div class="ph hc"><span class="ph-icon">🏥</span><div class="ph-title">Healthcare & Wellness</div></div><div class="pb"><div class="pb-stat"><strong>342</strong> open roles · avg <strong>$22/hr</strong></div><div class="pb-tags"><span class="pb-tag">CNA</span><span class="pb-tag">Medical Assistant</span><span class="pb-tag">Phlebotomy</span></div><div class="pb-arrow">Start Learning</div></div></a>
       <a href="learn.html" class="path-card rv d1"><div class="ph tc"><span class="ph-icon">💻</span><div class="ph-title">Technology & IT</div></div><div class="pb"><div class="pb-stat"><strong>218</strong> open roles · avg <strong>$26/hr</strong></div><div class="pb-tags"><span class="pb-tag">CompTIA A+</span><span class="pb-tag">Help Desk</span><span class="pb-tag">Cybersecurity</span></div><div class="pb-arrow">Start Learning</div></div></a>
-      <a href="learn.html" class="path-card rv d2"><div class="ph tr"><span class="ph-icon">⚙️</span><div class="ph-title">Skilled Trades</div></div><div class="pb"><div class="pb-stat"><strong>489</strong> open roles · avg <strong>$28/hr</strong></div><div class="pb-tags"><span class="pb-tag">OSHA 10</span><span class="pb-tag">Electrical</span><span class="pb-tag">Plumbing</span></div><div class="pb-arrow">Start Learning</div></div></a>
+      <a href="learn.html" class="path-card rv d2"><div class="ph tr"><span class="ph-icon">⚙️</span><div class="ph-title">Skilled Trades</div></div><div class="pb"><div class="pb-stat"><strong>489</strong> open roles · avg <strong>$28/hr</strong></div><div class="pb-tags"><span class="pb-tag">OSHA 10</span><span class="pb-tag">Electrical</span><span class="pb-tag">Plumbing</span></div><div class="pb-arrow">Start Learning</div></div></a>
       <a href="learn.html" class="path-card rv"><div class="ph en"><span class="ph-icon">🌱</span><div class="ph-title">Green Energy & Climate</div></div><div class="pb"><div class="pb-stat"><strong>156</strong> open roles · avg <strong>$24/hr</strong></div><div class="pb-tags"><span class="pb-tag">Solar Install</span><span class="pb-tag">NABCEP</span><span class="pb-tag">Energy Audit</span></div><div class="pb-arrow">Start Learning</div></div></a>
       <a href="learn.html" class="path-card rv d1"><div class="ph lg"><span class="ph-icon">📦</span><div class="ph-title">Logistics & Supply Chain</div></div><div class="pb"><div class="pb-stat"><strong>274</strong> open roles · avg <strong>$19/hr</strong></div><div class="pb-tags"><span class="pb-tag">Forklift Cert</span><span class="pb-tag">WMS</span><span class="pb-tag">CDL</span></div><div class="pb-arrow">Start Learning</div></div></a>
       <a href="learn.html" class="path-card rv d2"><div class="ph fn"><span class="ph-icon">💼</span><div class="ph-title">Finance & Accounting</div></div><div class="pb"><div class="pb-stat"><strong>132</strong> open roles · avg <strong>$30/hr</strong></div><div class="pb-tags"><span class="pb-tag">Bookkeeping</span><span class="pb-tag">QuickBooks</span><span class="pb-tag">Payroll</span></div><div class="pb-arrow">Start Learning</div></div></a>
@@ -550,11 +550,14 @@ const db=createClient(SUPABASE_URL,SUPABASE_ANON);
       <h3>Post your first job</h3>
       <p>Get in front of motivated candidates actively looking for their next role. Setup takes 10 minutes.</p>
       <div class="pricing">
-        <div class="price-opt"><div><div class="po-name">Basic Listing</div><div class="po-desc">60-day listing, standard placement</div></div><div class="po-price">$99<small>/post</small></div></div>
-        <div class="price-opt active"><div><div class="po-name">⭐ Featured Listing</div><div class="po-desc">Priority placement + verified badge</div></div><div class="po-price">$199<small>/post</small></div></div>
-        <div class="price-opt"><div><div class="po-name">Employer Account</div><div class="po-desc">10 listings/mo + analytics dashboard</div></div><div class="po-price">$499<small>/mo</small></div></div>
+        <div class="price-opt" data-plan="basic" onclick="selectPlan(this)"><div><div class="po-name">Basic Listing</div><div class="po-desc">60-day listing, standard placement</div></div><div class="po-price">$99<small>/post</small></div></div>
+        <div class="price-opt active" data-plan="featured" onclick="selectPlan(this)"><div><div class="po-name">⭐ Featured Listing</div><div class="po-desc">Priority placement + verified badge</div></div><div class="po-price">$199<small>/post</small></div></div>
+        <div class="price-opt" data-plan="employer" onclick="selectPlan(this)"><div><div class="po-name">Employer Account</div><div class="po-desc">10 listings/mo + analytics dashboard</div></div><div class="po-price">$499<small>/mo</small></div></div>
       </div>
-      <a href="mailto:employers@workforceforhumans.com" class="btn-amber" style="display:block;text-align:center;padding:0.9rem;">Post a Job Today →</a>
+      <input type="text" id="emp-name" placeholder="Your name" style="width:100%;padding:0.75rem 1rem;border:1px solid var(--stone);border-radius:10px;font-family:var(--font-b);font-size:0.9rem;margin-bottom:0.5rem;outline:none;"/>
+      <input type="email" id="emp-email" placeholder="Work email" style="width:100%;padding:0.75rem 1rem;border:1px solid var(--stone);border-radius:10px;font-family:var(--font-b);font-size:0.9rem;margin-bottom:0.75rem;outline:none;"/>
+      <p id="checkout-msg" style="font-size:0.82rem;margin-bottom:0.5rem;min-height:1.2em;"></p>
+      <button id="checkout-btn" onclick="startCheckout()" class="btn-amber" style="display:block;width:100%;text-align:center;padding:0.9rem;border:none;font-size:0.95rem;cursor:pointer;">Post a Job Today &#8594;</button>
     </div>
   </div>
 </section>
@@ -646,14 +649,14 @@ async function loadFeat(){
   c.innerHTML=[
     {t:'Medical Assistant — Entry Level',e:'HealthFirst Medical',b:'gr',bl:'🌱 Entry Level',l:'Denver, CO',p:'$18–22/hr'},
     {t:'Solar Installer Apprentice',e:'SunPath Solar',b:'gr',bl:'🌱 Entry Level',l:'Phoenix, AZ',p:'$17–20/hr'},
-    {t:'IT Help Desk Technician',e:'TechBridge IT',b:'',bl:'⭐ Featured',l:'Remote',p:'$18–24/hr'},
+    {t:'IT Help Desk Technician',e:'TechBridge IT',b:'',bl:'⭐ Featured',l:'Remote',p:'$18–24/hr'},
     {t:'Warehouse Associate',e:'FastFreight Logistics',b:'gr',bl:'🌱 Entry Level',l:'Dallas, TX',p:'$16.50–19/hr'},
   ].map(j=>`<a class="mini-card${!j.b?' feat':''}" href="jobs.html"><div class="mc-top"><div><div class="mc-title">${j.t}</div><div class="mc-emp">${j.e}</div></div><span class="mc-badge ${j.b}">${j.bl}</span></div><div class="mc-meta"><span class="mc-chip">📍 ${j.l}</span><span class="mc-chip pay">💰 ${j.p}</span></div></a>`).join('');
 }
 function mkCard(j){
   const p=j.pay_min?(j.pay_type==='hourly'?`$${+j.pay_min}–${+j.pay_max||+j.pay_min}/hr`:`$${Math.round(+j.pay_min/1000)}K/yr`):'';
   const l=j.is_remote?'Remote':([j.location_city,j.location_state].filter(Boolean).join(', ')||'TBD');
-  const b=j.is_featured?'⭐ Featured':j.is_entry_level_highlighted?'🌱 Entry Level':j.is_senior_friendly?'🔭 50+ Friendly':'';
+  const b=j.is_featured?'⭐ Featured':j.is_entry_level_highlighted?'🌱 Entry Level':j.is_senior_friendly?'🔭 50+ Friendly':'';
   const bc=j.is_entry_level_highlighted||j.is_senior_friendly?'gr':'';
   return `<a class="mini-card${j.is_featured?' feat':''}" href="jobs.html"><div class="mc-top"><div><div class="mc-title">${j.title}</div><div class="mc-emp">${j.employer_name||''}</div></div>${b?`<span class="mc-badge ${bc}">${b}</span>`:''}</div><div class="mc-meta"><span class="mc-chip">📍 ${l}</span><span class="mc-chip">${(j.employment_type||'').replace('-',' ')}</span>${p?`<span class="mc-chip pay">💰 ${p}</span>`:''}</div></a>`;
 }
@@ -675,6 +678,37 @@ async function doSubscribe(e){
     document.getElementById('nl-email').value='';
   }catch{msg.textContent='Please try again.';}
 }
+// ─── EMPLOYER CHECKOUT ─────────────────────────────────
+let selectedPlan = 'featured';
+function selectPlan(el) {
+  document.querySelectorAll('.price-opt').forEach(o => o.classList.remove('active'));
+  el.classList.add('active');
+  selectedPlan = el.dataset.plan;
+}
+async function startCheckout() {
+  const name = document.getElementById('emp-name').value.trim();
+  const email = document.getElementById('emp-email').value.trim();
+  const msg = document.getElementById('checkout-msg');
+  const btn = document.getElementById('checkout-btn');
+  if (!name || !email) { msg.textContent = 'Please enter your name and work email.'; msg.style.color = 'var(--terra)'; return; }
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { msg.textContent = 'Please enter a valid email address.'; msg.style.color = 'var(--terra)'; return; }
+  btn.disabled = true; btn.textContent = 'Setting up checkout…'; msg.textContent = '';
+  try {
+    const res = await fetch(SUPABASE_URL + '/functions/v1/create-checkout', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ plan: selectedPlan, email, name, site_url: window.location.origin !== 'null' ? window.location.origin : 'https://workforceforhumans.com' }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Checkout failed');
+    if (data.url) { window.location.href = data.url; } else { throw new Error('No checkout URL returned'); }
+  } catch (err) {
+    msg.textContent = err.message || 'Something went wrong. Please try again.';
+    msg.style.color = 'var(--terra)';
+    btn.disabled = false; btn.textContent = 'Post a Job Today →';
+  }
+}
+
 const obs=new IntersectionObserver(en=>{en.forEach(e=>{if(e.isIntersecting)e.target.classList.add('on');});},{threshold:0.1,rootMargin:'0px 0px -40px 0px'});
 document.querySelectorAll('.rv').forEach(el=>obs.observe(el));
 document.addEventListener('DOMContentLoaded',()=>{loadStats();loadFeat();});
