@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>My Workforce — Workforce for Humans</title>
+<meta name="description" content="Your member dashboard: resume review, job matches, and recruiter opt-in."/>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,300&display=swap" rel="stylesheet"/>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --navy:#1a2340;--amber:#f5a623;--amber-dk:#c47d0e;
+  --cream:#faf7f0;--stone:#ede8df;--terra:#c85f3e;
+  --slate:#4a5568;--mist:#8ba8b5;--white:#fff;--green:#2d7a3a;
+  --font-d:'Playfair Display',Georgia,serif;
+  --font-b:'DM Sans',sans-serif;
+}
+body{font-family:var(--font-b);background:var(--cream);color:var(--navy);line-height:1.6;}
+nav{background:var(--navy);padding:1rem 5vw;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;}
+.nav-logo{font-family:var(--font-d);color:#fff;text-decoration:none;font-size:1.2rem;}
+.nav-logo span{color:var(--amber);}
+.nav-links{display:flex;gap:1.5rem;list-style:none;}
+.nav-links a{color:rgba(255,255,255,0.65);text-decoration:none;font-size:0.88rem;font-weight:500;}
+.nav-links a:hover,.nav-links a.active{color:var(--amber);}
+.nav-cta{background:var(--amber);color:var(--navy)!important;padding:0.45rem 1.1rem;border-radius:6px;font-weight:600!important;}
+main{max-width:980px;margin:0 auto;padding:2rem 5vw;}
+h1{font-family:var(--font-d);font-size:clamp(1.8rem,4vw,2.6rem);margin-bottom:0.25rem;}
+.sub{color:var(--slate);margin-bottom:2rem;}
+.card{background:#fff;border:1px solid var(--stone);border-radius:14px;padding:1.5rem 1.75rem;margin-bottom:1.25rem;}
+.card h2{font-family:var(--font-d);font-size:1.3rem;margin-bottom:0.75rem;}
+.card h3{font-size:0.82rem;font-weight:600;text-transform:uppercase;letter-spacing:0.1em;color:var(--terra);margin:1rem 0 0.5rem;}
+input[type=email],input[type=text],input[type=tel],input[type=number],select,textarea{width:100%;padding:0.7rem 0.9rem;border:1px solid var(--stone);border-radius:8px;font-family:var(--font-b);font-size:0.92rem;background:#fff;color:var(--navy);outline:none;}
+input:focus,textarea:focus,select:focus{border-color:var(--amber);}
+label{display:block;font-size:0.82rem;color:var(--slate);margin-bottom:0.3rem;font-weight:500;}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:0.75rem;}
+.row-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:1rem;margin-bottom:0.75rem;}
+@media (max-width:640px){.row,.row-3{grid-template-columns:1fr;}}
+button.primary{background:var(--amber);color:var(--navy);border:none;border-radius:8px;padding:0.7rem 1.5rem;font-family:var(--font-b);font-weight:600;font-size:0.92rem;cursor:pointer;}
+button.primary:hover{background:var(--amber-dk);}
+button.ghost{background:transparent;color:var(--navy);border:1px solid var(--stone);border-radius:8px;padding:0.6rem 1.2rem;font-family:var(--font-b);font-size:0.88rem;cursor:pointer;}
+button.ghost:hover{border-color:var(--amber);color:var(--amber-dk);}
+.chip{display:inline-block;background:var(--cream);border:1px solid var(--stone);color:var(--slate);padding:3px 10px;border-radius:20px;font-size:0.78rem;margin:2px 4px 2px 0;}
+.chip.have{background:rgba(45,122,58,0.08);border-color:rgba(45,122,58,0.25);color:var(--green);}
+.chip.want{background:rgba(245,166,35,0.1);border-color:rgba(245,166,35,0.3);color:var(--amber-dk);}
+.toggle{display:flex;align-items:center;gap:.6rem;cursor:pointer;}
+.toggle input{width:18px;height:18px;accent-color:var(--amber);}
+.status{padding:.6rem .9rem;border-radius:8px;font-size:.88rem;margin-bottom:1rem;}
+.status.info{background:rgba(139,168,181,0.12);color:var(--navy);}
+.status.error{background:rgba(200,95,62,0.1);color:var(--terra);}
+.status.ok{background:rgba(45,122,58,0.1);color:var(--green);}
+.match{border:1px solid var(--stone);border-radius:10px;padding:1rem 1.1rem;margin-bottom:.75rem;}
+.match .t{font-weight:600;}
+.match .m{color:var(--slate);font-size:.88rem;margin:4px 0;}
+.match .s{font-size:.78rem;color:var(--mist);}
+.score{float:right;background:var(--navy);color:#fff;border-radius:20px;padding:2px 10px;font-size:.78rem;font-weight:600;}
+.hidden{display:none;}
+.muted{color:var(--slate);font-size:.88rem;}
+footer{text-align:center;padding:2rem;color:var(--slate);font-size:.82rem;}
+.rev-list{margin:.4rem 0 .5rem 1.2rem;}
+.rev-list li{margin-bottom:.25rem;font-size:.9rem;color:var(--slate);}
+</style>
+</head>
+<body>
+
+<nav>
+  <a href="/" class="nav-logo">Workforce<span>for</span>Humans</a>
+  <ul class="nav-links">
+    <li><a href="/jobs.html">Jobs</a></li>
+    <li><a href="/learn.html">Learn</a></li>
+    <li><a href="/feed.html">Feed</a></li>
+    <li><a href="/member.html" class="active">My Workforce</a></li>
+  </ul>
+</nav>
+
+<main>
+  <!-- SIGNED OUT -->
+  <section id="auth-view" class="hidden">
+    <h1>Sign in</h1>
+    <p class="sub">Get your resume reviewed by AI, see personalized job matches, and let verified employers reach you.</p>
+    <div class="card" style="max-width:440px;">
+      <label for="email">Email address</label>
+      <input type="email" id="email" placeholder="you@email.com" autocomplete="email"/>
+      <div style="margin-top:1rem;"><button class="primary" id="send-link">Email me a magic link</button></div>
+      <p id="auth-msg" class="muted" style="margin-top:.75rem;"></p>
+    </div>
+  </section>
+
+  <!-- SIGNED IN -->
+  <section id="dash-view" class="hidden">
+    <h1 id="hi">Welcome</h1>
+    <p class="sub">Your profile, resume review, and matches.</p>
+
+    <!-- Resume status -->
+    <div class="card">
+      <h2>Your resume</h2>
+      <div id="resume-status" class="muted">Loading…</div>
+      <div style="margin-top:1rem;display:flex;gap:.5rem;flex-wrap:wrap;">
+        <a href="/resume.html" class="ghost" style="padding:.6rem 1.2rem;border:1px solid var(--stone);border-radius:8px;text-decoration:none;color:var(--navy);">Edit / upload resume</a>
+        <button class="ghost" id="rescore">Find new matches</button>
+      </div>
+
+      <div id="review" class="hidden">
+        <h3>Strengths</h3><ul id="strengths" class="rev-list"></ul>
+        <h3>Gaps to close</h3><ul id="gaps" class="rev-list"></ul>
+        <h3>Bullet rewrites</h3><div id="rewrites"></div>
+        <h3>Market notes</h3><p id="market" class="muted"></p>
+        <h3>Skills detected</h3><div id="skills"></div>
+      </div>
+    </div>
+
+    <!-- Profile -->
+    <div class="card">
+      <h2>Profile</h2>
+      <div class="row">
+        <div><label>First name</label><input type="text" id="first_name"/></div>
+        <div><label>Last name</label><input type="text" id="last_name"/></div>
+      </div>
+      <div class="row">
+        <div><label>Phone (for recruiters, if enabled)</label><input type="tel" id="phone"/></div>
+        <div><label>Headline</label><input type="text" id="headline" placeholder="e.g. Former retail manager exploring logistics"/></div>
+      </div>
+      <div class="row-3">
+        <div><label>City</label><input type="text" id="city"/></div>
+        <div><label>State</label><input type="text" id="state" maxlength="2" placeholder="NY"/></div>
+        <div><label>Minimum pay</label><input type="number" id="pay_min" placeholder="20"/></div>
+      </div>
+      <div class="row">
+        <div><label>Pay type</label>
+          <select id="pay_type"><option value="">—</option><option value="hourly">Hourly</option><option value="salary">Salary</option></select>
+        </div>
+        <div><label>Career stage</label>
+          <select id="career_stage"><option value="">—</option>
+            <option>entry-level</option><option>early-career</option><option>mid-career</option>
+            <option>senior</option><option>career-changer</option><option>returning-to-work</option>
+            <option>late-career</option><option>pre-retirement</option>
+          </select>
+        </div>
+      </div>
+      <div style="margin-top:.5rem;display:flex;flex-direction:column;gap:.4rem;">
+        <label class="toggle"><input type="checkbox" id="open_remote"/> Open to remote</label>
+        <label class="toggle"><input type="checkbox" id="open_recruiters"/> Open to recruiter calls — verified employers can reach me for matched roles</label>
+        <label class="toggle"><input type="checkbox" id="newsletter"/> Email me my weekly match digest</label>
+      </div>
+      <div style="margin-top:1rem;"><button class="primary" id="save-profile">Save profile</button> <span id="save-msg" class="muted"></span></div>
+    </div>
+
+    <!-- Matches -->
+    <div class="card">
+      <h2>Matches for you</h2>
+      <div id="matches" class="muted">No matches yet. Upload or paste your resume to get started.</div>
+    </div>
+
+    <div style="margin-top:1.5rem;"><button class="ghost" id="signout">Sign out</button></div>
+  </section>
+</main>
+
+<footer>© Workforce for Humans</footer>
+
+<script>
+  const { createClient } = supabase;
+  const SUPABASE_URL  = 'https://dbomfjqijyrkidptrrfi.supabase.co';
+  const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRib21manFpanlya2lkcHRycmZpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU0MDE2OTMsImV4cCI6MjA5MDk3NzY5M30.Vvv94m3O0DVZsNU5gjoexksmkoYG6r8Kq5dXKAE1gZc';
+  const db = createClient(SUPABASE_URL, SUPABASE_ANON);
+
+  const $ = (id) => document.getElementById(id);
+  const show = (id) => $(id).classList.remove('hidden');
+  const hide = (id) => $(id).classList.add('hidden');
+
+  async function boot() {
+    const { data: { session } } = await db.auth.getSession();
+    if (!session) { show('auth-view'); hide('dash-view'); return; }
+    show('dash-view'); hide('auth-view');
+    await loadDashboard(session.user);
+  }
+
+  $('send-link').onclick = async () => {
+    const email = $('email').value.trim();
+    if (!email) return;
+    $('auth-msg').textContent = 'Sending…';
+    const { error } = await db.auth.signInWithOtp({
+      email, options: { emailRedirectTo: window.location.origin + '/member.html' }
+    });
+    $('auth-msg').textContent = error ? ('Error: ' + error.message) : 'Check your email for a sign-in link.';
+  };
+
+  $('signout').onclick = async () => { await db.auth.signOut(); location.reload(); };
+
+  db.auth.onAuthStateChange((_e, _s) => { boot(); });
+
+  async function loadDashboard(user) {
+    $('hi').textContent = 'Welcome' + (user.email ? ', ' + user.email.split('@')[0] : '');
+
+    // Profile
+    const { data: js } = await db.from('job_seekers').select('*').eq('auth_user_id', user.id).maybeSingle();
+    if (js) fillProfile(js);
+
+    // Latest resume + review
+    if (js) {
+      const { data: resume } = await db.from('resumes')
+        .select('*').eq('job_seeker_id', js.id).eq('is_current', true).maybeSingle();
+      renderResume(resume);
+      await loadMatches(js.id);
+    }
+  }
+
+  function fillProfile(js) {
+    $('first_name').value = js.first_name || '';
+    $('last_name').value  = js.last_name  || '';
+    $('phone').value      = js.phone      || '';
+    $('headline').value   = js.headline   || '';
+    $('city').value       = js.location_city  || '';
+    $('state').value      = js.location_state || '';
+    $('pay_min').value    = js.desired_pay_min || '';
+    $('pay_type').value   = js.desired_pay_type || '';
+    $('career_stage').value = js.career_stage || '';
+    $('open_remote').checked      = !!js.open_to_remote;
+    $('open_recruiters').checked  = !!js.open_to_recruiters;
+    $('newsletter').checked       = js.newsletter_opt_in !== false;
+  }
+
+  $('save-profile').onclick = async () => {
+    const { data: { user } } = await db.auth.getUser();
+    if (!user) return;
+    const patch = {
+      first_name: $('first_name').value || null,
+      last_name:  $('last_name').value || null,
+      phone: $('phone').value || null,
+      headline: $('headline').value || null,
+      location_city:  $('city').value || null,
+      location_state: $('state').value || null,
+      desired_pay_min:  $('pay_min').value ? Number($('pay_min').value) : null,
+      desired_pay_type: $('pay_type').value || null,
+      career_stage: $('career_stage').value || null,
+      open_to_remote: $('open_remote').checked,
+      open_to_recruiters: $('open_recruiters').checked,
+      newsletter_opt_in: $('newsletter').checked,
+    };
+    const { error } = await db.from('job_seekers').update(patch).eq('auth_user_id', user.id);
+    $('save-msg').textContent = error ? ('Error: ' + error.message) : 'Saved.';
+    setTimeout(() => { $('save-msg').textContent = ''; }, 2500);
+  };
+
+  function renderResume(r) {
+    if (!r) { $('resume-status').textContent = 'No resume yet. Upload, paste, or build one.'; return; }
+    const when = new Date(r.created_at).toLocaleDateString();
+    $('resume-status').innerHTML = `<b>Current resume</b> · source: ${r.source} · status: ${r.status} · updated ${when}`;
+    if (r.status !== 'parsed' || !r.review_json) return;
+    const rev = r.review_json, p = r.parsed_json || {};
+    show('review');
+    $('strengths').innerHTML = (rev.strengths||[]).map(x=>`<li>${esc(x)}</li>`).join('');
+    $('gaps').innerHTML = (rev.gaps||[]).map(x=>`<li>${esc(x)}</li>`).join('');
+    $('rewrites').innerHTML = (rev.rewrites||[]).map(x=>`
+      <div style="margin-bottom:.75rem;padding:.6rem .8rem;background:var(--cream);border-radius:8px;">
+        <div style="font-size:.82rem;color:var(--terra);">Before</div>
+        <div>${esc(x.original||'')}</div>
+        <div style="font-size:.82rem;color:var(--green);margin-top:.3rem;">After</div>
+        <div>${esc(x.improved||'')}</div>
+        <div class="muted" style="margin-top:.3rem;">${esc(x.why||'')}</div>
+      </div>`).join('');
+    $('market').textContent = rev.market_notes || '';
+    const have = (p.skills_have||[]).map(s=>`<span class="chip have">${esc(s)}</span>`).join('');
+    const want = (p.skills_want||[]).map(s=>`<span class="chip want">+ ${esc(s)}</span>`).join('');
+    $('skills').innerHTML = have + (want ? '<div style="margin-top:.5rem;font-size:.82rem;color:var(--slate);">Recommended to add:</div>' + want : '');
+  }
+
+  async function loadMatches(seekerId) {
+    const { data: ms } = await db.from('match_scores')
+      .select('*').eq('job_seeker_id', seekerId).eq('match_type','job')
+      .order('score', { ascending:false }).limit(10);
+    if (!ms?.length) { $('matches').textContent = 'No matches yet. Click "Find new matches" after your resume is reviewed.'; return; }
+    const ids = ms.map(m=>m.match_target_id);
+    const { data: jobs } = await db.from('jobs').select('id,title,location_city,location_state,is_remote,pay_min,pay_max,pay_type,employers(name)').in('id', ids);
+    const byId = Object.fromEntries((jobs||[]).map(j=>[j.id,j]));
+    $('matches').innerHTML = ms.map(m=>{
+      const j = byId[m.match_target_id]; if(!j) return '';
+      const loc = j.is_remote ? 'Remote' : [j.location_city,j.location_state].filter(Boolean).join(', ');
+      const pay = j.pay_min ? `$${j.pay_min}${j.pay_max?`–$${j.pay_max}`:''} ${j.pay_type==='hourly'?'/hr':'/yr'}` : '';
+      return `<div class="match">
+        <span class="score">${m.score||Math.round((m.similarity||0)*100)}</span>
+        <div class="t">${esc(j.title)}</div>
+        <div class="m">${esc(j.employers?.name||'')} · ${esc(loc)} ${pay?'· '+esc(pay):''}</div>
+        <div class="m">${esc(m.rationale||'')}</div>
+        <div class="s">${(m.match_reasons||[]).map(r=>esc(r)).join(' · ')}</div>
+      </div>`;
+    }).join('');
+  }
+
+  $('rescore').onclick = async () => {
+    const btn = $('rescore'); btn.disabled = true; btn.textContent = 'Scoring…';
+    const { data: { session } } = await db.auth.getSession();
+    const r = await fetch(`${SUPABASE_URL}/functions/v1/match-jobs`, {
+      method: 'POST',
+      headers: { 'Content-Type':'application/json', 'Authorization': `Bearer ${session.access_token}` },
+      body: '{}',
+    });
+    const out = await r.json().catch(()=>({}));
+    btn.disabled = false; btn.textContent = 'Find new matches';
+    if (!r.ok) { alert('Error: ' + (out.error||r.status)); return; }
+    const { data: { user } } = await db.auth.getUser();
+    const { data: js } = await db.from('job_seekers').select('id').eq('auth_user_id', user.id).single();
+    await loadMatches(js.id);
+  };
+
+  function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c]));}
+
+  boot();
+</script>
+</body>
+</html>
