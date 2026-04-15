@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Resume Builder & Reviewer — Workforce for Humans</title>
+<meta name="description" content="Paste, upload, or build your resume. Get an AI review with concrete rewrites and skill gap analysis."/>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,300&display=swap" rel="stylesheet"/>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --navy:#1a2340;--amber:#f5a623;--amber-dk:#c47d0e;
+  --cream:#faf7f0;--stone:#ede8df;--terra:#c85f3e;
+  --slate:#4a5568;--mist:#8ba8b5;--green:#2d7a3a;
+  --font-d:'Playfair Display',Georgia,serif;
+  --font-b:'DM Sans',sans-serif;
+}
+body{font-family:var(--font-b);background:var(--cream);color:var(--navy);line-height:1.6;}
+nav{background:var(--navy);padding:1rem 5vw;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;}
+.nav-logo{font-family:var(--font-d);color:#fff;text-decoration:none;font-size:1.2rem;}
+.nav-logo span{color:var(--amber);}
+.nav-links{display:flex;gap:1.5rem;list-style:none;}
+.nav-links a{color:rgba(255,255,255,0.65);text-decoration:none;font-size:0.88rem;font-weight:500;}
+.nav-links a:hover,.nav-links a.active{color:var(--amber);}
+main{max-width:860px;margin:0 auto;padding:2rem 5vw;}
+h1{font-family:var(--font-d);font-size:clamp(1.8rem,4vw,2.4rem);margin-bottom:.25rem;}
+.sub{color:var(--slate);margin-bottom:1.5rem;}
+.card{background:#fff;border:1px solid var(--stone);border-radius:14px;padding:1.5rem 1.75rem;margin-bottom:1.25rem;}
+.tabs{display:flex;gap:.4rem;margin-bottom:1rem;flex-wrap:wrap;}
+.tab{padding:.55rem 1rem;border-radius:8px;border:1px solid var(--stone);background:#fff;color:var(--navy);font-family:var(--font-b);font-size:.88rem;cursor:pointer;}
+.tab.on{background:var(--navy);color:#fff;border-color:var(--navy);}
+textarea{width:100%;min-height:260px;padding:.9rem 1rem;border:1px solid var(--stone);border-radius:10px;font-family:var(--font-b);font-size:.92rem;resize:vertical;}
+input[type=text],input[type=file],input[type=email]{width:100%;padding:.7rem .9rem;border:1px solid var(--stone);border-radius:8px;font-family:var(--font-b);font-size:.92rem;background:#fff;}
+label{display:block;font-size:.82rem;color:var(--slate);margin-bottom:.3rem;font-weight:500;}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:.75rem;}
+@media (max-width:640px){.row{grid-template-columns:1fr;}}
+button.primary{background:var(--amber);color:var(--navy);border:none;border-radius:8px;padding:.7rem 1.5rem;font-weight:600;cursor:pointer;}
+button.primary:disabled{opacity:.6;cursor:not-allowed;}
+button.ghost{background:transparent;color:var(--navy);border:1px solid var(--stone);border-radius:8px;padding:.55rem 1rem;cursor:pointer;}
+button.add{background:transparent;color:var(--terra);border:1px dashed var(--stone);border-radius:8px;padding:.5rem 1rem;font-size:.85rem;cursor:pointer;margin-top:.5rem;}
+.status{padding:.6rem .9rem;border-radius:8px;font-size:.88rem;margin-top:1rem;}
+.status.info{background:rgba(139,168,181,.12);color:var(--navy);}
+.status.err{background:rgba(200,95,62,.1);color:var(--terra);}
+.status.ok{background:rgba(45,122,58,.1);color:var(--green);}
+.hidden{display:none;}
+.job-block{border:1px solid var(--stone);border-radius:10px;padding:1rem;margin-bottom:.75rem;}
+.job-block .rm{float:right;color:var(--terra);background:transparent;border:none;cursor:pointer;font-size:.85rem;}
+.muted{color:var(--slate);font-size:.88rem;}
+footer{text-align:center;padding:2rem;color:var(--slate);font-size:.82rem;}
+</style>
+</head>
+<body>
+
+<nav>
+  <a href="/" class="nav-logo">Workforce<span>for</span>Humans</a>
+  <ul class="nav-links">
+    <li><a href="/jobs.html">Jobs</a></li>
+    <li><a href="/learn.html">Learn</a></li>
+    <li><a href="/feed.html">Feed</a></li>
+    <li><a href="/member.html" class="active">My Workforce</a></li>
+  </ul>
+</nav>
+
+<main>
+  <h1>Resume builder & AI review</h1>
+  <p class="sub">Paste your resume, upload a PDF/DOCX, or build from scratch. Claude will extract your skills, flag gaps, and rewrite weak bullets.</p>
+
+  <div id="signed-out" class="card hidden">
+    <p>Please <a href="/member.html">sign in</a> first to save your resume.</p>
+  </div>
+
+  <div id="main-card" class="card hidden">
+    <div class="tabs">
+      <button class="tab on" data-tab="paste">Paste text</button>
+      <button class="tab" data-tab="upload">Upload PDF/DOCX</button>
+      <button class="tab" data-tab="build">Build from scratch</button>
+    </div>
+
+    <div id="tab-paste">
+      <label>Paste your resume text</label>
+      <textarea id="paste-text" placeholder="Paste your current resume here — plain text is fine."></textarea>
+      <div style="margin-top:1rem;"><button class="primary" id="submit-paste">Review my resume</button></div>
+    </div>
+
+    <div id="tab-upload" class="hidden">
+      <label>Upload PDF or DOCX (max 4MB)</label>
+      <input type="file" id="upload-file" accept=".pdf,.docx"/>
+      <div style="margin-top:1rem;"><button class="primary" id="submit-upload">Upload & review</button></div>
+    </div>
+
+    <div id="tab-build" class="hidden">
+      <div class="row">
+        <div><label>Full name</label><input type="text" id="b-name"/></div>
+        <div><label>Headline / target role</label><input type="text" id="b-headline" placeholder="e.g. Healthcare coordinator"/></div>
+      </div>
+      <div class="row">
+        <div><label>Email</label><input type="email" id="b-email"/></div>
+        <div><label>Phone</label><input type="text" id="b-phone"/></div>
+      </div>
+      <div class="row">
+        <div><label>City</label><input type="text" id="b-city"/></div>
+        <div><label>State</label><input type="text" id="b-state" maxlength="2"/></div>
+      </div>
+      <label>Professional summary (2–3 sentences)</label>
+      <textarea id="b-summary" style="min-height:90px;"></textarea>
+
+      <h3 style="font-size:.82rem;font-weight:600;text-transform:uppercase;letter-spacing:.1em;color:var(--terra);margin:1.2rem 0 .5rem;">Experience</h3>
+      <div id="b-jobs"></div>
+      <button class="add" id="add-job">+ Add a job</button>
+
+      <label style="margin-top:1rem;">Education (one per line)</label>
+      <textarea id="b-edu" style="min-height:70px;" placeholder="High school diploma — Lincoln HS, 2012"></textarea>
+
+      <label style="margin-top:1rem;">Skills (comma-separated)</label>
+      <input type="text" id="b-skills" placeholder="customer service, scheduling, Excel"/>
+
+      <div style="margin-top:1rem;"><button class="primary" id="submit-build">Build & review</button></div>
+    </div>
+
+    <div id="status" class="status info hidden"></div>
+  </div>
+
+  <div id="review-out" class="card hidden">
+    <h2 style="font-family:var(--font-d);font-size:1.3rem;margin-bottom:.5rem;">Review</h2>
+    <p class="muted">You can see the full review and save further changes on <a href="/member.html">your dashboard</a>.</p>
+    <div id="review-body" style="margin-top:1rem;"></div>
+  </div>
+</main>
+
+<footer>© Workforce for Humans</footer>
+
+<script>
+  const { createClient } = supabase;
+  const SUPABASE_URL  = 'https://dbomfjqijyrkidptrrfi.supabase.co';
+  const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRib21manFpanlya2lkcHRycmZpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU0MDE2OTMsImV4cCI6MjA5MDk3NzY5M30.Vvv94m3O0DVZsNU5gjoexksmkoYG6r8Kq5dXKAE1gZc';
+  const db = createClient(SUPABASE_URL, SUPABASE_ANON);
+  const $ = id => document.getElementById(id);
+
+  let seekerId = null;
+  let accessToken = null;
+
+  async function boot() {
+    const { data: { session } } = await db.auth.getSession();
+    if (!session) { $('signed-out').classList.remove('hidden'); return; }
+    accessToken = session.access_token;
+    $('main-card').classList.remove('hidden');
+    const { data: js } = await db.from('job_seekers').select('id').eq('auth_user_id', session.user.id).maybeSingle();
+    if (js) seekerId = js.id;
+    addJobBlock();
+  }
+
+  document.querySelectorAll('.tab').forEach(b => b.onclick = () => {
+    document.querySelectorAll('.tab').forEach(x => x.classList.remove('on'));
+    b.classList.add('on');
+    ['paste','upload','build'].forEach(t => $('tab-'+t).classList.add('hidden'));
+    $('tab-'+b.dataset.tab).classList.remove('hidden');
+  });
+
+  function setStatus(msg, kind='info') {
+    const el = $('status'); el.className = 'status ' + kind; el.textContent = msg; el.classList.remove('hidden');
+  }
+
+  async function createResume(payload) {
+    const ins = { job_seeker_id: seekerId, ...payload, is_current: true };
+    const { data, error } = await db.from('resumes').insert(ins).select().single();
+    if (error) throw error;
+    return data;
+  }
+
+  async function callParse(resumeId) {
+    const r = await fetch(`${SUPABASE_URL}/functions/v1/parse-resume`, {
+      method: 'POST',
+      headers: { 'Content-Type':'application/json', 'Authorization': `Bearer ${accessToken}` },
+      body: JSON.stringify({ resume_id: resumeId }),
+    });
+    const out = await r.json().catch(()=>({}));
+    if (!r.ok) throw new Error(out.error || ('status '+r.status));
+    return out;
+  }
+
+  function renderReview(out) {
+    $('review-out').classList.remove('hidden');
+    const rev = out.review || {};
+    const p = out.parsed || {};
+    $('review-body').innerHTML = `
+      <div style="margin-bottom:1rem;"><b>Strengths</b><ul style="margin:.3rem 0 0 1.2rem;">${(rev.strengths||[]).map(x=>`<li>${esc(x)}</li>`).join('')}</ul></div>
+      <div style="margin-bottom:1rem;"><b>Gaps</b><ul style="margin:.3rem 0 0 1.2rem;">${(rev.gaps||[]).map(x=>`<li>${esc(x)}</li>`).join('')}</ul></div>
+      <div style="margin-bottom:1rem;"><b>Market notes</b><p class="muted" style="margin-top:.3rem;">${esc(rev.market_notes||'')}</p></div>
+      <div><b>Detected skills:</b> ${(p.skills_have||[]).map(s=>`<span style="display:inline-block;background:rgba(45,122,58,.08);border:1px solid rgba(45,122,58,.25);color:var(--green);padding:3px 10px;border-radius:20px;font-size:.78rem;margin:2px 4px 2px 0;">${esc(s)}</span>`).join('')}</div>
+      <div style="margin-top:1rem;"><a href="/member.html" class="ghost" style="display:inline-block;padding:.6rem 1.2rem;border:1px solid var(--stone);border-radius:8px;text-decoration:none;color:var(--navy);">Go to dashboard →</a></div>
+    `;
+  }
+
+  async function runFlow(resumePayload, btn) {
+    if (!seekerId) { setStatus('No profile — refresh or sign in again.', 'err'); return; }
+    btn.disabled = true;
+    try {
+      setStatus('Saving resume…');
+      const resume = await createResume(resumePayload);
+      setStatus('Asking Claude to review — this takes ~10 seconds…');
+      const out = await callParse(resume.id);
+      setStatus('Done. Review below and on your dashboard.', 'ok');
+      renderReview(out);
+    } catch (e) {
+      setStatus('Error: ' + (e.message || e), 'err');
+    } finally {
+      btn.disabled = false;
+    }
+  }
+
+  $('submit-paste').onclick = () => {
+    const text = $('paste-text').value.trim();
+    if (text.length < 40) return setStatus('Please paste at least a paragraph.', 'err');
+    runFlow({ source:'paste', raw_text:text }, $('submit-paste'));
+  };
+
+  $('submit-upload').onclick = async () => {
+    const f = $('upload-file').files[0];
+    if (!f) return setStatus('Choose a file.', 'err');
+    if (f.size > 4*1024*1024) return setStatus('File too big (max 4MB).', 'err');
+    const ext = f.name.toLowerCase().endsWith('.docx') ? 'docx' : 'pdf';
+    const path = `${seekerId}/${crypto.randomUUID()}.${ext}`;
+    setStatus('Uploading file…');
+    const { error: upErr } = await db.storage.from('resumes').upload(path, f, { contentType: f.type });
+    if (upErr) return setStatus('Upload failed: ' + upErr.message, 'err');
+    runFlow({ source:'upload', file_path: path }, $('submit-upload'));
+  };
+
+  $('submit-build').onclick = () => {
+    const jobs = [...document.querySelectorAll('.job-block')].map(block => {
+      const q = s => block.querySelector(s).value.trim();
+      return { title:q('.j-title'), company:q('.j-company'), dates:q('.j-dates'), bullets:q('.j-bullets') };
+    }).filter(j => j.title || j.company);
+    const parts = [];
+    if ($('b-name').value) parts.push($('b-name').value);
+    const contact = [$('b-email').value, $('b-phone').value, [$('b-city').value, $('b-state').value].filter(Boolean).join(', ')].filter(Boolean).join(' · ');
+    if (contact) parts.push(contact);
+    if ($('b-headline').value) parts.push('\n' + $('b-headline').value);
+    if ($('b-summary').value) parts.push('\nSummary\n' + $('b-summary').value);
+    if (jobs.length) {
+      parts.push('\nExperience');
+      for (const j of jobs) {
+        parts.push(`${j.title} — ${j.company} (${j.dates})`);
+        if (j.bullets) parts.push(j.bullets);
+      }
+    }
+    if ($('b-edu').value) parts.push('\nEducation\n' + $('b-edu').value);
+    if ($('b-skills').value) parts.push('\nSkills\n' + $('b-skills').value);
+    const raw = parts.join('\n');
+    if (raw.length < 40) return setStatus('Fill in at least a few fields.', 'err');
+    runFlow({ source:'builder', raw_text: raw }, $('submit-build'));
+  };
+
+  $('add-job').onclick = () => addJobBlock();
+  function addJobBlock() {
+    const div = document.createElement('div');
+    div.className = 'job-block';
+    div.innerHTML = `
+      <button class="rm" type="button">Remove</button>
+      <div class="row"><div><label>Title</label><input type="text" class="j-title"/></div><div><label>Company</label><input type="text" class="j-company"/></div></div>
+      <div><label>Dates (e.g. 2022–present)</label><input type="text" class="j-dates"/></div>
+      <label style="margin-top:.5rem;">Bullets (one per line)</label>
+      <textarea class="j-bullets" style="min-height:90px;"></textarea>`;
+    div.querySelector('.rm').onclick = () => div.remove();
+    $('b-jobs').appendChild(div);
+  }
+
+  function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c]));}
+
+  boot();
+</script>
+</body>
+</html>

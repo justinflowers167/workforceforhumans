@@ -189,16 +189,49 @@ nav{background:var(--navy);padding:1rem 5vw;display:flex;align-items:center;just
 
 <!-- NAV -->
 <nav>
-  <a href="index.html" class="nav-logo">Workforce<span>.</span>for<span>Humans</span></a>
+  <a href="index.html" class="nav-logo">Workforce<span>for</span>Humans</a>
   <ul class="nav-links">
     <li><a href="jobs.html" class="active">Find Jobs</a></li>
     <li><a href="learn.html">Level Up</a></li>
     <li><a href="feed.html">Intelligence</a></li>
     <li><a href="kb.html">Resources</a></li>
+    <li><a href="resume.html">Resume AI</a></li>
     <li><a href="index.html#employers">For Employers</a></li>
-    <li><a href="mailto:employers@workforceforhumans.com" class="nav-cta">Post a Job</a></li>
+    <li><a href="member.html" class="nav-cta">My Workforce</a></li>
   </ul>
 </nav>
+
+<!-- MATCHES BANNER (only when signed in, populated by script) -->
+<div id="matches-banner" style="display:none;max-width:1280px;margin:1rem auto 0;padding:1rem 5vw 0;">
+  <div style="background:#fff;border:1px solid var(--stone);border-left:4px solid var(--amber);border-radius:12px;padding:1rem 1.25rem;display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap;">
+    <div>
+      <div style="font-family:var(--font-d);font-size:1.1rem;color:var(--navy);">Matches tailored to you</div>
+      <div id="matches-banner-sub" style="color:var(--slate);font-size:0.88rem;">Based on your resume and preferences.</div>
+    </div>
+    <a href="member.html" style="background:var(--navy);color:#fff;text-decoration:none;border-radius:8px;padding:0.55rem 1.1rem;font-size:0.88rem;font-weight:600;">View dashboard →</a>
+  </div>
+</div>
+
+<script>
+  (async () => {
+    try {
+      const { createClient } = window.supabase;
+      const URL_ = 'https://dbomfjqijyrkidptrrfi.supabase.co';
+      const ANON_ = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRib21manFpanlya2lkcHRycmZpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU0MDE2OTMsImV4cCI6MjA5MDk3NzY5M30.Vvv94m3O0DVZsNU5gjoexksmkoYG6r8Kq5dXKAE1gZc';
+      const client = createClient(URL_, ANON_);
+      const { data: { session } } = await client.auth.getSession();
+      if (!session) return;
+      const { data: js } = await client.from('job_seekers').select('id').eq('auth_user_id', session.user.id).maybeSingle();
+      if (!js) return;
+      const { count } = await client.from('match_scores').select('*', { count: 'exact', head: true })
+        .eq('job_seeker_id', js.id).eq('match_type','job');
+      const banner = document.getElementById('matches-banner');
+      const sub = document.getElementById('matches-banner-sub');
+      banner.style.display = 'block';
+      sub.textContent = count ? `${count} role${count===1?'':'s'} scored for you — see them on your dashboard.` : 'Upload or paste your resume to see personalized matches.';
+    } catch {}
+  })();
+</script>
 
 <!-- STATS BAR -->
 <div class="stats-bar" id="stats-bar">
@@ -358,7 +391,7 @@ nav{background:var(--navy);padding:1rem 5vw;display:flex;align-items:center;just
 <!-- FOOTER -->
 <div style="background:var(--navy);padding:2.5rem 5vw;margin-top:3rem;text-align:center;">
   <p style="color:rgba(255,255,255,0.45);font-size:0.88rem;margin-bottom:0.75rem;">
-    <a href="index.html" style="color:var(--amber);text-decoration:none;font-weight:600;">Workforce.for.Humans</a>
+    <a href="index.html" style="color:var(--amber);text-decoration:none;font-weight:600;">WorkforceforHumans</a>
     &nbsp;·&nbsp;
     <a href="learn.html" style="color:rgba(255,255,255,0.6);text-decoration:none;">Level Up</a>
     &nbsp;·&nbsp;
