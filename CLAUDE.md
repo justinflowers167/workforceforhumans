@@ -63,6 +63,10 @@ const admin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 - **`send-match-digest`** is auth'd by the `x-digest-secret` header (not user auth). It picks up `match_scores` rows with `emailed_at IS NULL` and `score >= 60`, groups by seeker, sends a single email per seeker via Resend, then stamps `emailed_at`. Respects `job_seekers.newsletter_opt_in = false`.
 - **`create-checkout`** maps `plan` in `{basic, featured, employer}` to Stripe Price IDs via env vars. `employer` is a recurring subscription; the other two are one-time payments. Success/cancel URLs are derived from a `site_url` field sent by the caller.
 
+### Known gap: Stripe fulfillment
+
+`create-checkout` ends the flow in this repo — there is **no Stripe webhook handler** checked in (no `stripe-webhook` Edge Function, no `checkout.session.completed` consumer). That means nothing in the repo turns a paid checkout into an `employers` row, a listed `jobs` row, or any kind of entitlement. Fulfillment must be happening outside this repo (manually, via a Supabase function not in source control, or by a Zap / dashboard trigger), or it hasn't been built yet. Before touching the checkout flow, confirm where fulfillment actually happens — don't assume the browser → `create-checkout` path is the whole story.
+
 ### Data model conventions (from call sites)
 
 The DB schema isn't checked in, but call sites reveal the expected shape:
