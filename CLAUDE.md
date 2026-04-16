@@ -59,9 +59,13 @@ const admin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
 - **`parse-resume`** and **`match-jobs`** use the Anthropic SDK with model **`claude-sonnet-4-6`**. Both parse model output by slicing from the first `{` to the last `}` — the system prompts instruct JSON-only output but the slice is defensive. Keep this pattern if you add another Claude call.
 - **`parse-resume`** downloads from the `resumes` storage bucket and decodes PDF via `pdf-parse` and DOCX via `mammoth` (both from esm.sh). After parsing it updates `resumes`, `job_seekers`, and syncs `skills` + `job_seeker_skills` — upserting by lowercased name.
-- **`match-jobs`** scores up to 50 active jobs for the authenticated seeker, keeps the top 10 with score ≥ 40, deletes the seeker's non-emailed `match_scores` rows for `match_type = 'job'`, and inserts the fresh top-N.
+- **`match-jobs`** scores up to 50 active jobs for the authenticated seeker. The system prompt asks Claude to filter to score ≥ 40 and sort desc; the code then `.slice(0, 10)` on whatever the model returns (no code-side score filter). Before insert it deletes the seeker's non-emailed `match_scores` rows for `match_type = 'job'`, then inserts the fresh top-N.
 - **`send-match-digest`** is auth'd by the `x-digest-secret` header (not user auth). It picks up `match_scores` rows with `emailed_at IS NULL` and `score >= 60`, groups by seeker, sends a single email per seeker via Resend, then stamps `emailed_at`. Respects `job_seekers.newsletter_opt_in = false`.
 - **`create-checkout`** maps `plan` in `{basic, featured, employer}` to Stripe Price IDs via env vars. `employer` is a recurring subscription; the other two are one-time payments. Success/cancel URLs are derived from a `site_url` field sent by the caller.
+
+### Known gap: Stripe fulfillment
+
+`create-checkout` ends the flow in this repo — there is **no Stripe webhook handler** checked in (no `stripe-webhook` Edge Function, no `checkout.session.completed` consumer). That means nothing in the repo turns a paid checkout into an `employers` row, a listed `jobs` row, or any kind of entitlement. Fulfillment must be happening outside this repo (manually, via a Supabase function not in source control, or by a Zap / dashboard trigger), or it hasn't been built yet. Before touching the checkout flow, confirm where fulfillment actually happens — don't assume the browser → `create-checkout` path is the whole story.
 
 ### Data model conventions (from call sites)
 
