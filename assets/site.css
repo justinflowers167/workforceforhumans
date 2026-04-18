@@ -223,3 +223,14 @@ body.nav-open .nav-scrim{opacity:1;pointer-events:auto;}
   .nav-burger{display:flex;}
   .footer-grid{grid-template-columns:1fr;gap:2rem;}
 }
+
+/* ─── MOBILE TAP TARGETS (≥44px per WCAG 2.5.5) ─── */
+@media(max-width:640px){
+  .btn-ghost,.btn-amber,
+  button,.tab,.chip,
+  .quick-tag,.meta-chip,
+  .apply-btn,.page-btn{min-height:44px;}
+  .filter-option{padding:0.6rem 0;}
+  .filter-option input[type="checkbox"]{width:20px;height:20px;}
+  .toggle input[type="checkbox"]{width:22px;height:22px;}
+}
