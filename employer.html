@@ -411,7 +411,7 @@ window.editListing = async function (id) {
 };
 
 window.setStatus = async function (id, status) {
-  const { error } = await db.from('jobs').update({ status }).eq('id', id);
+  const { error } = await db.rpc('update_job_listing', { p_job_id: id, p_payload: { status } });
   if (error) { toast(error.message, 'error'); return; }
   toast('Updated', 'ok');
   await loadListings();
@@ -426,11 +426,11 @@ $('save-listing').onclick = async () => {
   if (!description) return toast('Description is required', 'error');
 
   const splitLines = (s) => s.split('\n').map(t => t.trim()).filter(Boolean);
-  const slug = (title + '-' + Math.random().toString(36).slice(2, 7))
-    .toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
 
+  // Server-side RPCs (create_job_listing / update_job_listing) own slug
+  // generation, is_featured assignment, and posting consumption — the client
+  // cannot self-promote to featured or post for free.
   const payload = {
-    employer_id: me.id,
     title,
     description,
     responsibilities: splitLines($('f-resp').value),
@@ -448,30 +448,22 @@ $('save-listing').onclick = async () => {
     pay_max: $('f-pay-max').value ? Number($('f-pay-max').value) : null,
     apply_url: $('f-apply-url').value.trim() || null,
     apply_email: $('f-apply-email').value.trim() || null,
-    status: 'active',
   };
 
   const editingJobId = $('f-job-id').value;
   const fromPostingId = $('f-posting-id').value;
 
-  let result;
+  let error;
   if (editingJobId) {
-    result = await db.from('jobs').update(payload).eq('id', editingJobId).select('id').single();
+    ({ error } = await db.rpc('update_job_listing', { p_job_id: editingJobId, p_payload: payload }));
   } else {
-    payload.slug = slug;
-    if (fromPostingId) {
-      const posting = pendingPostings.find(p => p.id === fromPostingId);
-      if (posting?.plan === 'featured') payload.is_featured = true;
-    }
-    result = await db.from('jobs').insert(payload).select('id').single();
+    ({ error } = await db.rpc('create_job_listing', {
+      p_payload: payload,
+      p_posting_id: fromPostingId || null,
+    }));
   }
 
-  if (result.error) return toast(result.error.message, 'error');
-
-  if (fromPostingId && !editingJobId) {
-    const { error: linkErr } = await db.from('job_postings').update({ job_id: result.data.id }).eq('id', fromPostingId);
-    if (linkErr) toast('Saved listing, but could not link posting: ' + linkErr.message, 'error');
-  }
+  if (error) return toast(error.message, 'error');
 
   toast(editingJobId ? 'Listing updated' : 'Listing posted', 'ok');
   closeModal();
