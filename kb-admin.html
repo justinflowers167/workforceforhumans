@@ -178,10 +178,51 @@
 let categories = [];
 
 document.addEventListener('DOMContentLoaded', async () => {
+  const { data: { session } } = await db.auth.getSession();
+  if (!session) { renderSignIn(); return; }
+
+  const email = session.user.email || '';
+  const { data: allowed } = await db.from('kb_editor_emails')
+    .select('email').ilike('email', email).maybeSingle();
+  if (!allowed) { renderUnauthorized(email); return; }
+
   await loadCats();
   await loadStats();
   await loadArticles();
 });
+
+db.auth.onAuthStateChange(() => location.reload());
+
+function renderSignIn() {
+  document.querySelector('.admin-layout').innerHTML =
+    '<div class="card" style="max-width:440px;margin:3rem auto;background:#fff;border:1px solid var(--stone);border-radius:14px;padding:2rem;">' +
+      '<h1 style="font-family:var(--font-d);font-size:1.4rem;margin-bottom:.4rem;">Sign in to KB Admin</h1>' +
+      '<p style="color:var(--slate);font-size:.92rem;margin-bottom:1.25rem;">Enter your editor email and we\'ll send you a magic link.</p>' +
+      '<input type="email" id="kb-email" placeholder="you@email.com" style="width:100%;padding:.7rem .9rem;border:1px solid var(--stone);border-radius:8px;font-size:.92rem;outline:none;"/>' +
+      '<div style="margin-top:1rem;"><button class="btn btn-primary" id="kb-send">Email me a link</button></div>' +
+      '<p id="kb-msg" style="color:var(--slate);font-size:.86rem;margin-top:.75rem;min-height:1.2em;"></p>' +
+    '</div>';
+  document.getElementById('kb-send').onclick = async () => {
+    const email = document.getElementById('kb-email').value.trim();
+    if (!email) return;
+    document.getElementById('kb-msg').textContent = 'Sending…';
+    const { error } = await db.auth.signInWithOtp({
+      email, options: { emailRedirectTo: window.location.origin + '/kb-admin.html' }
+    });
+    document.getElementById('kb-msg').textContent = error ? ('Error: ' + error.message) : 'Check your inbox for the sign-in link.';
+  };
+}
+
+function renderUnauthorized(email) {
+  document.querySelector('.admin-layout').innerHTML =
+    '<div class="card" style="max-width:520px;margin:3rem auto;background:#fff;border:1px solid var(--stone);border-radius:14px;padding:2rem;">' +
+      '<h1 style="font-family:var(--font-d);font-size:1.4rem;margin-bottom:.4rem;">Not authorized</h1>' +
+      '<p style="color:var(--slate);font-size:.92rem;margin-bottom:1rem;">Signed in as <strong>' + email.replace(/[<>&"]/g, '') + '</strong>, but this account is not on the KB editor list. ' +
+        'If you should have access, contact <a href="mailto:hello@workforceforhumans.com" style="color:var(--amber-dk);">hello@workforceforhumans.com</a>.</p>' +
+      '<button class="btn btn-secondary" id="kb-signout">Sign out</button>' +
+    '</div>';
+  document.getElementById('kb-signout').onclick = async () => { await db.auth.signOut(); location.reload(); };
+}
 
 // ─── LOAD CATEGORIES ─────────────────────────────────
 async function loadCats() {

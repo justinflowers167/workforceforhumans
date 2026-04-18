@@ -1,0 +1,498 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Employer Dashboard — Workforce for Humans</title>
+<meta name="description" content="Manage your job listings and subscription on Workforce for Humans."/>
+<link rel="stylesheet" href="/assets/site.css"/>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+main{max-width:1040px;margin:0 auto;padding:2rem 5vw;}
+h1{font-family:var(--font-d);font-size:clamp(1.8rem,4vw,2.6rem);margin-bottom:0.25rem;}
+.sub{color:var(--slate);margin-bottom:2rem;}
+.card{background:#fff;border:1px solid var(--stone);border-radius:14px;padding:1.5rem 1.75rem;margin-bottom:1.25rem;}
+.card h2{font-family:var(--font-d);font-size:1.3rem;margin-bottom:0.75rem;}
+.card h3{font-size:0.82rem;font-weight:600;text-transform:uppercase;letter-spacing:0.1em;color:var(--terra);margin:1rem 0 0.5rem;}
+.card p{color:var(--slate);font-size:0.92rem;line-height:1.6;}
+input[type=email],input[type=text],input[type=tel],input[type=number],input[type=url],select,textarea{width:100%;padding:0.7rem 0.9rem;border:1px solid var(--stone);border-radius:8px;font-family:var(--font-b);font-size:0.92rem;background:#fff;color:var(--navy);outline:none;}
+input:focus,textarea:focus,select:focus{border-color:var(--amber);}
+textarea{min-height:96px;resize:vertical;line-height:1.6;}
+label{display:block;font-size:0.82rem;color:var(--slate);margin-bottom:0.3rem;font-weight:500;}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:0.75rem;}
+.row-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:1rem;margin-bottom:0.75rem;}
+@media (max-width:960px){.row,.row-3{grid-template-columns:1fr;}}
+button.primary{background:var(--amber);color:var(--navy);border:none;border-radius:8px;padding:0.7rem 1.5rem;font-family:var(--font-b);font-weight:600;font-size:0.92rem;cursor:pointer;}
+button.primary:hover{background:var(--amber-dk);}
+button.ghost{background:transparent;color:var(--navy);border:1px solid var(--stone);border-radius:8px;padding:0.55rem 1.1rem;font-family:var(--font-b);font-size:0.86rem;cursor:pointer;}
+button.ghost:hover{border-color:var(--amber);color:var(--amber-dk);}
+button.danger{background:transparent;color:var(--terra);border:1px solid rgba(200,95,62,0.3);border-radius:8px;padding:0.5rem 1rem;font-family:var(--font-b);font-size:0.84rem;cursor:pointer;}
+button.danger:hover{background:rgba(200,95,62,0.06);}
+.toggle{display:flex;align-items:center;gap:.6rem;cursor:pointer;font-size:0.9rem;color:var(--navy);}
+.toggle input{width:18px;height:18px;accent-color:var(--amber);}
+.status{padding:.7rem 1rem;border-radius:8px;font-size:.9rem;margin-bottom:1rem;}
+.status.info{background:rgba(139,168,181,0.12);color:var(--navy);}
+.status.warn{background:rgba(245,166,35,0.12);color:var(--amber-dk);}
+.status.error{background:rgba(200,95,62,0.1);color:var(--terra);}
+.status.ok{background:rgba(45,122,58,0.1);color:var(--green);}
+.hidden{display:none;}
+.muted{color:var(--slate);font-size:.88rem;}
+
+.sub-banner{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.75rem;background:linear-gradient(90deg,rgba(45,122,58,0.08),rgba(245,166,35,0.08));border:1px solid rgba(45,122,58,0.18);border-radius:12px;padding:0.85rem 1.1rem;margin-bottom:1.25rem;}
+.sub-banner.past_due{background:rgba(200,95,62,0.08);border-color:rgba(200,95,62,0.25);}
+.sub-banner.canceled{background:rgba(74,85,104,0.06);border-color:var(--stone);}
+.sub-pill{font-size:0.78rem;font-weight:600;text-transform:uppercase;letter-spacing:.06em;padding:3px 9px;border-radius:20px;background:var(--green);color:#fff;}
+.sub-pill.past_due{background:var(--terra);}
+.sub-pill.canceled{background:var(--slate);}
+.sub-pill.trialing{background:var(--amber);color:var(--navy);}
+
+.posting-row{display:flex;align-items:center;justify-content:space-between;gap:1rem;padding:0.85rem 1rem;border:1px dashed var(--amber);border-radius:10px;margin-bottom:.6rem;background:rgba(245,166,35,0.05);flex-wrap:wrap;}
+.posting-row .lbl{font-weight:600;color:var(--navy);}
+.posting-row .meta{font-size:.82rem;color:var(--slate);}
+
+.listings-table{width:100%;border-collapse:collapse;font-size:0.92rem;}
+.listings-table th{text-align:left;padding:.65rem 0.8rem;font-size:.74rem;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--terra);border-bottom:1px solid var(--stone);}
+.listings-table td{padding:.7rem 0.8rem;border-bottom:1px solid var(--stone);vertical-align:middle;}
+.listings-table tr:last-child td{border-bottom:none;}
+.status-pill{font-size:.72rem;font-weight:600;padding:2px 9px;border-radius:20px;text-transform:uppercase;letter-spacing:.05em;}
+.status-pill.active{background:rgba(45,122,58,0.1);color:var(--green);}
+.status-pill.draft{background:rgba(74,85,104,0.1);color:var(--slate);}
+.status-pill.paused{background:rgba(245,166,35,0.12);color:var(--amber-dk);}
+.status-pill.expired,.status-pill.filled{background:rgba(200,95,62,0.08);color:var(--terra);}
+@media(max-width:760px){.listings-table thead{display:none;}.listings-table,.listings-table tbody,.listings-table tr,.listings-table td{display:block;width:100%;}.listings-table td{border-bottom:none;padding:.25rem 0;}.listings-table tr{border-bottom:1px solid var(--stone);padding:.7rem 0;}}
+
+.modal-scrim{position:fixed;inset:0;background:rgba(26,35,64,.55);z-index:500;display:none;align-items:flex-start;justify-content:center;padding:2rem 1rem;overflow-y:auto;}
+.modal-scrim.open{display:flex;}
+.modal{background:#fff;border-radius:18px;width:100%;max-width:780px;margin:auto;overflow:hidden;}
+.modal-header{background:var(--navy);color:#fff;padding:1.1rem 1.5rem;display:flex;align-items:center;justify-content:space-between;}
+.modal-header h2{font-family:var(--font-d);font-size:1.15rem;}
+.modal-close{background:rgba(255,255,255,.15);border:none;color:#fff;width:30px;height:30px;border-radius:50%;font-size:1rem;cursor:pointer;}
+.modal-body{padding:1.5rem;max-height:70vh;overflow-y:auto;}
+.modal-footer{padding:1rem 1.5rem;background:var(--cream);border-top:1px solid var(--stone);display:flex;gap:.6rem;justify-content:flex-end;}
+
+.toast{position:fixed;bottom:1.5rem;right:1.5rem;background:var(--navy);color:#fff;padding:.8rem 1.3rem;border-radius:10px;font-size:.88rem;z-index:600;opacity:0;transform:translateY(8px);transition:all .25s;pointer-events:none;}
+.toast.show{opacity:1;transform:translateY(0);}
+.toast.ok{background:var(--green);} .toast.error{background:var(--terra);}
+</style>
+</head>
+<body data-nav="employer" data-surface="product">
+<div id="site-nav"></div>
+<script src="/assets/site.js"></script>
+<noscript><nav><div class="nav-inner"><a href="index.html" class="nav-logo">Workforce<span class="dot">for</span>Humans</a></div></nav></noscript>
+
+<main>
+  <!-- AUTH -->
+  <section id="auth-view" class="hidden">
+    <h1>Sign in</h1>
+    <p class="sub">Manage your listings and subscription. Use the same email you paid with.</p>
+    <div class="card" style="max-width:440px;">
+      <label for="email">Email address</label>
+      <input type="email" id="email" placeholder="you@company.com" autocomplete="email"/>
+      <div style="margin-top:1rem;"><button class="primary" id="send-link">Email me a magic link</button></div>
+      <p id="auth-msg" class="muted" style="margin-top:.75rem;"></p>
+    </div>
+  </section>
+
+  <!-- DASHBOARD -->
+  <section id="dash-view" class="hidden">
+    <h1 id="hi">Employer dashboard</h1>
+    <p class="sub" id="hi-sub">Your listings and subscription.</p>
+
+    <!-- No employer record found for this auth user -->
+    <div id="no-employer" class="card hidden">
+      <h2>No purchase on file</h2>
+      <p>We couldn't find a purchase tied to this email. If you've paid, sign in with the same email you used at checkout. Otherwise, <a href="index.html#employers">browse pricing</a> to get started.</p>
+      <div style="margin-top:1rem;"><button class="ghost" id="signout-empty">Sign out</button></div>
+    </div>
+
+    <div id="dash-body" class="hidden">
+      <!-- Subscription banner -->
+      <div id="sub-banner" class="hidden"></div>
+
+      <!-- Pending paid listings to fulfill -->
+      <div class="card" id="pending-card">
+        <h2>Listings ready to publish</h2>
+        <p class="muted" id="pending-empty">No paid listings waiting. New purchases will appear here.</p>
+        <div id="pending-list"></div>
+      </div>
+
+      <!-- New listing CTA (subscription only) -->
+      <div class="card hidden" id="new-cta-card">
+        <h2>Post a new listing</h2>
+        <p>Your subscription includes unlimited active listings. Add another whenever you're hiring.</p>
+        <div style="margin-top:.75rem;"><button class="primary" id="new-listing">+ New listing</button></div>
+      </div>
+
+      <!-- My listings -->
+      <div class="card">
+        <h2>My listings</h2>
+        <div id="listings-wrap"><p class="muted">Loading…</p></div>
+      </div>
+
+      <div style="margin-top:1.5rem;"><button class="ghost" id="signout">Sign out</button></div>
+    </div>
+  </section>
+</main>
+
+<!-- Listing modal -->
+<div class="modal-scrim" id="modal" onclick="if(event.target===this)closeModal()">
+  <div class="modal">
+    <div class="modal-header">
+      <h2 id="modal-title">New listing</h2>
+      <button class="modal-close" onclick="closeModal()" aria-label="Close">&times;</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="f-job-id"/>
+      <input type="hidden" id="f-posting-id"/>
+      <div class="row">
+        <div><label>Job title *</label><input type="text" id="f-title" placeholder="e.g. Warehouse Associate"/></div>
+        <div><label>Employment type</label>
+          <select id="f-employment">
+            <option value="full-time">Full-time</option>
+            <option value="part-time">Part-time</option>
+            <option value="contract">Contract</option>
+            <option value="apprenticeship">Apprenticeship</option>
+            <option value="temporary">Temporary</option>
+            <option value="internship">Internship</option>
+          </select>
+        </div>
+      </div>
+      <div style="margin-bottom:.75rem;"><label>Description *</label><textarea id="f-desc" placeholder="What this role does day-to-day, who it's for, what success looks like."></textarea></div>
+      <div class="row">
+        <div><label>Responsibilities (one per line)</label><textarea id="f-resp"></textarea></div>
+        <div><label>Requirements (one per line)</label><textarea id="f-req"></textarea></div>
+      </div>
+      <div style="margin-bottom:.75rem;"><label>Nice to have (one per line)</label><textarea id="f-nice"></textarea></div>
+
+      <h3 style="font-size:.78rem;font-weight:600;color:var(--terra);text-transform:uppercase;letter-spacing:.08em;margin:1rem 0 .5rem;">Location</h3>
+      <div class="row-3">
+        <div><label>City</label><input type="text" id="f-city"/></div>
+        <div><label>State</label><input type="text" id="f-state" maxlength="2" placeholder="CO"/></div>
+        <div><label>Experience level</label>
+          <select id="f-exp">
+            <option value="no-requirement">No requirement</option>
+            <option value="entry-level">Entry level</option>
+            <option value="early-career">Early career</option>
+            <option value="mid-career">Mid-career</option>
+            <option value="senior">Senior</option>
+          </select>
+        </div>
+      </div>
+      <div style="display:flex;gap:1.25rem;flex-wrap:wrap;margin-bottom:.75rem;">
+        <label class="toggle"><input type="checkbox" id="f-remote"/> Remote</label>
+        <label class="toggle"><input type="checkbox" id="f-hybrid"/> Hybrid</label>
+        <label class="toggle"><input type="checkbox" id="f-onsite" checked/> On-site</label>
+      </div>
+
+      <h3 style="font-size:.78rem;font-weight:600;color:var(--terra);text-transform:uppercase;letter-spacing:.08em;margin:1rem 0 .5rem;">Pay</h3>
+      <div class="row-3">
+        <div><label>Pay type</label>
+          <select id="f-pay-type"><option value="hourly">Hourly</option><option value="salary">Salary</option></select>
+        </div>
+        <div><label>Min</label><input type="number" id="f-pay-min" placeholder="e.g. 22"/></div>
+        <div><label>Max</label><input type="number" id="f-pay-max" placeholder="e.g. 28"/></div>
+      </div>
+
+      <h3 style="font-size:.78rem;font-weight:600;color:var(--terra);text-transform:uppercase;letter-spacing:.08em;margin:1rem 0 .5rem;">How to apply</h3>
+      <div class="row">
+        <div><label>Apply URL</label><input type="url" id="f-apply-url" placeholder="https://…"/></div>
+        <div><label>or apply email</label><input type="email" id="f-apply-email" placeholder="careers@…"/></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="ghost" onclick="closeModal()">Cancel</button>
+      <button class="primary" id="save-listing">Save listing</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<div id="site-footer"></div>
+
+<script>
+const { createClient } = supabase;
+const SUPABASE_URL  = 'https://dbomfjqijyrkidptrrfi.supabase.co';
+const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRib21manFpanlya2lkcHRycmZpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU0MDE2OTMsImV4cCI6MjA5MDk3NzY5M30.Vvv94m3O0DVZsNU5gjoexksmkoYG6r8Kq5dXKAE1gZc';
+const db = createClient(SUPABASE_URL, SUPABASE_ANON);
+
+const $ = (id) => document.getElementById(id);
+const show = (id) => $(id).classList.remove('hidden');
+const hide = (id) => $(id).classList.add('hidden');
+
+let me = null;            // employers row for the signed-in user
+let pendingPostings = []; // job_postings rows with status=paid, job_id=null
+
+async function boot() {
+  const { data: { session } } = await db.auth.getSession();
+  if (!session) { show('auth-view'); hide('dash-view'); return; }
+  hide('auth-view'); show('dash-view');
+  await loadEmployer(session);
+}
+
+$('send-link').onclick = async () => {
+  const email = $('email').value.trim();
+  if (!email) return;
+  $('auth-msg').textContent = 'Sending…';
+  const { error } = await db.auth.signInWithOtp({
+    email, options: { emailRedirectTo: window.location.origin + '/employer.html' }
+  });
+  $('auth-msg').textContent = error ? ('Error: ' + error.message) : 'Check your email for a sign-in link.';
+};
+
+const onSignOut = async () => { await db.auth.signOut(); location.reload(); };
+$('signout').onclick = onSignOut;
+$('signout-empty').onclick = onSignOut;
+
+db.auth.onAuthStateChange(() => boot());
+
+async function loadEmployer(session) {
+  // First try the auth_user_id link (set either by trigger or a previous link).
+  let { data: emp } = await db.from('employers')
+    .select('id, name, contact_email, subscription_id, subscription_status, subscription_current_period_end')
+    .eq('auth_user_id', session.user.id).maybeSingle();
+
+  if (!emp) {
+    // Fallback: invoke link-employer in case the trigger never fired.
+    try {
+      const r = await fetch(SUPABASE_URL + '/functions/v1/link-employer', {
+        method: 'POST',
+        headers: { Authorization: 'Bearer ' + session.access_token, 'Content-Type': 'application/json', apikey: SUPABASE_ANON },
+      });
+      const j = await r.json();
+      emp = j.employer || null;
+    } catch (e) { /* fall through */ }
+  }
+
+  if (!emp) {
+    show('no-employer'); hide('dash-body');
+    $('hi-sub').textContent = '';
+    return;
+  }
+
+  me = emp;
+  hide('no-employer'); show('dash-body');
+  $('hi').textContent = emp.name || 'Employer dashboard';
+  $('hi-sub').textContent = emp.contact_email;
+
+  renderSubscriptionBanner(emp);
+  await loadPending();
+  await loadListings();
+}
+
+function renderSubscriptionBanner(emp) {
+  if (!emp.subscription_id) { hide('sub-banner'); hide('new-cta-card'); return; }
+  const status = emp.subscription_status || 'active';
+  const renews = emp.subscription_current_period_end
+    ? new Date(emp.subscription_current_period_end).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+    : null;
+  const banner = $('sub-banner');
+  banner.className = 'sub-banner ' + status;
+  let label = 'Active';
+  if (status === 'past_due') label = 'Past due';
+  else if (status === 'canceled') label = 'Canceled';
+  else if (status === 'trialing') label = 'Trial';
+  banner.innerHTML =
+    '<div><span class="sub-pill ' + status + '">' + label + '</span> ' +
+      '<strong style="margin-left:.6rem;">Employer subscription</strong> ' +
+      (renews ? '<span class="muted"> &middot; ' + (status === 'canceled' ? 'ended' : 'renews') + ' ' + renews + '</span>' : '') +
+    '</div>' +
+    '<span class="muted" style="font-size:.8rem;">Manage billing in Stripe (coming soon)</span>';
+  show('sub-banner');
+  if (status === 'active' || status === 'trialing') show('new-cta-card');
+  else hide('new-cta-card');
+}
+
+async function loadPending() {
+  if (!me) return;
+  const { data } = await db.from('job_postings')
+    .select('id, plan, amount_cents, created_at')
+    .eq('employer_id', me.id).eq('status', 'paid').is('job_id', null)
+    .order('created_at', { ascending: true });
+  pendingPostings = data || [];
+
+  const list = $('pending-list');
+  if (pendingPostings.length === 0) {
+    list.innerHTML = '';
+    show('pending-empty');
+    return;
+  }
+  hide('pending-empty');
+  list.innerHTML = pendingPostings.map(p => {
+    const dollars = '$' + ((p.amount_cents || 0) / 100).toFixed(0);
+    const purchased = new Date(p.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    const planLabel = p.plan === 'featured' ? 'Featured' : 'Basic';
+    return '<div class="posting-row">' +
+      '<div><div class="lbl">' + planLabel + ' listing &middot; ' + dollars + '</div>' +
+      '<div class="meta">Purchased ' + purchased + '</div></div>' +
+      '<button class="primary" onclick="openListingModal(null, \'' + p.id + '\')">Create listing &rarr;</button>' +
+    '</div>';
+  }).join('');
+}
+
+async function loadListings() {
+  if (!me) return;
+  const { data, error } = await db.from('jobs')
+    .select('id, title, status, view_count, posted_at, expires_at, is_featured')
+    .eq('employer_id', me.id)
+    .order('posted_at', { ascending: false });
+  const wrap = $('listings-wrap');
+  if (error) { wrap.innerHTML = '<p class="muted">Could not load listings: ' + escapeHtml(error.message) + '</p>'; return; }
+  if (!data || data.length === 0) {
+    wrap.innerHTML = '<p class="muted">No listings yet. Click <strong>Create listing</strong> on a paid posting above to publish your first one.</p>';
+    return;
+  }
+  wrap.innerHTML =
+    '<table class="listings-table"><thead><tr>' +
+      '<th>Title</th><th>Status</th><th>Views</th><th>Posted</th><th>Actions</th>' +
+    '</tr></thead><tbody>' +
+    data.map(j => {
+      const posted = j.posted_at ? new Date(j.posted_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '—';
+      const featured = j.is_featured ? ' <span class="status-pill draft" style="background:rgba(245,166,35,0.15);color:var(--amber-dk);">Featured</span>' : '';
+      const toggleLabel = j.status === 'paused' ? 'Resume' : 'Pause';
+      const toggleAction = j.status === 'paused' ? "setStatus('" + j.id + "','active')" : "setStatus('" + j.id + "','paused')";
+      const canToggle = j.status === 'active' || j.status === 'paused';
+      return '<tr>' +
+        '<td><strong>' + escapeHtml(j.title) + '</strong>' + featured + '</td>' +
+        '<td><span class="status-pill ' + j.status + '">' + j.status + '</span></td>' +
+        '<td>' + (j.view_count || 0) + '</td>' +
+        '<td>' + posted + '</td>' +
+        '<td><button class="ghost" onclick="editListing(\'' + j.id + '\')">Edit</button> ' +
+          (canToggle ? '<button class="ghost" onclick="' + toggleAction + '">' + toggleLabel + '</button>' : '') + '</td>' +
+      '</tr>';
+    }).join('') + '</tbody></table>';
+}
+
+window.openListingModal = function (jobId, postingId) {
+  $('f-job-id').value = jobId || '';
+  $('f-posting-id').value = postingId || '';
+  $('modal-title').textContent = jobId ? 'Edit listing' : 'New listing';
+  if (!jobId) {
+    ['f-title','f-desc','f-resp','f-req','f-nice','f-city','f-state','f-pay-min','f-pay-max','f-apply-url','f-apply-email'].forEach(id => $(id).value = '');
+    $('f-employment').value = 'full-time';
+    $('f-exp').value = 'no-requirement';
+    $('f-pay-type').value = 'hourly';
+    $('f-remote').checked = false; $('f-hybrid').checked = false; $('f-onsite').checked = true;
+  }
+  $('modal').classList.add('open');
+  document.body.style.overflow = 'hidden';
+};
+
+window.closeModal = function () {
+  $('modal').classList.remove('open');
+  document.body.style.overflow = '';
+};
+
+window.editListing = async function (id) {
+  const { data: j } = await db.from('jobs').select('*').eq('id', id).maybeSingle();
+  if (!j) { toast('Could not load listing', 'error'); return; }
+  $('f-job-id').value = j.id;
+  $('f-posting-id').value = '';
+  $('modal-title').textContent = 'Edit listing';
+  $('f-title').value = j.title || '';
+  $('f-desc').value = j.description || '';
+  $('f-resp').value = (j.responsibilities || []).join('\n');
+  $('f-req').value = (j.requirements || []).join('\n');
+  $('f-nice').value = (j.nice_to_have || []).join('\n');
+  $('f-city').value = j.location_city || '';
+  $('f-state').value = j.location_state || '';
+  $('f-employment').value = j.employment_type || 'full-time';
+  $('f-exp').value = j.experience_level || 'no-requirement';
+  $('f-pay-type').value = j.pay_type || 'hourly';
+  $('f-pay-min').value = j.pay_min || '';
+  $('f-pay-max').value = j.pay_max || '';
+  $('f-apply-url').value = j.apply_url || '';
+  $('f-apply-email').value = j.apply_email || '';
+  $('f-remote').checked = !!j.is_remote;
+  $('f-hybrid').checked = !!j.is_hybrid;
+  $('f-onsite').checked = j.is_onsite !== false;
+  $('modal').classList.add('open');
+  document.body.style.overflow = 'hidden';
+};
+
+window.setStatus = async function (id, status) {
+  const { error } = await db.from('jobs').update({ status }).eq('id', id);
+  if (error) { toast(error.message, 'error'); return; }
+  toast('Updated', 'ok');
+  await loadListings();
+};
+
+$('new-listing').onclick = () => openListingModal();
+
+$('save-listing').onclick = async () => {
+  const title = $('f-title').value.trim();
+  const description = $('f-desc').value.trim();
+  if (!title) return toast('Title is required', 'error');
+  if (!description) return toast('Description is required', 'error');
+
+  const splitLines = (s) => s.split('\n').map(t => t.trim()).filter(Boolean);
+  const slug = (title + '-' + Math.random().toString(36).slice(2, 7))
+    .toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+
+  const payload = {
+    employer_id: me.id,
+    title,
+    description,
+    responsibilities: splitLines($('f-resp').value),
+    requirements: splitLines($('f-req').value),
+    nice_to_have: splitLines($('f-nice').value),
+    location_city: $('f-city').value.trim() || null,
+    location_state: $('f-state').value.trim().toUpperCase() || null,
+    is_remote: $('f-remote').checked,
+    is_hybrid: $('f-hybrid').checked,
+    is_onsite: $('f-onsite').checked,
+    employment_type: $('f-employment').value,
+    experience_level: $('f-exp').value,
+    pay_type: $('f-pay-type').value,
+    pay_min: $('f-pay-min').value ? Number($('f-pay-min').value) : null,
+    pay_max: $('f-pay-max').value ? Number($('f-pay-max').value) : null,
+    apply_url: $('f-apply-url').value.trim() || null,
+    apply_email: $('f-apply-email').value.trim() || null,
+    status: 'active',
+  };
+
+  const editingJobId = $('f-job-id').value;
+  const fromPostingId = $('f-posting-id').value;
+
+  let result;
+  if (editingJobId) {
+    result = await db.from('jobs').update(payload).eq('id', editingJobId).select('id').single();
+  } else {
+    payload.slug = slug;
+    if (fromPostingId) {
+      const posting = pendingPostings.find(p => p.id === fromPostingId);
+      if (posting?.plan === 'featured') payload.is_featured = true;
+    }
+    result = await db.from('jobs').insert(payload).select('id').single();
+  }
+
+  if (result.error) return toast(result.error.message, 'error');
+
+  if (fromPostingId && !editingJobId) {
+    const { error: linkErr } = await db.from('job_postings').update({ job_id: result.data.id }).eq('id', fromPostingId);
+    if (linkErr) toast('Saved listing, but could not link posting: ' + linkErr.message, 'error');
+  }
+
+  toast(editingJobId ? 'Listing updated' : 'Listing posted', 'ok');
+  closeModal();
+  await loadPending();
+  await loadListings();
+};
+
+function toast(msg, kind) {
+  const el = $('toast');
+  el.textContent = msg;
+  el.className = 'toast show ' + (kind || '');
+  setTimeout(() => { el.className = 'toast'; }, 2500);
+}
+
+function escapeHtml(s) {
+  return String(s == null ? '' : s).replace(/[&<>"']/g, (c) => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' })[c]);
+}
+
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
+
+boot();
+</script>
+</body>
+</html>

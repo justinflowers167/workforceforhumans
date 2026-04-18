@@ -1,0 +1,13 @@
+project_id = "dbomfjqijyrkidptrrfi"
+
+# Stripe POSTs to this endpoint with no Supabase JWT — verify by signature instead.
+[functions.stripe-webhook]
+verify_jwt = false
+
+# Public news aggregator; invoked by cron with no user context.
+[functions.intelligence-feed]
+verify_jwt = false
+
+# create-checkout: called from index.html anonymously (buyer hasn't signed in yet).
+[functions.create-checkout]
+verify_jwt = false
