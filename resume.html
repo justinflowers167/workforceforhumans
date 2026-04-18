@@ -19,7 +19,7 @@ textarea{width:100%;min-height:260px;padding:.9rem 1rem;border:1px solid var(--s
 input[type=text],input[type=file],input[type=email]{width:100%;padding:.7rem .9rem;border:1px solid var(--stone);border-radius:8px;font-family:var(--font-b);font-size:.92rem;background:#fff;}
 label{display:block;font-size:.82rem;color:var(--slate);margin-bottom:.3rem;font-weight:500;}
 .row{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:.75rem;}
-@media (max-width:640px){.row{grid-template-columns:1fr;}}
+@media (max-width:960px){.row{grid-template-columns:1fr;}}
 button.primary{background:var(--amber);color:var(--navy);border:none;border-radius:8px;padding:.7rem 1.5rem;font-weight:600;cursor:pointer;}
 button.primary:disabled{opacity:.6;cursor:not-allowed;}
 button.ghost{background:transparent;color:var(--navy);border:1px solid var(--stone);border-radius:8px;padding:.55rem 1rem;cursor:pointer;}
@@ -73,7 +73,7 @@ button.add{background:transparent;color:var(--terra);border:1px dashed var(--sto
       </div>
       <div class="row">
         <div><label>Email</label><input type="email" id="b-email"/></div>
-        <div><label>Phone</label><input type="text" id="b-phone"/></div>
+        <div><label>Phone</label><input type="tel" id="b-phone" inputmode="tel" autocomplete="tel"/></div>
       </div>
       <div class="row">
         <div><label>City</label><input type="text" id="b-city"/></div>
