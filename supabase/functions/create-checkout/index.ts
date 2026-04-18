@@ -1,69 +1,130 @@
-import Stripe from "https://esm.sh/stripe@14?target=deno";
+// Create a Stripe Checkout Session for an employer purchase. Side effects
+// before redirecting to Stripe:
+//   1. Upsert an employers row by contact_email.
+//   2. Create the Stripe customer (if not already linked).
+//   3. For one-time plans (basic, featured) insert a job_postings row in
+//      'pending' state. For the employer subscription we skip the posting
+//      row — entitlement is unlimited while subscription is active.
+//   4. Pass {employer_id, job_posting_id, plan} as session metadata so
+//      stripe-webhook can fulfill on payment.
 
-const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY")!, {
-  apiVersion: "2024-04-10",
-});
-
-// Map plan names to your Stripe Price IDs.
-// Replace these with your actual Price IDs from the Stripe Dashboard.
-const PRICE_MAP: Record<string, string> = {
-  basic: Deno.env.get("STRIPE_PRICE_BASIC") || "price_REPLACE_WITH_BASIC_PRICE_ID",
-  featured: Deno.env.get("STRIPE_PRICE_FEATURED") || "price_REPLACE_WITH_FEATURED_PRICE_ID",
-  employer: Deno.env.get("STRIPE_PRICE_EMPLOYER") || "price_REPLACE_WITH_EMPLOYER_PRICE_ID",
-};
-
-// Which plans are recurring subscriptions vs one-time payments
-const RECURRING_PLANS = new Set(["employer"]);
+import "jsr:@supabase/functions-js/edge-runtime.d.ts";
+import Stripe from "https://esm.sh/stripe@14.21.0?target=deno";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
 
-Deno.serve(async (req) => {
-  // Handle CORS preflight
-  if (req.method === "OPTIONS") {
-    return new Response("ok", { headers: corsHeaders });
-  }
+type PlanKey = "basic" | "featured" | "employer";
+const PLANS: Record<PlanKey, { amount: number; mode: "payment" | "subscription"; label: string; duration: number }> = {
+  basic:    { amount: 9900,  mode: "payment",      label: "Basic Listing (60 days)",    duration: 60 },
+  featured: { amount: 19900, mode: "payment",      label: "Featured Listing (60 days)", duration: 60 },
+  employer: { amount: 49900, mode: "subscription", label: "Employer Subscription",      duration: 30 },
+};
+
+Deno.serve(async (req: Request) => {
+  if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
 
   try {
-    const { plan, email, name, site_url } = await req.json();
+    const stripeKey = Deno.env.get("STRIPE_SECRET_KEY");
+    if (!stripeKey) return json({ error: "STRIPE_SECRET_KEY not configured" }, 500);
 
-    if (!plan || !email || !name) {
-      return new Response(
-        JSON.stringify({ error: "Missing required fields: plan, email, name" }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+    const stripe = new Stripe(stripeKey, { apiVersion: "2023-10-16" });
+    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+    const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const db = createClient(supabaseUrl, supabaseServiceKey);
+
+    const { plan, email, name, site_url } = await req.json();
+    if (!plan || !email || !name) return json({ error: "Missing required fields: plan, email, name" }, 400);
+
+    const planConfig = PLANS[plan as PlanKey];
+    if (!planConfig) return json({ error: "Invalid plan. Must be: basic, featured, or employer" }, 400);
+
+    // Upsert employer (safe because employers_contact_email_key was added in
+    // the phase-3 migration). Slug is derived from name only on insert.
+    const slug = String(name).toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
+    const { data: employer, error: empErr } = await db.from("employers")
+      .upsert(
+        { name, slug, contact_email: email, contact_name: name },
+        { onConflict: "contact_email" },
+      )
+      .select("id, stripe_customer_id")
+      .single();
+    if (empErr || !employer) return json({ error: "Failed to upsert employer", detail: empErr?.message }, 500);
+
+    // Ensure a Stripe customer exists.
+    let stripeCustomerId = employer.stripe_customer_id;
+    if (!stripeCustomerId) {
+      const customer = await stripe.customers.create({
+        email, name, metadata: { employer_id: employer.id },
+      });
+      stripeCustomerId = customer.id;
+      await db.from("employers").update({ stripe_customer_id: stripeCustomerId }).eq("id", employer.id);
     }
 
-    const priceId = PRICE_MAP[plan];
-    if (!priceId || priceId.includes("REPLACE")) {
-      return new Response(
-        JSON.stringify({ error: `Invalid or unconfigured plan: ${plan}` }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+    // Create the pending job_postings row for one-time plans only.
+    let postingId: string | null = null;
+    if (planConfig.mode === "payment") {
+      const { data: posting, error: postErr } = await db.from("job_postings")
+        .insert({
+          employer_id: employer.id,
+          plan,
+          amount_cents: planConfig.amount,
+          listing_duration_days: planConfig.duration,
+          status: "pending",
+        })
+        .select("id").single();
+      if (postErr || !posting) return json({ error: "Failed to create job_postings row", detail: postErr?.message }, 500);
+      postingId = posting.id;
     }
 
     const origin = site_url || "https://workforceforhumans.com";
-
-    const session = await stripe.checkout.sessions.create({
-      mode: RECURRING_PLANS.has(plan) ? "subscription" : "payment",
-      customer_email: email,
-      metadata: { employer_name: name, plan },
-      line_items: [{ price: priceId, quantity: 1 }],
-      success_url: `${origin}/success.html`,
+    const sessionParams: Stripe.Checkout.SessionCreateParams = {
+      customer: stripeCustomerId,
+      client_reference_id: employer.id,
+      line_items: [{
+        price_data: {
+          currency: "usd",
+          product_data: { name: planConfig.label },
+          unit_amount: planConfig.amount,
+          ...(planConfig.mode === "subscription" ? { recurring: { interval: "month" } } : {}),
+        },
+        quantity: 1,
+      }],
+      mode: planConfig.mode,
+      success_url: `${origin}/success.html?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${origin}/cancel.html`,
-    });
+      metadata: {
+        employer_id: employer.id,
+        job_posting_id: postingId ?? "",
+        plan,
+      },
+    };
 
-    return new Response(
-      JSON.stringify({ url: session.url }),
-      { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
+    if (planConfig.mode === "subscription") {
+      sessionParams.subscription_data = {
+        metadata: { employer_id: employer.id, plan },
+      };
+    }
+
+    const session = await stripe.checkout.sessions.create(sessionParams);
+
+    if (postingId) {
+      await db.from("job_postings").update({ stripe_session_id: session.id }).eq("id", postingId);
+    }
+
+    return json({ url: session.url, session_id: session.id });
   } catch (err) {
-    console.error("Checkout error:", err);
-    return new Response(
-      JSON.stringify({ error: err.message || "Internal server error" }),
-      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
+    return json({ error: (err as Error).message }, 500);
   }
 });
+
+function json(body: unknown, status = 200) {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: { ...corsHeaders, "Content-Type": "application/json" },
+  });
+}

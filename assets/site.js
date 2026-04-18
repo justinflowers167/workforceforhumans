@@ -6,8 +6,8 @@
  * content or observers attach). No dependencies.
  *
  * Body attributes:
- *   data-nav="marketing" | "member" | "admin"  (default: marketing)
- *   data-surface="product"                      (optional)
+ *   data-nav="marketing" | "member" | "admin" | "employer"  (default: marketing)
+ *   data-surface="product"                                   (optional)
  * ============================================================ */
 (function () {
   var body = document.body;
@@ -96,7 +96,29 @@
             '<a href="kb.html">&larr; View Knowledge Base</a>' +
           '</div>' +
         '</div>' +
-      '</nav>'
+      '</nav>',
+
+    employer:
+      '<nav>' +
+        '<div class="nav-inner">' +
+          '<div style="display:flex;align-items:center">' +
+            '<a href="index.html" class="nav-logo">Workforce<span class="dot">for</span>Humans</a>' +
+            '<span class="nav-badge">Employer</span>' +
+          '</div>' +
+          '<ul class="nav-links">' +
+            '<li><a href="employer.html" data-match="employer.html">My Listings</a></li>' +
+            '<li><a href="jobs.html" data-match="jobs.html">View Site</a></li>' +
+          '</ul>' +
+          BURGER +
+        '</div>' +
+      '</nav>' +
+      '<div class="nav-scrim" aria-hidden="true"></div>' +
+      '<aside class="nav-drawer" id="nav-drawer" aria-hidden="true">' +
+        '<ul class="drawer-links">' +
+          '<li><a href="employer.html" data-match="employer.html">My Listings</a></li>' +
+          '<li><a href="jobs.html" data-match="jobs.html">View Site</a></li>' +
+        '</ul>' +
+      '</aside>'
   };
 
   // --- Footer template (shared marketing + member; admin uses minimal). ---
