@@ -5,26 +5,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>Resume Builder & Reviewer — Workforce for Humans</title>
 <meta name="description" content="Paste, upload, or build your resume. Get an AI review with concrete rewrites and skill gap analysis."/>
-<link rel="preconnect" href="https://fonts.googleapis.com"/>
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
-<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,300&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="/assets/site.css"/>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
-*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-:root{
-  --navy:#1a2340;--amber:#f5a623;--amber-dk:#c47d0e;
-  --cream:#faf7f0;--stone:#ede8df;--terra:#c85f3e;
-  --slate:#4a5568;--mist:#8ba8b5;--green:#2d7a3a;
-  --font-d:'Playfair Display',Georgia,serif;
-  --font-b:'DM Sans',sans-serif;
-}
-body{font-family:var(--font-b);background:var(--cream);color:var(--navy);line-height:1.6;}
-nav{background:var(--navy);padding:1rem 5vw;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;}
-.nav-logo{font-family:var(--font-d);color:#fff;text-decoration:none;font-size:1.2rem;}
-.nav-logo span{color:var(--amber);}
-.nav-links{display:flex;gap:1.5rem;list-style:none;}
-.nav-links a{color:rgba(255,255,255,0.65);text-decoration:none;font-size:0.88rem;font-weight:500;}
-.nav-links a:hover,.nav-links a.active{color:var(--amber);}
 main{max-width:860px;margin:0 auto;padding:2rem 5vw;}
 h1{font-family:var(--font-d);font-size:clamp(1.8rem,4vw,2.4rem);margin-bottom:.25rem;}
 .sub{color:var(--slate);margin-bottom:1.5rem;}
@@ -49,20 +32,12 @@ button.add{background:transparent;color:var(--terra);border:1px dashed var(--sto
 .job-block{border:1px solid var(--stone);border-radius:10px;padding:1rem;margin-bottom:.75rem;}
 .job-block .rm{float:right;color:var(--terra);background:transparent;border:none;cursor:pointer;font-size:.85rem;}
 .muted{color:var(--slate);font-size:.88rem;}
-footer{text-align:center;padding:2rem;color:var(--slate);font-size:.82rem;}
 </style>
 </head>
-<body>
-
-<nav>
-  <a href="/" class="nav-logo">Workforce<span>for</span>Humans</a>
-  <ul class="nav-links">
-    <li><a href="/jobs.html">Jobs</a></li>
-    <li><a href="/learn.html">Learn</a></li>
-    <li><a href="/feed.html">Feed</a></li>
-    <li><a href="/member.html" class="active">My Workforce</a></li>
-  </ul>
-</nav>
+<body data-nav="marketing" data-surface="product">
+<div id="site-nav"></div>
+<script src="/assets/site.js"></script>
+<noscript><nav><div class="nav-inner"><a href="index.html" class="nav-logo">Workforce<span class="dot">for</span>Humans</a></div></nav></noscript>
 
 <main>
   <h1>Resume builder & AI review</h1>
@@ -130,7 +105,7 @@ footer{text-align:center;padding:2rem;color:var(--slate);font-size:.82rem;}
   </div>
 </main>
 
-<footer>© Workforce for Humans</footer>
+<div id="site-footer"></div>
 
 <script>
   const { createClient } = supabase;
