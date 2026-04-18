@@ -7,54 +7,14 @@
 <meta name="description" content="The platform for displaced workers and career changers. Real jobs. Real training. Real results."/>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
-<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400;1,700&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,300&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="/assets/site.css"/>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
-*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-:root{
-  --navy:#0f1829;--navy-mid:#1a2340;--navy-light:#243055;
-  --amber:#f5a623;--amber-dk:#c47d0e;--amber-lt:#fdf0d5;
-  --cream:#faf8f4;--stone:#ede8de;--stone-dk:#d4ccbc;
-  --terra:#c85f3e;--terra-lt:#f9ece7;
-  --slate:#4a5568;--slate-lt:#6b7a8d;--mist:#8ba8b5;
-  --green:#1f6b35;--green-lt:#e6f2ea;--white:#ffffff;
-  --font-d:'Playfair Display',Georgia,serif;
-  --font-b:'DM Sans',sans-serif;--font-m:'DM Mono',monospace;
-  --ease:cubic-bezier(0.16,1,0.3,1);
-  --sh-sm:0 2px 8px rgba(15,24,41,0.06);
-  --sh-md:0 8px 32px rgba(15,24,41,0.1);
-  --sh-lg:0 24px 64px rgba(15,24,41,0.14);
-}
-html{scroll-behavior:smooth;}
-body{font-family:var(--font-b);background:var(--cream);color:var(--navy);line-height:1.6;overflow-x:hidden;}
 .container{max-width:1280px;margin:0 auto;padding:0 5vw;}
-
-/* NAV */
-nav{position:fixed;top:0;left:0;right:0;z-index:1000;
-  background:rgba(15,24,41,0.94);backdrop-filter:blur(20px);
-  border-bottom:1px solid rgba(255,255,255,0.06);}
-.nav-inner{max-width:1280px;margin:0 auto;padding:0 5vw;
-  display:flex;align-items:center;justify-content:space-between;height:68px;}
-.nav-logo{font-family:var(--font-d);color:#fff;text-decoration:none;
-  font-size:1.15rem;font-weight:700;}
-.nav-logo .dot{color:var(--amber);}
-.nav-links{display:flex;align-items:center;gap:0.25rem;list-style:none;}
-.nav-links a{color:rgba(255,255,255,0.6);text-decoration:none;font-size:0.875rem;
-  font-weight:500;padding:0.5rem 0.85rem;border-radius:8px;transition:all 0.2s;}
-.nav-links a:hover{color:#fff;background:rgba(255,255,255,0.07);}
-.nav-actions{display:flex;align-items:center;gap:0.75rem;}
-.btn-ghost{color:rgba(255,255,255,0.7);background:none;border:1px solid rgba(255,255,255,0.15);
-  border-radius:8px;padding:0.5rem 1.1rem;font-family:var(--font-b);font-size:0.875rem;
-  font-weight:500;cursor:pointer;text-decoration:none;transition:all 0.2s;}
-.btn-ghost:hover{color:#fff;border-color:rgba(255,255,255,0.3);}
-.btn-amber{background:var(--amber);color:var(--navy);border:none;border-radius:8px;
-  padding:0.5rem 1.2rem;font-family:var(--font-b);font-size:0.875rem;font-weight:700;
-  cursor:pointer;text-decoration:none;transition:all 0.2s;display:inline-block;}
-.btn-amber:hover{background:var(--amber-dk);transform:translateY(-1px);}
 
 /* HERO */
 .hero{min-height:100vh;background:var(--navy);display:flex;flex-direction:column;
-  justify-content:center;position:relative;overflow:hidden;padding-top:68px;}
+  justify-content:center;position:relative;overflow:hidden;}
 .hero-bg{position:absolute;inset:0;
   background:radial-gradient(ellipse 80% 60% at 70% 40%,rgba(245,166,35,0.08) 0%,transparent 60%),
     linear-gradient(160deg,#0f1829 0%,#1a2340 50%,#0f1829 100%);}
@@ -280,32 +240,6 @@ section{padding:6rem 0;}
 .nl-form input:focus{border-color:var(--amber);}
 .nl-note{font-size:0.78rem;color:rgba(255,255,255,0.3);margin-top:0.75rem;}
 
-/* FOOTER */
-footer{background:#0a1120;padding:4rem 0 2rem;}
-.footer-grid{max-width:1280px;margin:0 auto;padding:0 5vw;
-  display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:3rem;margin-bottom:3rem;}
-.fb{font-family:var(--font-d);font-size:1.1rem;color:#fff;font-weight:700;margin-bottom:0.75rem;}
-.fb .dot{color:var(--amber);}
-.fd{font-size:0.85rem;color:rgba(255,255,255,0.35);font-weight:300;line-height:1.75;max-width:280px;margin-bottom:1.5rem;}
-.fsoc{display:flex;gap:0.75rem;}
-.fsoc a{width:36px;height:36px;border-radius:8px;background:rgba(255,255,255,0.06);
-  border:1px solid rgba(255,255,255,0.08);display:flex;align-items:center;justify-content:center;
-  color:rgba(255,255,255,0.5);text-decoration:none;font-size:0.85rem;transition:all 0.2s;}
-.fsoc a:hover{background:rgba(245,166,35,0.15);border-color:rgba(245,166,35,0.3);color:var(--amber);}
-.fc-title{font-size:0.8rem;font-weight:600;text-transform:uppercase;letter-spacing:0.08em;
-  color:rgba(255,255,255,0.4);margin-bottom:1.25rem;}
-.fc-links{list-style:none;}
-.fc-links li{margin-bottom:0.6rem;}
-.fc-links a{color:rgba(255,255,255,0.45);text-decoration:none;font-size:0.875rem;transition:color 0.2s;}
-.fc-links a:hover{color:var(--amber);}
-.footer-bot{max-width:1280px;margin:0 auto;padding:1.5rem 5vw 0;
-  border-top:1px solid rgba(255,255,255,0.06);display:flex;align-items:center;
-  justify-content:space-between;flex-wrap:wrap;gap:1rem;}
-.fcopy{font-size:0.8rem;color:rgba(255,255,255,0.25);}
-.flegal{display:flex;gap:1.5rem;}
-.flegal a{font-size:0.8rem;color:rgba(255,255,255,0.25);text-decoration:none;transition:color 0.2s;}
-.flegal a:hover{color:rgba(255,255,255,0.5);}
-
 /* REVEAL */
 .rv{opacity:0;transform:translateY(28px);transition:opacity 0.7s var(--ease),transform 0.7s var(--ease);}
 .rv.on{opacity:1;transform:none;}
@@ -335,31 +269,16 @@ footer{background:#0a1120;padding:4rem 0 2rem;}
 }
 </style>
 </head>
-<body>
+<body data-nav="marketing">
+<div id="site-nav"></div>
+<script src="/assets/site.js"></script>
+<noscript><nav><div class="nav-inner"><a href="index.html" class="nav-logo">Workforce<span class="dot">for</span>Humans</a></div></nav></noscript>
 <script>
 const SUPABASE_URL='https://dbomfjqijyrkidptrrfi.supabase.co';
 const SUPABASE_ANON='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRib21manFpanlya2lkcHRycmZpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU0MDE2OTMsImV4cCI6MjA5MDk3NzY5M30.Vvv94m3O0DVZsNU5gjoexksmkoYG6r8Kq5dXKAE1gZc';
 const {createClient}=supabase;
 const db=createClient(SUPABASE_URL,SUPABASE_ANON);
 </script>
-
-<nav>
-  <div class="nav-inner">
-    <a href="index.html" class="nav-logo">Workforce<span class="dot">for</span>Humans</a>
-    <ul class="nav-links">
-      <li><a href="jobs.html">Find Jobs</a></li>
-      <li><a href="learn.html">Level Up</a></li>
-      <li><a href="feed.html">Intelligence</a></li>
-      <li><a href="kb.html">Resources</a></li>
-      <li><a href="resume.html">Resume AI</a></li>
-      <li><a href="#employers">For Employers</a></li>
-    </ul>
-    <div class="nav-actions">
-      <a href="mailto:employers@workforceforhumans.com" class="btn-ghost">Post a Job</a>
-      <a href="member.html" class="btn-amber">My Workforce →</a>
-    </div>
-  </div>
-</nav>
 
 <section class="hero">
   <div class="hero-bg"></div>
@@ -577,51 +496,7 @@ const db=createClient(SUPABASE_URL,SUPABASE_ANON);
   </div>
 </section>
 
-<footer>
-  <div class="footer-grid">
-    <div>
-      <div class="fb">Workforce<span class="dot">for</span>Humans</div>
-      <p class="fd">The platform for displaced workers, career changers, and anyone building their next chapter. Find Work. Level Up. Move Forward.</p>
-      <div class="fsoc">
-        <a href="mailto:hello@workforceforhumans.com" title="Email us">✉</a>
-      </div>
-    </div>
-    <div>
-      <div class="fc-title">Find Work</div>
-      <ul class="fc-links">
-        <li><a href="jobs.html">Browse Jobs</a></li>
-        <li><a href="jobs.html?q=entry">Entry Level</a></li>
-        <li><a href="jobs.html?state=remote">Remote Jobs</a></li>
-        <li><a href="jobs.html?q=50%2B+friendly">50+ Friendly</a></li>
-        <li><a href="jobs.html?q=apprenticeship">Apprenticeships</a></li>
-      </ul>
-    </div>
-    <div>
-      <div class="fc-title">Level Up</div>
-      <ul class="fc-links">
-        <li><a href="learn.html">Learning Paths</a></li>
-        <li><a href="learn.html#healthcare">Healthcare</a></li>
-        <li><a href="learn.html#tech">Technology</a></li>
-        <li><a href="learn.html#trades">Skilled Trades</a></li>
-        <li><a href="learn.html#coaching">Career Coaching</a></li>
-      </ul>
-    </div>
-    <div>
-      <div class="fc-title">Resources</div>
-      <ul class="fc-links">
-        <li><a href="kb.html">Knowledge Base</a></li>
-        <li><a href="feed.html">Intelligence Feed</a></li>
-        <li><a href="#employers">For Employers</a></li>
-        <li><a href="mailto:hello@workforceforhumans.com">Contact</a></li>
-        <li><a href="mailto:employers@workforceforhumans.com">Post a Job</a></li>
-      </ul>
-    </div>
-  </div>
-  <div class="footer-bot">
-    <div class="fcopy">© 2025 WorkforceForHumans LLC · Colorado, USA</div>
-    <div class="flegal"><a href="mailto:privacy@workforceforhumans.com">Privacy</a><a href="mailto:legal@workforceforhumans.com">Terms</a><a href="mailto:access@workforceforhumans.com">Accessibility</a></div>
-  </div>
-</footer>
+<div id="site-footer"></div>
 
 <script>
 async function loadStats(){

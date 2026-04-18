@@ -4,29 +4,9 @@
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>KB Admin — Workforce for Humans</title>
-<link rel="preconnect" href="https://fonts.googleapis.com"/>
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
-<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,300&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="/assets/site.css"/>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
-*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-:root{
-  --navy:#1a2340;--amber:#f5a623;--amber-dk:#c47d0e;
-  --cream:#faf7f0;--stone:#ede8df;--terra:#c85f3e;
-  --slate:#4a5568;--mist:#8ba8b5;--white:#fff;
-  --green:#2d7a3a;--red:#c0392b;
-  --font-d:'Playfair Display',Georgia,serif;
-  --font-b:'DM Sans',sans-serif;
-}
-body{font-family:var(--font-b);background:var(--cream);color:var(--navy);line-height:1.6}
-nav{background:var(--navy);padding:1rem 5vw;display:flex;align-items:center;justify-content:space-between}
-.nav-logo{font-family:var(--font-d);color:#fff;text-decoration:none;font-size:1.2rem}
-.nav-logo span{color:var(--amber)}
-.nav-badge{background:var(--terra);color:#fff;font-size:.7rem;padding:2px 8px;border-radius:4px;font-weight:600;margin-left:.75rem}
-.nav-right{display:flex;align-items:center;gap:1rem}
-.nav-right a{color:rgba(255,255,255,.6);text-decoration:none;font-size:.85rem}
-.nav-right a:hover{color:var(--amber)}
-
 .admin-layout{max-width:1200px;margin:0 auto;padding:2rem 5vw}
 .admin-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:2rem;flex-wrap:wrap;gap:1rem}
 .admin-header h1{font-family:var(--font-d);font-size:1.6rem}
@@ -97,7 +77,10 @@ nav{background:var(--navy);padding:1rem 5vw;display:flex;align-items:center;just
 }
 </style>
 </head>
-<body>
+<body data-nav="admin" data-surface="product">
+<div id="site-nav"></div>
+<script src="/assets/site.js"></script>
+<noscript><nav><div class="nav-inner"><a href="index.html" class="nav-logo">Workforce<span class="dot">for</span>Humans</a></div></nav></noscript>
 
 <script>
   const SUPABASE_URL  = 'https://dbomfjqijyrkidptrrfi.supabase.co';
@@ -105,16 +88,6 @@ nav{background:var(--navy);padding:1rem 5vw;display:flex;align-items:center;just
   const { createClient } = supabase;
   const db = createClient(SUPABASE_URL, SUPABASE_ANON);
 </script>
-
-<nav>
-  <div style="display:flex;align-items:center">
-    <a href="index.html" class="nav-logo">Workforce<span>for</span>Humans</a>
-    <span class="nav-badge">KB Admin</span>
-  </div>
-  <div class="nav-right">
-    <a href="kb.html">← View Knowledge Base</a>
-  </div>
-</nav>
 
 <div class="admin-layout">
   <!-- Stats -->
@@ -363,5 +336,7 @@ function toast(msg, type = '') {
 
 document.addEventListener('keydown', e => { if (e.key === 'Escape') closeEditor(); });
 </script>
+
+<div id="site-footer"></div>
 </body>
 </html>

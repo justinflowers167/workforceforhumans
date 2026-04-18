@@ -1,19 +1,12 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>Payment Cancelled — Workforce for Humans</title>
-<link rel="preconnect" href="https://fonts.googleapis.com"/>
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
-<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="/assets/site.css"/>
 <style>
-*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-:root{--navy:#0f1829;--amber:#f5a623;--amber-dk:#c47d0e;--cream:#faf8f4;--stone:#ede8de;--terra:#c85f3e;--slate:#4a5568;--font-d:'Playfair Display',Georgia,serif;--font-b:'DM Sans',sans-serif;}
-body{font-family:var(--font-b);background:var(--cream);color:var(--navy);min-height:100vh;display:flex;flex-direction:column;}
-nav{background:var(--navy);padding:1rem 5vw;display:flex;align-items:center;justify-content:space-between;}
-.nav-logo{font-family:var(--font-d);color:#fff;text-decoration:none;font-size:1.2rem;}.nav-logo span{color:var(--amber);}
-.nav-links{display:flex;gap:1.5rem;list-style:none;}.nav-links a{color:rgba(255,255,255,.65);text-decoration:none;font-size:.88rem;font-weight:500;}.nav-links a:hover{color:var(--amber);}
+body{min-height:100vh;display:flex;flex-direction:column;}
 .main{flex:1;display:flex;align-items:center;justify-content:center;padding:4rem 5vw;text-align:center;}
 .card{background:#fff;border:1px solid var(--stone);border-radius:24px;padding:3rem 3.5rem;max-width:540px;width:100%;}
 .icon{font-size:3.5rem;margin-bottom:1.5rem;}
@@ -21,19 +14,13 @@ nav{background:var(--navy);padding:1rem 5vw;display:flex;align-items:center;just
 .card p{color:var(--slate);font-weight:300;line-height:1.75;margin-bottom:2rem;font-size:0.95rem;}
 .btn{display:inline-block;background:var(--amber);color:var(--navy);border:none;border-radius:8px;padding:0.75rem 1.5rem;font-family:var(--font-b);font-size:0.95rem;font-weight:700;text-decoration:none;transition:all 0.2s;margin:0 0.5rem;}.btn:hover{background:var(--amber-dk);transform:translateY(-1px);}
 .btn-outline{background:none;border:1px solid var(--stone);color:var(--navy);font-weight:500;}.btn-outline:hover{border-color:var(--amber);color:var(--amber);background:none;}
-.footer{background:var(--navy);padding:2rem 5vw;text-align:center;margin-top:auto;}.footer p{color:rgba(255,255,255,.4);font-size:.82rem;}.footer a{color:var(--amber);text-decoration:none;}
 </style>
 </head>
-<body>
-<nav>
-  <a href="index.html" class="nav-logo">Workforce<span>for</span>Humans</a>
-  <ul class="nav-links">
-    <li><a href="jobs.html">Find Jobs</a></li>
-    <li><a href="learn.html">Level Up</a></li>
-    <li><a href="feed.html">Intelligence</a></li>
-    <li><a href="kb.html">Resources</a></li>
-  </ul>
-</nav>
+<body data-nav="marketing">
+<div id="site-nav"></div>
+<script src="/assets/site.js"></script>
+<noscript><nav><div class="nav-inner"><a href="index.html" class="nav-logo">Workforce<span class="dot">for</span>Humans</a></div></nav></noscript>
+
 <div class="main">
   <div class="card">
     <div class="icon">&#8592;</div>
@@ -43,8 +30,7 @@ nav{background:var(--navy);padding:1rem 5vw;display:flex;align-items:center;just
     <a href="mailto:employers@workforceforhumans.com" class="btn btn-outline">Contact Us</a>
   </div>
 </div>
-<div class="footer">
-  <p>&copy; 2025 <a href="index.html">Workforce for Humans</a>. Questions? <a href="mailto:employers@workforceforhumans.com">employers@workforceforhumans.com</a></p>
-</div>
+
+<div id="site-footer"></div>
 </body>
 </html>

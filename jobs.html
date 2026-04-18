@@ -5,30 +5,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>Find Jobs — Workforce for Humans</title>
 <meta name="description" content="Browse thousands of jobs in healthcare, trades, tech, green energy, logistics, and more. Entry-level welcome. No degree required."/>
-<link rel="preconnect" href="https://fonts.googleapis.com"/>
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
-<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,300&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="/assets/site.css"/>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
-*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-:root{
-  --navy:#1a2340;--amber:#f5a623;--amber-dk:#c47d0e;
-  --cream:#faf7f0;--stone:#ede8df;--terra:#c85f3e;
-  --slate:#4a5568;--mist:#8ba8b5;--white:#fff;
-  --green:#2d7a3a;--font-d:'Playfair Display',Georgia,serif;
-  --font-b:'DM Sans',sans-serif;
-}
-body{font-family:var(--font-b);background:var(--cream);color:var(--navy);line-height:1.6;}
-
-/* NAV */
-nav{background:var(--navy);padding:1rem 5vw;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;}
-.nav-logo{font-family:var(--font-d);color:#fff;text-decoration:none;font-size:1.2rem;}
-.nav-logo span{color:var(--amber);}
-.nav-links{display:flex;gap:1.5rem;list-style:none;}
-.nav-links a{color:rgba(255,255,255,0.65);text-decoration:none;font-size:0.88rem;font-weight:500;transition:color 0.2s;}
-.nav-links a:hover,.nav-links a.active{color:var(--amber);}
-.nav-cta{background:var(--amber);color:var(--navy)!important;padding:0.45rem 1.1rem;border-radius:6px;font-weight:600!important;}
-
 /* SEARCH HERO */
 .search-hero{background:var(--navy);padding:3.5rem 5vw 2.5rem;position:relative;overflow:hidden;}
 .search-hero::before{content:'';position:absolute;right:-50px;top:-80px;width:400px;height:400px;border-radius:50%;background:rgba(245,166,35,0.07);pointer-events:none;}
@@ -176,7 +155,10 @@ nav{background:var(--navy);padding:1rem 5vw;display:flex;align-items:center;just
 }
 </style>
 </head>
-<body>
+<body data-nav="marketing" data-surface="product">
+<div id="site-nav"></div>
+<script src="/assets/site.js"></script>
+<noscript><nav><div class="nav-inner"><a href="index.html" class="nav-logo">Workforce<span class="dot">for</span>Humans</a></div></nav></noscript>
 
 <!-- ─── Supabase connection ─── -->
 <script>
@@ -186,20 +168,6 @@ nav{background:var(--navy);padding:1rem 5vw;display:flex;align-items:center;just
   const { createClient } = supabase;
   const db = createClient(SUPABASE_URL, SUPABASE_ANON);
 </script>
-
-<!-- NAV -->
-<nav>
-  <a href="index.html" class="nav-logo">Workforce<span>for</span>Humans</a>
-  <ul class="nav-links">
-    <li><a href="jobs.html" class="active">Find Jobs</a></li>
-    <li><a href="learn.html">Level Up</a></li>
-    <li><a href="feed.html">Intelligence</a></li>
-    <li><a href="kb.html">Resources</a></li>
-    <li><a href="resume.html">Resume AI</a></li>
-    <li><a href="index.html#employers">For Employers</a></li>
-    <li><a href="member.html" class="nav-cta">My Workforce</a></li>
-  </ul>
-</nav>
 
 <!-- MATCHES BANNER (only when signed in, populated by script) -->
 <div id="matches-banner" style="display:none;max-width:1280px;margin:1rem auto 0;padding:1rem 5vw 0;">
@@ -705,5 +673,7 @@ function skeletons(n) {
 // Close modal on Escape
 document.addEventListener('keydown', e => { if (e.key === 'Escape') { document.getElementById('modal').classList.remove('open'); document.body.style.overflow=''; }});
 </script>
+
+<div id="site-footer"></div>
 </body>
 </html>
