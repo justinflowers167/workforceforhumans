@@ -214,10 +214,10 @@ body.nav-open .nav-scrim{opacity:1;pointer-events:auto;}
 #site-footer.admin .footer-grid{display:none;}
 
 /* ─── RESPONSIVE ─── */
-@media(max-width:1024px){
+@media(max-width:1200px){
   .footer-grid{grid-template-columns:1fr 1fr;}
 }
-@media(max-width:768px){
+@media(max-width:960px){
   .nav-links{display:none;}
   .nav-actions{display:none;}
   .nav-burger{display:flex;}
