@@ -1,6 +1,6 @@
 // Create a Stripe Checkout Session for an employer purchase. Side effects
 // before redirecting to Stripe:
-//   1. Upsert an employers row by contact_email.
+//   1. Find or create an employers row, matched case-insensitively by email.
 //   2. Create the Stripe customer (if not already linked).
 //   3. For one-time plans (basic, featured) insert a job_postings row in
 //      'pending' state. For the employer subscription we skip the posting
@@ -43,17 +43,30 @@ Deno.serve(async (req: Request) => {
     const planConfig = PLANS[plan as PlanKey];
     if (!planConfig) return json({ error: "Invalid plan. Must be: basic, featured, or employer" }, 400);
 
-    // Upsert employer (safe because employers_contact_email_key was added in
-    // the phase-3 migration). Slug is derived from name only on insert.
-    const slug = String(name).toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
-    const { data: employer, error: empErr } = await db.from("employers")
-      .upsert(
-        { name, slug, contact_email: email, contact_name: name },
-        { onConflict: "contact_email" },
-      )
-      .select("id, stripe_customer_id")
-      .single();
-    if (empErr || !employer) return json({ error: "Failed to upsert employer", detail: empErr?.message }, 500);
+    // Find or create the employer. We can't use upsert(onConflict:contact_email)
+    // because the employers.slug UNIQUE constraint can collide with an existing
+    // row owned by a different email (e.g. "Acme Inc" and "acme-inc" both
+    // slug to "acme-inc"). Select-then-insert with a random slug suffix avoids
+    // both constraints.
+    let employer: { id: string; stripe_customer_id: string | null } | null = null;
+    {
+      const { data: existing } = await db.from("employers")
+        .select("id, stripe_customer_id")
+        .ilike("contact_email", email)
+        .maybeSingle();
+      if (existing) {
+        employer = existing;
+      } else {
+        const baseSlug = String(name).toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "") || "employer";
+        const slug = `${baseSlug}-${Math.random().toString(36).slice(2, 7)}`;
+        const { data: created, error: empErr } = await db.from("employers")
+          .insert({ name, slug, contact_email: email, contact_name: name })
+          .select("id, stripe_customer_id")
+          .single();
+        if (empErr || !created) return json({ error: "Failed to create employer", detail: empErr?.message }, 500);
+        employer = created;
+      }
+    }
 
     // Ensure a Stripe customer exists.
     let stripeCustomerId = employer.stripe_customer_id;
