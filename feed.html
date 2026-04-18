@@ -41,7 +41,7 @@
 .feed-card.severity-medium{border-left:4px solid var(--amber)}
 .feed-card.severity-low{border-left:4px solid var(--mist)}
 .fc-top{display:flex;align-items:flex-start;justify-content:space-between;gap:1rem;margin-bottom:.5rem}
-.fc-title{font-family:var(--font-d);font-size:1.05rem;color:var(--navy);line-height:1.3;flex:1}
+.fcard-title{font-family:var(--font-d);font-size:1.05rem;color:var(--navy);line-height:1.3;flex:1}
 .fc-severity{font-size:.65rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;padding:2px 8px;border-radius:10px;flex-shrink:0}
 .fc-severity.critical{background:rgba(192,57,43,.1);color:var(--red)}
 .fc-severity.high{background:rgba(200,95,62,.1);color:var(--terra)}
@@ -290,7 +290,7 @@ function renderLayoffs() {
       html += `
         <div class="feed-card severity-${item.severity || 'medium'}">
           <div class="fc-top">
-            <div class="fc-title">${typeEmoji} ${item.title}</div>
+            <div class="fcard-title">${typeEmoji} ${item.title}</div>
             <span class="fc-severity ${item.severity || 'medium'}">${item.severity || 'medium'}</span>
           </div>
           ${item.summary ? `<div class="fc-summary">${item.summary}</div>` : ''}
