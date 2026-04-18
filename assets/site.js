@@ -21,7 +21,7 @@
   }
 
   // --- Nav templates ---
-  // marketing/member render a hamburger + slide-over drawer at ≤768px.
+  // marketing/member render a hamburger + slide-over drawer at ≤960px.
   // admin has only one link which fits on mobile — no burger/drawer rendered.
   var BURGER = '<button class="nav-burger" type="button" aria-label="Menu" ' +
                'aria-expanded="false" aria-controls="nav-drawer"><span></span></button>';
@@ -167,8 +167,9 @@
     for (var i = 0; i < activeLinks.length; i++) activeLinks[i].classList.add('active');
 
     // Wire up the slide-over drawer (marketing + member variants only).
-    // Scroll-lock is CSS-based (body.nav-open) so it stacks cleanly with any
-    // page-local modal that sets body.style.overflow inline (e.g. jobs.html).
+    // Scroll-lock uses a class (body.nav-open) so it stacks cleanly with
+    // page-local modals that set body.style.overflow inline (jobs.html,
+    // kb-admin.html).
     var burger = navHost.querySelector('.nav-burger');
     var drawer = navHost.querySelector('.nav-drawer');
     var scrim = navHost.querySelector('.nav-scrim');

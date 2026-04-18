@@ -37,10 +37,7 @@
   --sh-md:0 8px 32px rgba(15,24,41,0.1);
   --sh-lg:0 24px 64px rgba(15,24,41,0.14);
 
-  /* breakpoints (declarative tokens only — CSS custom properties cannot be
-     used inside @media query conditions without a build step, so @media
-     rules use the literal px values. These tokens document the canonical
-     scale (sm:640, md:960, lg:1200) that all pages normalize to.) */
+  /* breakpoints — documentation only; @media rules use literal px. */
   --bp-sm:640px;
   --bp-md:960px;
   --bp-lg:1200px;
@@ -133,7 +130,7 @@ body.nav-open .nav-burger span::after{top:0;transform:rotate(-45deg);}
 .nav-drawer{
   position:fixed;top:0;right:0;bottom:0;
   width:84vw;max-width:320px;height:100vh;height:100dvh;
-  background:var(--navy);z-index:1001;
+  background:#0f1829;z-index:1001;
   transform:translateX(100%);transition:transform 0.22s var(--ease);
   display:flex;flex-direction:column;padding:5rem 1.25rem 1.5rem;
   overflow-y:auto;
