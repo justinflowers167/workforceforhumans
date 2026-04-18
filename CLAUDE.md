@@ -22,9 +22,26 @@ There is nothing to build, lint, or test locally.
 
 ## Architecture
 
-### Frontend: one file per page, no shared assets
+### Frontend: one file per page, shared chrome in `/assets/`
 
-Each HTML page duplicates the Supabase client setup, the CSS design tokens, and the nav. Do not try to extract a shared CSS/JS bundle — the site's deploy model is "drop HTML files on static hosting." If you change a color/token, update **every** page's `:root` block. Pages:
+Each HTML page is a self-contained document, but design tokens, the universal reset, the nav, and the footer live in two shared files:
+
+- `/assets/site.css` — tokens in `:root`, universal reset, base typography, shared utility classes (`.btn-ghost`, `.btn-amber`, etc.), canonical nav + footer CSS, breakpoint vars. Navy has a `body[data-surface="product"]` override for product pages.
+- `/assets/site.js` — ~160-line vanilla-JS IIFE. Reads `document.body.dataset.nav` (`marketing` / `member` / `admin`), renders the matching nav into `<div id="site-nav"></div>`, renders the footer into `<div id="site-footer"></div>`, marks the active link from `location.pathname`. Runs synchronously at the top of `<body>` so nav/footer are in the DOM before any `DOMContentLoaded` / `hashchange` handlers bind.
+
+Every page declares its variant via body attributes — e.g. `<body data-nav="marketing">` (marketing), `<body data-nav="member" data-surface="product">` (member), `<body data-nav="admin" data-surface="product">` (kb-admin). Pages also include a minimal `<noscript>` nav fallback and page-specific CSS only (hero layouts, page-local classes). **Do not duplicate tokens, nav markup, or footer markup in page HTML** — change `site.css` once, every page updates.
+
+Verify with:
+
+```bash
+grep -c "<nav" *.html            # must print 0 for every page (<noscript> nav uses lowercase, won't match the canonical regex above if you prefer `grep -En "^\s*<nav"` — use whatever check catches duplicated chrome)
+grep -rn "^\s*--amber:" *.html   # must print nothing
+grep -rn "^\s*--navy:" *.html    # must print nothing
+```
+
+Deploy model unchanged: drop HTML files + `/assets/*` on static hosting (Cloudflare Pages). No build step, no bundler.
+
+Pages:
 
 | Page | Role |
 |---|---|
@@ -88,7 +105,7 @@ Configure these via `supabase secrets set`:
 
 ## Conventions to follow
 
-- **Don't introduce a build step, bundler, or framework.** The HTML-per-page architecture is deliberate. Changes to one page should not require editing others (except for shared design tokens in `:root`).
+- **Don't introduce a build step, bundler, or framework.** The HTML-per-page architecture is deliberate. Shared design tokens, nav, and footer live in `/assets/site.css` + `/assets/site.js`; per-page CSS/JS stays inline in that page.
 - **Keep Edge Function style uniform**: same `corsHeaders`, same `json(body, status)` helper, same auth pattern (user client for verification → admin client for work), same defensive JSON slice for Claude output.
 - **Model ID**: use `claude-sonnet-4-6` for new Claude calls unless there's a reason to switch. Keep `max_tokens` bounded (current functions use 4000).
 - **RLS is the source of truth for access control on browser reads.** The anon key is shipped to the client intentionally; any new tables the browser reads need matching RLS policies — do not work around this by pushing reads into an Edge Function unless there's a real reason.
