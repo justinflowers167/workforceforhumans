@@ -21,6 +21,11 @@
   }
 
   // --- Nav templates ---
+  // marketing/member render a hamburger + slide-over drawer at ≤768px.
+  // admin has only one link which fits on mobile — no burger/drawer rendered.
+  var BURGER = '<button class="nav-burger" type="button" aria-label="Menu" ' +
+               'aria-expanded="false" aria-controls="nav-drawer"><span></span></button>';
+
   var NAVS = {
     marketing:
       '<nav>' +
@@ -38,8 +43,24 @@
             '<a href="mailto:employers@workforceforhumans.com" class="btn-ghost">Post a Job</a>' +
             '<a href="member.html" class="btn-amber">My Workforce &rarr;</a>' +
           '</div>' +
+          BURGER +
         '</div>' +
-      '</nav>',
+      '</nav>' +
+      '<div class="nav-scrim" aria-hidden="true"></div>' +
+      '<aside class="nav-drawer" id="nav-drawer" aria-hidden="true">' +
+        '<ul class="drawer-links">' +
+          '<li><a href="jobs.html" data-match="jobs.html">Find Jobs</a></li>' +
+          '<li><a href="learn.html" data-match="learn.html">Level Up</a></li>' +
+          '<li><a href="feed.html" data-match="feed.html">Intelligence</a></li>' +
+          '<li><a href="kb.html" data-match="kb.html">Resources</a></li>' +
+          '<li><a href="resume.html" data-match="resume.html">Resume AI</a></li>' +
+          '<li><a href="index.html#employers">For Employers</a></li>' +
+        '</ul>' +
+        '<div class="drawer-cta">' +
+          '<a href="mailto:employers@workforceforhumans.com" class="btn-ghost">Post a Job</a>' +
+          '<a href="member.html" class="btn-amber">My Workforce &rarr;</a>' +
+        '</div>' +
+      '</aside>',
 
     member:
       '<nav>' +
@@ -51,8 +72,18 @@
             '<li><a href="feed.html" data-match="feed.html">Feed</a></li>' +
             '<li><a href="member.html" data-match="member.html">My Workforce</a></li>' +
           '</ul>' +
+          BURGER +
         '</div>' +
-      '</nav>',
+      '</nav>' +
+      '<div class="nav-scrim" aria-hidden="true"></div>' +
+      '<aside class="nav-drawer" id="nav-drawer" aria-hidden="true">' +
+        '<ul class="drawer-links">' +
+          '<li><a href="jobs.html" data-match="jobs.html">Jobs</a></li>' +
+          '<li><a href="learn.html" data-match="learn.html">Learn</a></li>' +
+          '<li><a href="feed.html" data-match="feed.html">Feed</a></li>' +
+          '<li><a href="member.html" data-match="member.html">My Workforce</a></li>' +
+        '</ul>' +
+      '</aside>',
 
     admin:
       '<nav>' +
@@ -131,8 +162,51 @@
   var navHost = document.getElementById('site-nav');
   if (navHost) {
     navHost.innerHTML = NAVS[variant] || NAVS.marketing;
-    var active = navHost.querySelector('a[data-match="' + path + '"]');
-    if (active) active.classList.add('active');
+    // Highlight active link in both the bar and the drawer.
+    var activeLinks = navHost.querySelectorAll('a[data-match="' + path + '"]');
+    for (var i = 0; i < activeLinks.length; i++) activeLinks[i].classList.add('active');
+
+    // Wire up the slide-over drawer (marketing + member variants only).
+    // Scroll-lock is CSS-based (body.nav-open) so it stacks cleanly with any
+    // page-local modal that sets body.style.overflow inline (e.g. jobs.html).
+    var burger = navHost.querySelector('.nav-burger');
+    var drawer = navHost.querySelector('.nav-drawer');
+    var scrim = navHost.querySelector('.nav-scrim');
+    if (burger && drawer && scrim) {
+      var openDrawer = function () {
+        body.classList.add('nav-open');
+        burger.setAttribute('aria-expanded', 'true');
+        drawer.setAttribute('aria-hidden', 'false');
+        scrim.setAttribute('aria-hidden', 'false');
+        var firstLink = drawer.querySelector('a');
+        if (firstLink) firstLink.focus({ preventScroll: true });
+      };
+      var closeDrawer = function () {
+        body.classList.remove('nav-open');
+        burger.setAttribute('aria-expanded', 'false');
+        drawer.setAttribute('aria-hidden', 'true');
+        scrim.setAttribute('aria-hidden', 'true');
+      };
+      burger.addEventListener('click', function () {
+        if (body.classList.contains('nav-open')) {
+          closeDrawer();
+          burger.focus({ preventScroll: true });
+        } else {
+          openDrawer();
+        }
+      });
+      scrim.addEventListener('click', closeDrawer);
+      var drawerLinks = drawer.querySelectorAll('a');
+      for (var j = 0; j < drawerLinks.length; j++) {
+        drawerLinks[j].addEventListener('click', closeDrawer);
+      }
+      document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape' && body.classList.contains('nav-open')) {
+          closeDrawer();
+          burger.focus({ preventScroll: true });
+        }
+      });
+    }
   }
 
   var footHost = document.getElementById('site-footer');

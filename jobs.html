@@ -129,16 +129,18 @@
 .save-job-btn:hover{border-color:var(--navy);color:var(--navy);}
 
 /* RESPONSIVE */
-@media(max-width:860px){
+@media(max-width:960px){
   .main-layout{grid-template-columns:1fr;}
   .sidebar{position:static;display:grid;grid-template-columns:1fr 1fr;gap:1rem;}
-  .nav-links{display:none;}
 }
-@media(max-width:600px){
+@media(max-width:640px){
   .sidebar{grid-template-columns:1fr;}
   .search-bar{flex-direction:column;}
   .search-bar input,.search-bar select{width:100%;}
   .stats-bar{gap:1.5rem;}
+  .search-hero{padding:2rem 5vw 1.5rem;}
+  .modal-footer{flex-direction:column;align-items:stretch;}
+  .save-job-btn{width:100%;}
 }
 </style>
 </head>
