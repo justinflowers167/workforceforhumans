@@ -91,19 +91,6 @@
 .apply-btn.secondary{background:transparent;color:var(--navy);border:1px solid var(--stone);}
 .apply-btn.secondary:hover{border-color:var(--amber);color:var(--amber);background:transparent;}
 
-/* LOADING / EMPTY STATES */
-.skeleton{background:linear-gradient(90deg,#f0ece4 25%,#e8e4dc 50%,#f0ece4 75%);background-size:200% 100%;animation:shimmer 1.4s infinite;border-radius:8px;}
-@keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
-.sk-card{background:#fff;border-radius:14px;padding:1.5rem;border:1px solid var(--stone);margin-bottom:1rem;}
-.sk-line{height:14px;margin-bottom:10px;}
-.sk-title{height:20px;width:65%;margin-bottom:8px;}
-.sk-short{width:40%;}
-.sk-long{width:85%;}
-
-.empty-state{text-align:center;padding:4rem 2rem;}
-.empty-state .icon{font-size:3rem;margin-bottom:1rem;}
-.empty-state h3{font-family:var(--font-d);font-size:1.4rem;color:var(--navy);margin-bottom:0.5rem;}
-.empty-state p{color:var(--slate);font-size:0.92rem;font-weight:300;}
 
 /* PAGINATION */
 .pagination{display:flex;gap:0.5rem;justify-content:center;margin-top:2rem;flex-wrap:wrap;}
@@ -356,21 +343,7 @@
   </div>
 </div>
 
-<!-- FOOTER -->
-<div style="background:var(--navy);padding:2.5rem 5vw;margin-top:3rem;text-align:center;">
-  <p style="color:rgba(255,255,255,0.45);font-size:0.88rem;margin-bottom:0.75rem;">
-    <a href="index.html" style="color:var(--amber);text-decoration:none;font-weight:600;">WorkforceforHumans</a>
-    &nbsp;·&nbsp;
-    <a href="learn.html" style="color:rgba(255,255,255,0.6);text-decoration:none;">Level Up</a>
-    &nbsp;·&nbsp;
-    <a href="feed.html" style="color:rgba(255,255,255,0.6);text-decoration:none;">Intelligence</a>
-    &nbsp;·&nbsp;
-    <a href="kb.html" style="color:rgba(255,255,255,0.6);text-decoration:none;">Resources</a>
-    &nbsp;·&nbsp;
-    <a href="index.html#employers" style="color:rgba(255,255,255,0.6);text-decoration:none;">For Employers</a>
-  </p>
-  <p style="color:rgba(255,255,255,0.3);font-size:0.78rem;">© 2025 WorkforceForHumans LLC · Colorado, USA</p>
-</div>
+<div id="site-footer"></div>
 
 <script>
 // ─── STATE ───────────────────────────────────────────────
@@ -674,6 +647,5 @@ function skeletons(n) {
 document.addEventListener('keydown', e => { if (e.key === 'Escape') { document.getElementById('modal').classList.remove('open'); document.body.style.overflow=''; }});
 </script>
 
-<div id="site-footer"></div>
 </body>
 </html>

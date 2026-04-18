@@ -48,6 +48,30 @@ body[data-surface="product"]{--navy:#1a2340;}
 
 html{scroll-behavior:smooth;}
 body{font-family:var(--font-b);background:var(--cream);color:var(--navy);line-height:1.6;overflow-x:hidden;}
+.container{max-width:1280px;margin:0 auto;padding:0 5vw;}
+
+/* ─── EMPTY / LOADING STATES ─── */
+.empty-state{text-align:center;padding:4rem 2rem;}
+.empty-state .icon{font-size:3rem;margin-bottom:1rem;}
+.empty-state h3{font-family:var(--font-d);font-size:1.3rem;color:var(--navy);margin-bottom:0.5rem;}
+.empty-state p{color:var(--slate);font-size:0.9rem;font-weight:300;}
+.skeleton{background:linear-gradient(90deg,#f0ece4 25%,#e8e4dc 50%,#f0ece4 75%);background-size:200% 100%;animation:shimmer 1.4s infinite;border-radius:8px;}
+@keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
+.sk-card{background:#fff;border-radius:14px;padding:1.5rem;border:1px solid var(--stone);margin-bottom:1rem;}
+.sk-line{height:14px;margin-bottom:10px;}
+.sk-title{height:20px;width:60%;}
+.sk-short{width:40%;}
+.sk-long{width:85%;}
+
+/* ─── REVEAL ON SCROLL ─── */
+.rv{opacity:0;transform:translateY(24px);transition:opacity 0.7s var(--ease),transform 0.7s var(--ease);}
+.rv.on{opacity:1;transform:none;}
+.rv.d1{transition-delay:0.1s;}.rv.d2{transition-delay:0.2s;}.rv.d3{transition-delay:0.3s;}
+
+/* ─── SHARED SECTION HELPERS ─── */
+.eye{font-size:0.78rem;font-weight:600;text-transform:uppercase;letter-spacing:0.1em;
+  color:var(--terra);margin-bottom:1rem;display:flex;align-items:center;gap:0.5rem;}
+.eye::before{content:'';width:24px;height:2px;background:var(--terra);}
 
 /* ─── NAV ─── */
 #site-nav{position:sticky;top:0;left:0;right:0;z-index:1000;}
@@ -130,7 +154,10 @@ body{font-family:var(--font-b);background:var(--cream);color:var(--navy);line-he
 #site-footer.admin footer{padding:2rem 0;}
 #site-footer.admin .footer-grid{display:none;}
 
-/* ─── RESPONSIVE NAV ─── */
+/* ─── RESPONSIVE ─── */
+@media(max-width:1024px){
+  .footer-grid{grid-template-columns:1fr 1fr;}
+}
 @media(max-width:768px){
   .nav-links{display:none;}
   .nav-actions .btn-ghost{display:none;}
