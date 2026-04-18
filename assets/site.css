@@ -1,0 +1,138 @@
+/* ============================================================
+ * site.css — shared tokens, reset, and nav/footer chrome
+ *
+ * One source of truth for design tokens, fonts, and the nav +
+ * footer rendered by /assets/site.js. Pages declare their
+ * variants via <body data-nav="..." data-surface="...">.
+ *
+ * Do NOT redefine --amber, --navy, etc. in individual pages.
+ * Product pages can opt into a lighter navy via
+ * <body data-surface="product">.
+ * ============================================================ */
+
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400;1,700&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,300&family=DM+Mono:wght@400;500&display=swap');
+
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+
+:root{
+  /* palette */
+  --navy:#0f1829;--navy-mid:#1a2340;--navy-light:#243055;
+  --amber:#f5a623;--amber-dk:#c47d0e;--amber-lt:#fdf0d5;
+  --cream:#faf8f4;--stone:#ede8de;--stone-dk:#d4ccbc;
+  --terra:#c85f3e;--terra-lt:#f9ece7;
+  --slate:#4a5568;--slate-lt:#6b7a8d;--mist:#8ba8b5;
+  --green:#1f6b35;--green-lt:#e6f2ea;--white:#ffffff;
+  --red:#c0392b;
+
+  /* typography */
+  --font-d:'Playfair Display',Georgia,serif;
+  --font-b:'DM Sans',sans-serif;
+  --font-m:'DM Mono',monospace;
+
+  /* motion */
+  --ease:cubic-bezier(0.16,1,0.3,1);
+
+  /* shadows */
+  --sh-sm:0 2px 8px rgba(15,24,41,0.06);
+  --sh-md:0 8px 32px rgba(15,24,41,0.1);
+  --sh-lg:0 24px 64px rgba(15,24,41,0.14);
+
+  /* breakpoints (tokens only — page layouts still use existing px values) */
+  --bp-sm:640px;
+  --bp-md:960px;
+  --bp-lg:1200px;
+}
+
+/* Product pages use a slightly lighter navy as their base surface. */
+body[data-surface="product"]{--navy:#1a2340;}
+
+html{scroll-behavior:smooth;}
+body{font-family:var(--font-b);background:var(--cream);color:var(--navy);line-height:1.6;overflow-x:hidden;}
+
+/* ─── NAV ─── */
+#site-nav{position:sticky;top:0;left:0;right:0;z-index:1000;}
+#site-nav nav{
+  background:rgba(15,24,41,0.94);
+  backdrop-filter:blur(20px);
+  -webkit-backdrop-filter:blur(20px);
+  border-bottom:1px solid rgba(255,255,255,0.06);
+}
+.nav-inner{
+  max-width:1280px;margin:0 auto;padding:0 5vw;
+  display:flex;align-items:center;justify-content:space-between;
+  height:68px;gap:1rem;
+}
+.nav-logo{font-family:var(--font-d);color:#fff;text-decoration:none;font-size:1.15rem;font-weight:700;white-space:nowrap;}
+.nav-logo .dot{color:var(--amber);}
+.nav-links{display:flex;align-items:center;gap:0.25rem;list-style:none;}
+.nav-links a{
+  color:rgba(255,255,255,0.6);text-decoration:none;font-size:0.875rem;
+  font-weight:500;padding:0.5rem 0.85rem;border-radius:8px;transition:all 0.2s;
+}
+.nav-links a:hover{color:#fff;background:rgba(255,255,255,0.07);}
+.nav-links a.active{color:var(--amber);background:rgba(245,166,35,0.08);}
+.nav-actions{display:flex;align-items:center;gap:0.75rem;}
+.nav-badge{background:var(--terra);color:#fff;font-size:0.7rem;padding:2px 8px;border-radius:4px;font-weight:600;margin-left:0.75rem;}
+.nav-right{display:flex;align-items:center;gap:1rem;}
+.nav-right a{color:rgba(255,255,255,0.6);text-decoration:none;font-size:0.85rem;}
+.nav-right a:hover{color:var(--amber);}
+
+/* ─── BUTTONS (shared) ─── */
+.btn-ghost{
+  color:rgba(255,255,255,0.7);background:none;
+  border:1px solid rgba(255,255,255,0.15);border-radius:8px;
+  padding:0.5rem 1.1rem;font-family:var(--font-b);font-size:0.875rem;
+  font-weight:500;cursor:pointer;text-decoration:none;transition:all 0.2s;
+  white-space:nowrap;
+}
+.btn-ghost:hover{color:#fff;border-color:rgba(255,255,255,0.3);}
+.btn-amber{
+  background:var(--amber);color:var(--navy);border:none;border-radius:8px;
+  padding:0.5rem 1.2rem;font-family:var(--font-b);font-size:0.875rem;
+  font-weight:700;cursor:pointer;text-decoration:none;transition:all 0.2s;
+  display:inline-block;white-space:nowrap;
+}
+.btn-amber:hover{background:var(--amber-dk);transform:translateY(-1px);}
+
+/* ─── FOOTER ─── */
+#site-footer footer{background:#0a1120;padding:4rem 0 2rem;}
+.footer-grid{
+  max-width:1280px;margin:0 auto;padding:0 5vw;
+  display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:3rem;margin-bottom:3rem;
+}
+.fb{font-family:var(--font-d);font-size:1.1rem;color:#fff;font-weight:700;margin-bottom:0.75rem;}
+.fb .dot{color:var(--amber);}
+.fd{font-size:0.85rem;color:rgba(255,255,255,0.35);font-weight:300;line-height:1.75;max-width:280px;margin-bottom:1.5rem;}
+.fsoc{display:flex;gap:0.75rem;}
+.fsoc a{
+  width:36px;height:36px;border-radius:8px;background:rgba(255,255,255,0.06);
+  border:1px solid rgba(255,255,255,0.08);display:flex;align-items:center;
+  justify-content:center;color:rgba(255,255,255,0.5);text-decoration:none;
+  font-size:0.85rem;transition:all 0.2s;
+}
+.fsoc a:hover{background:rgba(245,166,35,0.15);border-color:rgba(245,166,35,0.3);color:var(--amber);}
+.fc-title{font-size:0.8rem;font-weight:600;text-transform:uppercase;letter-spacing:0.08em;color:rgba(255,255,255,0.4);margin-bottom:1.25rem;}
+.fc-links{list-style:none;}
+.fc-links li{margin-bottom:0.6rem;}
+.fc-links a{color:rgba(255,255,255,0.45);text-decoration:none;font-size:0.875rem;transition:color 0.2s;}
+.fc-links a:hover{color:var(--amber);}
+.footer-bot{
+  max-width:1280px;margin:0 auto;padding:1.5rem 5vw 0;
+  border-top:1px solid rgba(255,255,255,0.06);display:flex;align-items:center;
+  justify-content:space-between;flex-wrap:wrap;gap:1rem;
+}
+.fcopy{font-size:0.8rem;color:rgba(255,255,255,0.25);}
+.flegal{display:flex;gap:1.5rem;}
+.flegal a{font-size:0.8rem;color:rgba(255,255,255,0.25);text-decoration:none;transition:color 0.2s;}
+.flegal a:hover{color:rgba(255,255,255,0.5);}
+
+/* Admin footer is minimal — no grid. */
+#site-footer.admin footer{padding:2rem 0;}
+#site-footer.admin .footer-grid{display:none;}
+
+/* ─── RESPONSIVE NAV ─── */
+@media(max-width:768px){
+  .nav-links{display:none;}
+  .nav-actions .btn-ghost{display:none;}
+  .footer-grid{grid-template-columns:1fr;gap:2rem;}
+}
