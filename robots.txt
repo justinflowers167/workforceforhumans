@@ -1,0 +1,11 @@
+User-agent: *
+Allow: /
+
+Disallow: /kb-admin.html
+Disallow: /member.html
+Disallow: /employer.html
+Disallow: /resume.html
+Disallow: /success.html
+Disallow: /cancel.html
+
+Sitemap: https://workforceforhumans.com/sitemap.xml

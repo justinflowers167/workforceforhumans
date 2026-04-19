@@ -5,6 +5,22 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>Knowledge Base — Workforce for Humans</title>
 <meta name="description" content="Free guides, tips, and resources to help you find work, level up your skills, and move forward in your career."/>
+<link rel="canonical" href="https://workforceforhumans.com/kb.html"/>
+<link rel="icon" type="image/svg+xml" href="/assets/favicon.svg"/>
+<meta name="theme-color" content="#0f1829"/>
+<meta property="og:type" content="website"/>
+<meta property="og:site_name" content="Workforce for Humans"/>
+<meta property="og:title" content="Knowledge Base — Workforce for Humans"/>
+<meta property="og:description" content="Free guides, tips, and resources to help you find work, level up your skills, and move forward in your career."/>
+<meta property="og:url" content="https://workforceforhumans.com/kb.html"/>
+<meta property="og:image" content="https://workforceforhumans.com/assets/og-default.svg"/>
+<meta property="og:image:width" content="1200"/>
+<meta property="og:image:height" content="630"/>
+<meta name="twitter:card" content="summary_large_image"/>
+<meta name="twitter:title" content="Knowledge Base — Workforce for Humans"/>
+<meta name="twitter:description" content="Free guides, tips, and resources to help you find work, level up your skills, and move forward in your career."/>
+<meta name="twitter:image" content="https://workforceforhumans.com/assets/og-default.svg"/>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebSite","name":"Workforce for Humans Knowledge Base","url":"https://workforceforhumans.com/kb.html","potentialAction":{"@type":"SearchAction","target":{"@type":"EntryPoint","urlTemplate":"https://workforceforhumans.com/kb.html#search/{search_term_string}"},"query-input":"required name=search_term_string"}}</script>
 <link rel="stylesheet" href="/assets/site.css"/>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
@@ -17,7 +33,7 @@
 .kb-hero p{color:rgba(255,255,255,.5);font-size:.95rem;margin-bottom:2rem;font-weight:300;max-width:560px;margin-left:auto;margin-right:auto}
 .kb-search{max-width:600px;margin:0 auto;display:flex;gap:.5rem}
 .kb-search input{flex:1;padding:.85rem 1.2rem;border:none;border-radius:10px;font-family:var(--font-b);font-size:.95rem;color:var(--navy);outline:none}
-.kb-search input::placeholder{color:#aaa}
+.kb-search input::placeholder{color:var(--slate-lt)}
 .kb-search button{background:var(--amber);color:var(--navy);border:none;border-radius:10px;padding:.85rem 1.5rem;font-family:var(--font-b);font-size:.92rem;font-weight:600;cursor:pointer;transition:background .2s;white-space:nowrap}
 .kb-search button:hover{background:var(--amber-dk)}
 
@@ -118,11 +134,14 @@
   const db = createClient(SUPABASE_URL, SUPABASE_ANON);
 </script>
 
+<main id="main">
+
 <!-- HERO -->
 <div class="kb-hero">
   <h1>Learn. Level Up.<br/><em>Move Forward.</em></h1>
   <p>Free guides and resources to help you find work, build skills, and navigate your career — no matter where you're starting from.</p>
   <div class="kb-search">
+    <label for="kb-search-input" class="sr-only">Search articles</label>
     <input type="text" id="kb-search-input" placeholder="Search articles… e.g. &quot;resume tips&quot; or &quot;interview prep&quot;" />
     <button onclick="doSearch()">Search</button>
   </div>
@@ -138,6 +157,8 @@
     <div class="sk-card"><div class="skeleton sk-line sk-title"></div><div class="skeleton sk-line sk-long"></div></div>
   </div>
 </div>
+
+</main>
 
 <script>
 // ─── STATE ─────────────────────────────────────────────
@@ -172,9 +193,15 @@ async function loadCategories() {
   kbCategories = data || [];
 }
 
+function removeArticleLdJson() {
+  const s = document.querySelector('script[data-kb-article]');
+  if (s) s.remove();
+}
+
 // ─── HOME VIEW ────────────────────────────────────────
 async function renderHome() {
   currentView = 'home';
+  removeArticleLdJson();
   const content = document.getElementById('kb-content');
 
   // Get article counts per category
@@ -232,6 +259,7 @@ async function renderHome() {
 // ─── CATEGORY VIEW ────────────────────────────────────
 async function renderCategory(slug) {
   currentView = 'category';
+  removeArticleLdJson();
   const content = document.getElementById('kb-content');
   const cat = kbCategories.find(c => c.slug === slug);
   if (!cat) return renderHome();
@@ -257,6 +285,7 @@ async function renderCategory(slug) {
 // ─── ARTICLE VIEW ─────────────────────────────────────
 async function renderArticle(slug) {
   currentView = 'article';
+  removeArticleLdJson();
   const content = document.getElementById('kb-content');
   content.innerHTML = `<div class="article-view"><div class="sk-card"><div class="skeleton sk-line sk-title"></div><div class="skeleton sk-line sk-long"></div><div class="skeleton sk-line sk-long"></div></div></div>`;
 
@@ -265,6 +294,25 @@ async function renderArticle(slug) {
     content.innerHTML = `<div class="empty-state" style="margin-top:3rem"><div class="icon">🔍</div><h3>Article not found</h3><p>This article may have been moved or removed.</p></div>`;
     return;
   }
+
+  const pageId = `https://workforceforhumans.com/kb.html#article/${slug}`;
+  const schema = {
+    '@context':'https://schema.org',
+    '@type':'Article',
+    '@id': pageId,
+    mainEntityOfPage: { '@type':'WebPage', '@id': pageId },
+    headline: a.title,
+    datePublished: a.published_at || undefined,
+    dateModified: a.updated_at || a.published_at || undefined,
+    author: { '@type':'Organization', name:'Workforce for Humans' },
+    publisher: { '@type':'Organization', name:'Workforce for Humans', logo: { '@type':'ImageObject', url:'https://workforceforhumans.com/assets/og-default.svg' } }
+  };
+  Object.keys(schema).forEach(k => schema[k] === undefined && delete schema[k]);
+  const ld = document.createElement('script');
+  ld.type = 'application/ld+json';
+  ld.setAttribute('data-kb-article', '1');
+  ld.textContent = JSON.stringify(schema);
+  document.head.appendChild(ld);
 
   // Increment view count (fire-and-forget)
   db.from('kb_articles').update({ view_count: (a.view_count || 0) + 1 }).eq('id', a.id);
@@ -320,6 +368,7 @@ document.getElementById('kb-search-input').addEventListener('keydown', e => { if
 
 async function renderSearch(query) {
   currentView = 'search';
+  removeArticleLdJson();
   const content = document.getElementById('kb-content');
   content.innerHTML = `<div class="search-results-header">Searching…</div>`;
 

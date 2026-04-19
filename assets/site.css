@@ -14,6 +14,15 @@
 
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
 
+/* Keyboard-only focus ring. Mouse/touch focus stays clean via :focus:not(:focus-visible). */
+:focus-visible{outline:2px solid var(--amber);outline-offset:2px;border-radius:4px;}
+:focus:not(:focus-visible){outline:none;}
+
+.skip-link{position:absolute;left:-9999px;top:0;background:var(--amber);color:var(--navy);padding:.6rem 1rem;font-weight:600;z-index:2000;border-radius:0 0 8px 0;text-decoration:none;}
+.skip-link:focus{left:0;}
+
+.sr-only{position:absolute;left:-10000px;width:1px;height:1px;overflow:hidden;}
+
 :root{
   /* palette */
   --navy:#0f1829;--navy-mid:#1a2340;--navy-light:#243055;
@@ -23,6 +32,10 @@
   --slate:#4a5568;--slate-lt:#6b7a8d;--mist:#8ba8b5;
   --green:#1f6b35;--green-lt:#e6f2ea;--white:#ffffff;
   --red:#c0392b;
+
+  /* AA-compliant amber for text on cream/white surfaces (~4.9:1 on #faf8f4). */
+  --amber-txt:#c47d0e;
+  --focus-ring:0 0 0 3px rgba(245,166,35,0.45);
 
   /* typography */
   --font-d:'Playfair Display',Georgia,serif;
@@ -93,7 +106,7 @@ body{font-family:var(--font-b);background:var(--cream);color:var(--navy);line-he
 .nav-logo .dot{color:var(--amber);}
 .nav-links{display:flex;align-items:center;gap:0.25rem;list-style:none;}
 .nav-links a{
-  color:rgba(255,255,255,0.6);text-decoration:none;font-size:0.875rem;
+  color:rgba(255,255,255,0.72);text-decoration:none;font-size:0.875rem;
   font-weight:500;padding:0.5rem 0.85rem;border-radius:8px;transition:all 0.2s;
 }
 .nav-links a:hover{color:#fff;background:rgba(255,255,255,0.07);}
@@ -185,7 +198,7 @@ body.nav-open .nav-scrim{opacity:1;pointer-events:auto;}
 }
 .fb{font-family:var(--font-d);font-size:1.1rem;color:#fff;font-weight:700;margin-bottom:0.75rem;}
 .fb .dot{color:var(--amber);}
-.fd{font-size:0.85rem;color:rgba(255,255,255,0.35);font-weight:300;line-height:1.75;max-width:280px;margin-bottom:1.5rem;}
+.fd{font-size:0.85rem;color:rgba(255,255,255,0.60);font-weight:300;line-height:1.75;max-width:280px;margin-bottom:1.5rem;}
 .fsoc{display:flex;gap:0.75rem;}
 .fsoc a{
   width:36px;height:36px;border-radius:8px;background:rgba(255,255,255,0.06);
@@ -197,17 +210,17 @@ body.nav-open .nav-scrim{opacity:1;pointer-events:auto;}
 .fc-title{font-size:0.8rem;font-weight:600;text-transform:uppercase;letter-spacing:0.08em;color:rgba(255,255,255,0.4);margin-bottom:1.25rem;}
 .fc-links{list-style:none;}
 .fc-links li{margin-bottom:0.6rem;}
-.fc-links a{color:rgba(255,255,255,0.45);text-decoration:none;font-size:0.875rem;transition:color 0.2s;}
+.fc-links a{color:rgba(255,255,255,0.65);text-decoration:none;font-size:0.875rem;transition:color 0.2s;}
 .fc-links a:hover{color:var(--amber);}
 .footer-bot{
   max-width:1280px;margin:0 auto;padding:1.5rem 5vw 0;
   border-top:1px solid rgba(255,255,255,0.06);display:flex;align-items:center;
   justify-content:space-between;flex-wrap:wrap;gap:1rem;
 }
-.fcopy{font-size:0.8rem;color:rgba(255,255,255,0.25);}
+.fcopy{font-size:0.8rem;color:rgba(255,255,255,0.55);}
 .flegal{display:flex;gap:1.5rem;}
-.flegal a{font-size:0.8rem;color:rgba(255,255,255,0.25);text-decoration:none;transition:color 0.2s;}
-.flegal a:hover{color:rgba(255,255,255,0.5);}
+.flegal a{font-size:0.8rem;color:rgba(255,255,255,0.55);text-decoration:none;transition:color 0.2s;}
+.flegal a:hover{color:rgba(255,255,255,0.75);}
 
 /* Admin footer is minimal — no grid. */
 #site-footer.admin footer{padding:2rem 0;}

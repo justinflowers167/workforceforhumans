@@ -5,6 +5,23 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>WorkforceForHumans — Find Work. Level Up. Move Forward.</title>
 <meta name="description" content="The platform for displaced workers and career changers. Real jobs. Real training. Real results."/>
+<link rel="canonical" href="https://workforceforhumans.com/"/>
+<link rel="icon" type="image/svg+xml" href="/assets/favicon.svg"/>
+<meta name="theme-color" content="#0f1829"/>
+<meta property="og:type" content="website"/>
+<meta property="og:site_name" content="Workforce for Humans"/>
+<meta property="og:title" content="WorkforceForHumans — Find Work. Level Up. Move Forward."/>
+<meta property="og:description" content="The platform for displaced workers and career changers. Real jobs. Real training. Real results."/>
+<meta property="og:url" content="https://workforceforhumans.com/"/>
+<meta property="og:image" content="https://workforceforhumans.com/assets/og-default.svg"/>
+<meta property="og:image:width" content="1200"/>
+<meta property="og:image:height" content="630"/>
+<meta name="twitter:card" content="summary_large_image"/>
+<meta name="twitter:title" content="WorkforceForHumans — Find Work. Level Up. Move Forward."/>
+<meta name="twitter:description" content="The platform for displaced workers and career changers. Real jobs. Real training. Real results."/>
+<meta name="twitter:image" content="https://workforceforhumans.com/assets/og-default.svg"/>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"Organization","name":"Workforce for Humans","url":"https://workforceforhumans.com/","logo":"https://workforceforhumans.com/assets/og-default.svg","email":"hello@workforceforhumans.com"}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebSite","name":"Workforce for Humans","url":"https://workforceforhumans.com/","potentialAction":{"@type":"SearchAction","target":{"@type":"EntryPoint","urlTemplate":"https://workforceforhumans.com/jobs.html?q={search_term_string}"},"query-input":"required name=search_term_string"}}</script>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
 <link rel="stylesheet" href="/assets/site.css"/>
@@ -272,6 +289,7 @@ const {createClient}=supabase;
 const db=createClient(SUPABASE_URL,SUPABASE_ANON);
 </script>
 
+<main id="main">
 <section class="hero">
   <div class="hero-bg"></div>
   <div class="hero-grid"></div>
@@ -285,8 +303,10 @@ const db=createClient(SUPABASE_URL,SUPABASE_ANON);
       </h1>
       <p class="hero-sub">Whether you've been laid off, need a career change, or are starting from zero — we connect real people with employers who are actively hiring. No degree gatekeeping. No runaround.</p>
       <div class="hero-search-box">
+        <label for="hs" class="sr-only">Job title or keyword</label>
         <input type="text" id="hs" placeholder="Job title, skill, or keyword…"/>
         <div class="search-div"></div>
+        <label for="hstate" class="sr-only">Location</label>
         <select id="hstate">
           <option value="">All Locations</option>
           <option value="remote">Remote Only</option>
@@ -317,20 +337,6 @@ const db=createClient(SUPABASE_URL,SUPABASE_ANON);
     </div>
   </div>
 </section>
-
-<div class="trust-bar">
-  <div class="trust-inner">
-    <span class="trust-label">Employers actively hiring</span>
-    <div class="trust-logos">
-      <span class="trust-co">HealthFirst</span>
-      <span class="trust-co">SunPath Solar</span>
-      <span class="trust-co">FastFreight</span>
-      <span class="trust-co">BuildRight</span>
-      <span class="trust-co">TechBridge</span>
-      <span class="trust-co">+ more weekly</span>
-    </div>
-  </div>
-</div>
 
 <section>
   <div class="container">
@@ -373,11 +379,7 @@ const db=createClient(SUPABASE_URL,SUPABASE_ANON);
         <a href="jobs.html" class="btn-ao">Entry Level Only</a>
       </div>
     </div>
-    <div id="feat-jobs" class="rv d1">
-      <div class="mini-card"><div style="background:rgba(255,255,255,0.08);height:16px;border-radius:4px;width:70%;margin-bottom:8px;"></div><div style="background:rgba(255,255,255,0.04);height:12px;border-radius:4px;width:50%;"></div></div>
-      <div class="mini-card"><div style="background:rgba(255,255,255,0.08);height:16px;border-radius:4px;width:65%;margin-bottom:8px;"></div><div style="background:rgba(255,255,255,0.04);height:12px;border-radius:4px;width:45%;"></div></div>
-      <div class="mini-card"><div style="background:rgba(255,255,255,0.08);height:16px;border-radius:4px;width:72%;margin-bottom:8px;"></div><div style="background:rgba(255,255,255,0.04);height:12px;border-radius:4px;width:55%;"></div></div>
-    </div>
+    <div id="feat-jobs" class="rv d1"></div>
   </div>
 </div>
 
@@ -392,12 +394,12 @@ const db=createClient(SUPABASE_URL,SUPABASE_ANON);
       <a href="learn.html" class="btn-amber" style="margin-bottom:1rem;">All Learning Paths →</a>
     </div>
     <div class="paths">
-      <a href="learn.html" class="path-card rv"><div class="ph hc"><span class="ph-icon">🏥</span><div class="ph-title">Healthcare & Wellness</div></div><div class="pb"><div class="pb-stat"><strong>342</strong> open roles · avg <strong>$22/hr</strong></div><div class="pb-tags"><span class="pb-tag">CNA</span><span class="pb-tag">Medical Assistant</span><span class="pb-tag">Phlebotomy</span></div><div class="pb-arrow">Start Learning</div></div></a>
-      <a href="learn.html" class="path-card rv d1"><div class="ph tc"><span class="ph-icon">💻</span><div class="ph-title">Technology & IT</div></div><div class="pb"><div class="pb-stat"><strong>218</strong> open roles · avg <strong>$26/hr</strong></div><div class="pb-tags"><span class="pb-tag">CompTIA A+</span><span class="pb-tag">Help Desk</span><span class="pb-tag">Cybersecurity</span></div><div class="pb-arrow">Start Learning</div></div></a>
-      <a href="learn.html" class="path-card rv d2"><div class="ph tr"><span class="ph-icon">⚙️</span><div class="ph-title">Skilled Trades</div></div><div class="pb"><div class="pb-stat"><strong>489</strong> open roles · avg <strong>$28/hr</strong></div><div class="pb-tags"><span class="pb-tag">OSHA 10</span><span class="pb-tag">Electrical</span><span class="pb-tag">Plumbing</span></div><div class="pb-arrow">Start Learning</div></div></a>
-      <a href="learn.html" class="path-card rv"><div class="ph en"><span class="ph-icon">🌱</span><div class="ph-title">Green Energy & Climate</div></div><div class="pb"><div class="pb-stat"><strong>156</strong> open roles · avg <strong>$24/hr</strong></div><div class="pb-tags"><span class="pb-tag">Solar Install</span><span class="pb-tag">NABCEP</span><span class="pb-tag">Energy Audit</span></div><div class="pb-arrow">Start Learning</div></div></a>
-      <a href="learn.html" class="path-card rv d1"><div class="ph lg"><span class="ph-icon">📦</span><div class="ph-title">Logistics & Supply Chain</div></div><div class="pb"><div class="pb-stat"><strong>274</strong> open roles · avg <strong>$19/hr</strong></div><div class="pb-tags"><span class="pb-tag">Forklift Cert</span><span class="pb-tag">WMS</span><span class="pb-tag">CDL</span></div><div class="pb-arrow">Start Learning</div></div></a>
-      <a href="learn.html" class="path-card rv d2"><div class="ph fn"><span class="ph-icon">💼</span><div class="ph-title">Finance & Accounting</div></div><div class="pb"><div class="pb-stat"><strong>132</strong> open roles · avg <strong>$30/hr</strong></div><div class="pb-tags"><span class="pb-tag">Bookkeeping</span><span class="pb-tag">QuickBooks</span><span class="pb-tag">Payroll</span></div><div class="pb-arrow">Start Learning</div></div></a>
+      <a href="learn.html" class="path-card rv"><div class="ph hc"><span class="ph-icon">🏥</span><div class="ph-title">Healthcare & Wellness</div></div><div class="pb"><div class="pb-tags"><span class="pb-tag">CNA</span><span class="pb-tag">Medical Assistant</span><span class="pb-tag">Phlebotomy</span></div><div class="pb-arrow">Start Learning</div></div></a>
+      <a href="learn.html" class="path-card rv d1"><div class="ph tc"><span class="ph-icon">💻</span><div class="ph-title">Technology & IT</div></div><div class="pb"><div class="pb-tags"><span class="pb-tag">CompTIA A+</span><span class="pb-tag">Help Desk</span><span class="pb-tag">Cybersecurity</span></div><div class="pb-arrow">Start Learning</div></div></a>
+      <a href="learn.html" class="path-card rv d2"><div class="ph tr"><span class="ph-icon">⚙️</span><div class="ph-title">Skilled Trades</div></div><div class="pb"><div class="pb-tags"><span class="pb-tag">OSHA 10</span><span class="pb-tag">Electrical</span><span class="pb-tag">Plumbing</span></div><div class="pb-arrow">Start Learning</div></div></a>
+      <a href="learn.html" class="path-card rv"><div class="ph en"><span class="ph-icon">🌱</span><div class="ph-title">Green Energy & Climate</div></div><div class="pb"><div class="pb-tags"><span class="pb-tag">Solar Install</span><span class="pb-tag">NABCEP</span><span class="pb-tag">Energy Audit</span></div><div class="pb-arrow">Start Learning</div></div></a>
+      <a href="learn.html" class="path-card rv d1"><div class="ph lg"><span class="ph-icon">📦</span><div class="ph-title">Logistics & Supply Chain</div></div><div class="pb"><div class="pb-tags"><span class="pb-tag">Forklift Cert</span><span class="pb-tag">WMS</span><span class="pb-tag">CDL</span></div><div class="pb-arrow">Start Learning</div></div></a>
+      <a href="learn.html" class="path-card rv d2"><div class="ph fn"><span class="ph-icon">💼</span><div class="ph-title">Finance & Accounting</div></div><div class="pb"><div class="pb-tags"><span class="pb-tag">Bookkeeping</span><span class="pb-tag">QuickBooks</span><span class="pb-tag">Payroll</span></div><div class="pb-arrow">Start Learning</div></div></a>
     </div>
   </div>
 </section>
@@ -418,32 +420,6 @@ const db=createClient(SUPABASE_URL,SUPABASE_ANON);
     </div>
   </div>
 </div>
-
-<section class="testi-sec">
-  <div class="container">
-    <div class="rv" style="text-align:center;max-width:540px;margin:0 auto;">
-      <div class="eye" style="justify-content:center;">Success Stories</div>
-      <h2 class="h2">Real people.<br/><em>Real results.</em></h2>
-    </div>
-    <div class="testi-grid">
-      <div class="testi-card rv">
-        <div class="testi-stars">★★★★★</div>
-        <div class="testi-q">"I was laid off after 22 years in manufacturing. Found my solar installer job here in 3 weeks. The training resources helped me get my OSHA card before my first interview."</div>
-        <div class="testi-auth"><div class="testi-av" style="background:#1f6b35;">RK</div><div><div class="testi-name">Robert K., 54</div><div class="testi-det">Solar Installer · Phoenix, AZ · Was: Factory floor manager</div></div></div>
-      </div>
-      <div class="testi-card rv d1">
-        <div class="testi-stars">★★★★★</div>
-        <div class="testi-q">"Entry level tech with no degree felt impossible. The IT path showed me exactly what certs to get. Got my A+ in 6 weeks, hired within a month. Fully remote. My life changed."</div>
-        <div class="testi-auth"><div class="testi-av" style="background:#243055;">MT</div><div><div class="testi-name">Maria T., 31</div><div class="testi-det">IT Help Desk · Remote · Was: Retail shift supervisor</div></div></div>
-      </div>
-      <div class="testi-card rv d2">
-        <div class="testi-stars">★★★★★</div>
-        <div class="testi-q">"I'm 61 and was convinced nobody would hire me. The 50+ Friendly filter led me to employers who wanted my experience. Patient care coordinator — using everything I learned over 30 years."</div>
-        <div class="testi-auth"><div class="testi-av" style="background:#c85f3e;">DJ</div><div><div class="testi-name">Diane J., 61</div><div class="testi-det">Care Coordinator · Denver, CO · Was: Hospital administrator</div></div></div>
-      </div>
-    </div>
-  </div>
-</section>
 
 <section class="emp-sec" id="employers">
   <div class="emp-inner">
@@ -488,6 +464,8 @@ const db=createClient(SUPABASE_URL,SUPABASE_ANON);
   </div>
 </section>
 
+</main>
+
 <div id="site-footer"></div>
 
 <script>
@@ -497,8 +475,13 @@ async function loadStats(){
     if(data){
       count('s-jobs',+data.active_jobs);count('s-entry',+data.entry_level_jobs);
       count('s-senior',+data.senior_friendly_jobs);count('s-emp',+data.verified_employers);
+      return;
     }
-  }catch{count('s-jobs',248);count('s-entry',119);count('s-senior',63);count('s-emp',42);}
+    hideStats();
+  }catch{hideStats();}
+}
+function hideStats(){
+  document.querySelectorAll('.hero-right .stat-card').forEach(el=>el.style.display='none');
 }
 function count(id,target){
   const el=document.getElementById(id);if(!el)return;
@@ -514,12 +497,7 @@ async function loadFeat(){
     const {data}=await db.from('jobs_full').select('id,title,employer_name,is_featured,is_entry_level_highlighted,is_senior_friendly,employment_type,pay_type,pay_min,pay_max,is_remote,location_city,location_state').order('is_featured',{ascending:false}).order('posted_at',{ascending:false}).limit(4);
     if(data&&data.length){c.innerHTML=data.map(mkCard).join('');return;}
   }catch{}
-  c.innerHTML=[
-    {t:'Medical Assistant — Entry Level',e:'HealthFirst Medical',b:'gr',bl:'🌱 Entry Level',l:'Denver, CO',p:'$18–22/hr'},
-    {t:'Solar Installer Apprentice',e:'SunPath Solar',b:'gr',bl:'🌱 Entry Level',l:'Phoenix, AZ',p:'$17–20/hr'},
-    {t:'IT Help Desk Technician',e:'TechBridge IT',b:'',bl:'⭐ Featured',l:'Remote',p:'$18–24/hr'},
-    {t:'Warehouse Associate',e:'FastFreight Logistics',b:'gr',bl:'🌱 Entry Level',l:'Dallas, TX',p:'$16.50–19/hr'},
-  ].map(j=>`<a class="mini-card${!j.b?' feat':''}" href="jobs.html"><div class="mc-top"><div><div class="mc-title">${j.t}</div><div class="mc-emp">${j.e}</div></div><span class="mc-badge ${j.b}">${j.bl}</span></div><div class="mc-meta"><span class="mc-chip">📍 ${j.l}</span><span class="mc-chip pay">💰 ${j.p}</span></div></a>`).join('');
+  c.innerHTML='<a class="mini-card feat" href="jobs.html" style="text-align:center;padding:1.75rem 1.25rem;"><div class="mc-title" style="margin-bottom:0.4rem;">New jobs posted weekly</div><div class="mc-emp">Browse all openings →</div></a>';
 }
 function mkCard(j){
   const p=j.pay_min?(j.pay_type==='hourly'?`$${+j.pay_min}–${+j.pay_max||+j.pay_min}/hr`:`$${Math.round(+j.pay_min/1000)}K/yr`):'';

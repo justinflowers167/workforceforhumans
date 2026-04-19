@@ -5,6 +5,21 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>Intelligence Feed — Workforce for Humans</title>
 <meta name="description" content="Real-time layoff alerts, workforce agencies, free training resources, and career intelligence — all in one place."/>
+<link rel="canonical" href="https://workforceforhumans.com/feed.html"/>
+<link rel="icon" type="image/svg+xml" href="/assets/favicon.svg"/>
+<meta name="theme-color" content="#0f1829"/>
+<meta property="og:type" content="website"/>
+<meta property="og:site_name" content="Workforce for Humans"/>
+<meta property="og:title" content="Intelligence Feed — Workforce for Humans"/>
+<meta property="og:description" content="Real-time layoff alerts, workforce agencies, free training resources, and career intelligence — all in one place."/>
+<meta property="og:url" content="https://workforceforhumans.com/feed.html"/>
+<meta property="og:image" content="https://workforceforhumans.com/assets/og-default.svg"/>
+<meta property="og:image:width" content="1200"/>
+<meta property="og:image:height" content="630"/>
+<meta name="twitter:card" content="summary_large_image"/>
+<meta name="twitter:title" content="Intelligence Feed — Workforce for Humans"/>
+<meta name="twitter:description" content="Real-time layoff alerts, workforce agencies, free training resources, and career intelligence — all in one place."/>
+<meta name="twitter:image" content="https://workforceforhumans.com/assets/og-default.svg"/>
 <link rel="stylesheet" href="/assets/site.css"/>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
@@ -116,6 +131,8 @@
   const { createClient } = supabase;
   const db = createClient(SUPABASE_URL, SUPABASE_ANON);
 </script>
+
+<main id="main">
 
 <!-- HERO -->
 <div class="feed-hero">
@@ -426,6 +443,8 @@ function formatSource(s) {
   return m[s] || s;
 }
 </script>
+
+</main>
 
 <div id="site-footer"></div>
 </body>

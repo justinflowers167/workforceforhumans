@@ -26,8 +26,11 @@
   var BURGER = '<button class="nav-burger" type="button" aria-label="Menu" ' +
                'aria-expanded="false" aria-controls="nav-drawer"><span></span></button>';
 
+  var SKIP = '<a href="#main" class="skip-link">Skip to main content</a>';
+
   var NAVS = {
     marketing:
+      SKIP +
       '<nav>' +
         '<div class="nav-inner">' +
           '<a href="index.html" class="nav-logo">Workforce<span class="dot">for</span>Humans</a>' +
@@ -63,6 +66,7 @@
       '</aside>',
 
     member:
+      SKIP +
       '<nav>' +
         '<div class="nav-inner">' +
           '<a href="index.html" class="nav-logo">Workforce<span class="dot">for</span>Humans</a>' +
@@ -99,6 +103,7 @@
       '</nav>',
 
     employer:
+      SKIP +
       '<nav>' +
         '<div class="nav-inner">' +
           '<div style="display:flex;align-items:center">' +
@@ -241,3 +246,40 @@
     }
   }
 })();
+
+/* ============================================================
+ * SEO HEAD TEMPLATE — copy into each indexable page's <head>
+ *
+ * This is documentation, not executable. site.js runs at the top
+ * of <body> and cannot mutate <head> safely (crawlers like LinkedIn
+ * and Slack preview bots don't run JS). So each indexable page
+ * carries its own head block — but the shape is canonical here.
+ *
+ * Replace {TITLE}, {DESCRIPTION}, {PATH} (e.g. "/jobs.html" or "/"
+ * for index) for each page. og:image + favicon paths stay as-is.
+ * ------------------------------------------------------------
+ *
+ *   <title>{TITLE}</title>
+ *   <meta name="description" content="{DESCRIPTION}"/>
+ *   <link rel="canonical" href="https://workforceforhumans.com{PATH}"/>
+ *   <link rel="icon" type="image/svg+xml" href="/assets/favicon.svg"/>
+ *   <meta name="theme-color" content="#0f1829"/>
+ *
+ *   <meta property="og:type" content="website"/>
+ *   <meta property="og:site_name" content="Workforce for Humans"/>
+ *   <meta property="og:title" content="{TITLE}"/>
+ *   <meta property="og:description" content="{DESCRIPTION}"/>
+ *   <meta property="og:url" content="https://workforceforhumans.com{PATH}"/>
+ *   <meta property="og:image" content="https://workforceforhumans.com/assets/og-default.svg"/>
+ *   <meta property="og:image:width" content="1200"/>
+ *   <meta property="og:image:height" content="630"/>
+ *
+ *   <meta name="twitter:card" content="summary_large_image"/>
+ *   <meta name="twitter:title" content="{TITLE}"/>
+ *   <meta name="twitter:description" content="{DESCRIPTION}"/>
+ *   <meta name="twitter:image" content="https://workforceforhumans.com/assets/og-default.svg"/>
+ *
+ * For gated / transactional pages (resume, member, employer,
+ * kb-admin, success, cancel), use ONLY:
+ *   <meta name="robots" content="noindex, nofollow"/>
+ * ============================================================ */
