@@ -5,6 +5,21 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>Find Jobs — Workforce for Humans</title>
 <meta name="description" content="Browse thousands of jobs in healthcare, trades, tech, green energy, logistics, and more. Entry-level welcome. No degree required."/>
+<link rel="canonical" href="https://workforceforhumans.com/jobs.html"/>
+<link rel="icon" type="image/svg+xml" href="/assets/favicon.svg"/>
+<meta name="theme-color" content="#0f1829"/>
+<meta property="og:type" content="website"/>
+<meta property="og:site_name" content="Workforce for Humans"/>
+<meta property="og:title" content="Find Jobs — Workforce for Humans"/>
+<meta property="og:description" content="Browse thousands of jobs in healthcare, trades, tech, green energy, logistics, and more. Entry-level welcome. No degree required."/>
+<meta property="og:url" content="https://workforceforhumans.com/jobs.html"/>
+<meta property="og:image" content="https://workforceforhumans.com/assets/og-default.svg"/>
+<meta property="og:image:width" content="1200"/>
+<meta property="og:image:height" content="630"/>
+<meta name="twitter:card" content="summary_large_image"/>
+<meta name="twitter:title" content="Find Jobs — Workforce for Humans"/>
+<meta name="twitter:description" content="Browse thousands of jobs in healthcare, trades, tech, green energy, logistics, and more. Entry-level welcome. No degree required."/>
+<meta name="twitter:image" content="https://workforceforhumans.com/assets/og-default.svg"/>
 <link rel="stylesheet" href="/assets/site.css"/>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
@@ -198,12 +213,16 @@
   <div class="stat-pill"><span class="num" id="stat-employers">—</span><span class="lbl">verified employers</span></div>
 </div>
 
+<main id="main">
+
 <!-- SEARCH HERO -->
 <div class="search-hero">
   <h1>Find work that<br/><em>fits your life.</em></h1>
   <p>Browse real jobs from employers who are actively hiring — no degree required to get started.</p>
   <div class="search-bar">
+    <label for="search-input" class="sr-only">Job title or keyword</label>
     <input type="text" id="search-input" placeholder="Job title, skill, or keyword…" />
+    <label for="location-filter" class="sr-only">Location</label>
     <select id="location-filter">
       <option value="">All Locations</option>
       <option value="remote">Remote Only</option>
@@ -292,7 +311,7 @@
   </aside>
 
   <!-- RESULTS -->
-  <main>
+  <section class="results-pane">
     <div class="results-header">
       <p class="results-count" id="results-count">Loading jobs…</p>
       <select class="sort-select" id="sort-select" onchange="applyFilters()">
@@ -308,8 +327,10 @@
       <div class="sk-card"><div class="skeleton sk-line sk-title"></div><div class="skeleton sk-line sk-short"></div><div class="skeleton sk-line sk-long"></div><div class="skeleton sk-line sk-short"></div></div>
     </div>
     <div class="pagination" id="pagination"></div>
-  </main>
+  </section>
 </div>
+
+</main>
 
 <!-- JOB DETAIL MODAL -->
 <div class="modal-overlay" id="modal" onclick="closeModal(event)">
@@ -361,6 +382,8 @@ document.addEventListener('DOMContentLoaded', async () => {
   await loadStats();
   applyUrlParams();
   await loadJobs();
+  const deepId = new URLSearchParams(location.search).get('id');
+  if (deepId) openModal(deepId);
 });
 
 // ─── URL PARAM HANDLING ──────────────────────────────────
@@ -386,8 +409,14 @@ async function loadStats() {
       document.getElementById('stat-entry').textContent    = (+data.entry_level_jobs).toLocaleString();
       document.getElementById('stat-senior').textContent   = (+data.senior_friendly_jobs).toLocaleString();
       document.getElementById('stat-employers').textContent= (+data.verified_employers).toLocaleString();
+      return;
     }
-  } catch(e) { /* stats are decorative; fail silently */ }
+    hideStatsBar();
+  } catch(e) { hideStatsBar(); }
+}
+function hideStatsBar() {
+  const bar = document.getElementById('stats-bar');
+  if (bar) bar.style.display = 'none';
 }
 
 // ─── LOAD CATEGORIES ─────────────────────────────────────
@@ -494,6 +523,53 @@ async function loadJobs() {
 
   list.innerHTML = data.map(job => renderJobCard(job)).join('');
   renderPagination();
+  emitJobPostings(data);
+}
+
+// Emit one JobPosting JSON-LD per card so crawlers see structured jobs on this list view.
+// Since there's no per-job detail page, @id uses jobs.html?id=<uuid> as a surrogate URL.
+function emitJobPostings(jobs) {
+  document.querySelectorAll('script[data-jobposting]').forEach(s => s.remove());
+  const base = 'https://workforceforhumans.com/jobs.html';
+  const DAY = 86400000;
+  jobs.forEach(j => {
+    const posted = j.posted_at ? new Date(j.posted_at).toISOString().split('T')[0] : undefined;
+    let validThrough;
+    if (j.expires_at) validThrough = new Date(j.expires_at).toISOString().split('T')[0];
+    else if (j.posted_at) validThrough = new Date(new Date(j.posted_at).getTime() + 60*DAY).toISOString().split('T')[0];
+    const loc = j.is_remote
+      ? undefined
+      : (j.location_city || j.location_state)
+        ? { '@type':'Place', address: { '@type':'PostalAddress', addressLocality: j.location_city || undefined, addressRegion: j.location_state || undefined, addressCountry: 'US' } }
+        : undefined;
+    const salary = (j.pay_min && j.pay_type) ? {
+      '@type':'MonetaryAmount', currency: 'USD',
+      value: { '@type':'QuantitativeValue', minValue: +j.pay_min, maxValue: +(j.pay_max || j.pay_min), unitText: j.pay_type === 'hourly' ? 'HOUR' : 'YEAR' }
+    } : undefined;
+    const empTypeMap = { 'full-time':'FULL_TIME','part-time':'PART_TIME','contract':'CONTRACTOR','apprenticeship':'OTHER' };
+    const schema = {
+      '@context':'https://schema.org',
+      '@type':'JobPosting',
+      '@id': `${base}?id=${j.id}`,
+      url: `${base}?id=${j.id}`,
+      title: j.title,
+      description: (j.description || j.title || '').replace(/<[^>]+>/g,'').slice(0, 2000),
+      datePosted: posted,
+      validThrough,
+      employmentType: empTypeMap[j.employment_type] || 'OTHER',
+      hiringOrganization: { '@type':'Organization', name: j.employer_name || 'Workforce for Humans' },
+      jobLocation: loc,
+      jobLocationType: j.is_remote ? 'TELECOMMUTE' : undefined,
+      applicantLocationRequirements: j.is_remote ? { '@type':'Country', name:'USA' } : undefined,
+      baseSalary: salary,
+    };
+    Object.keys(schema).forEach(k => schema[k] === undefined && delete schema[k]);
+    const s = document.createElement('script');
+    s.type = 'application/ld+json';
+    s.setAttribute('data-jobposting', '1');
+    s.textContent = JSON.stringify(schema);
+    document.head.appendChild(s);
+  });
 }
 
 // ─── RENDER JOB CARD ────────────────────────────────────
@@ -563,6 +639,10 @@ async function openModal(jobId) {
 
   document.getElementById('modal').classList.add('open');
   document.body.style.overflow = 'hidden';
+
+  const params = new URLSearchParams(location.search);
+  params.set('id', jobId);
+  history.replaceState(null, '', location.pathname + '?' + params.toString());
 }
 
 function renderList(elId, items, sectionId) {
@@ -577,6 +657,13 @@ function closeModal(e) {
   if (e && e.target !== document.getElementById('modal')) return;
   document.getElementById('modal').classList.remove('open');
   document.body.style.overflow = '';
+
+  const params = new URLSearchParams(location.search);
+  if (params.has('id')) {
+    params.delete('id');
+    const qs = params.toString();
+    history.replaceState(null, '', location.pathname + (qs ? '?' + qs : ''));
+  }
 }
 
 // ─── QUICK FILTERS ───────────────────────────────────────
