@@ -127,7 +127,7 @@ Deno.serve(async (req) => {
     return json({ ok: true, matches: top });
   } catch (err) {
     console.error("match-jobs error:", err);
-    return json({ error: (err as Error).message || "internal error" }, 500);
+    return json({ error: "Matching failed. Please try again." }, 500);
   }
 });
 

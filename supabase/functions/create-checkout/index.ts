@@ -25,6 +25,13 @@ const PLANS: Record<PlanKey, { amount: number; mode: "payment" | "subscription";
   employer: { amount: 49900, mode: "subscription", label: "Employer Subscription",      duration: 30 },
 };
 
+// Origins permitted for Stripe success_url / cancel_url. Client-supplied
+// site_url must match one of these; unknown values fall back to production.
+const ALLOWED_ORIGINS = new Set([
+  "https://workforceforhumans.com",
+  "http://localhost:3000",
+]);
+
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
 
@@ -37,11 +44,16 @@ Deno.serve(async (req: Request) => {
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const db = createClient(supabaseUrl, supabaseServiceKey);
 
-    const { plan, email, name, site_url } = await req.json();
-    if (!plan || !email || !name) return json({ error: "Missing required fields: plan, email, name" }, 400);
+    const body = await req.json().catch(() => ({}));
+    const plan = typeof body.plan === "string" ? body.plan : "";
+    const email = typeof body.email === "string" ? body.email.trim().slice(0, 254) : "";
+    const name = typeof body.name === "string" ? body.name.trim().slice(0, 200) : "";
+    const site_url = typeof body.site_url === "string" ? body.site_url : "";
 
     const planConfig = PLANS[plan as PlanKey];
     if (!planConfig) return json({ error: "Invalid plan. Must be: basic, featured, or employer" }, 400);
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return json({ error: "Invalid email" }, 400);
+    if (name.length < 1) return json({ error: "Name required" }, 400);
 
     // Find or create the employer. We can't use upsert(onConflict:contact_email)
     // because the employers.slug UNIQUE constraint can collide with an existing
@@ -63,7 +75,10 @@ Deno.serve(async (req: Request) => {
           .insert({ name, slug, contact_email: email, contact_name: name })
           .select("id, stripe_customer_id")
           .single();
-        if (empErr || !created) return json({ error: "Failed to create employer", detail: empErr?.message }, 500);
+        if (empErr || !created) {
+          console.error("create-checkout: failed to create employer:", empErr);
+          return json({ error: "Could not start checkout. Please try again." }, 500);
+        }
         employer = created;
       }
     }
@@ -90,11 +105,14 @@ Deno.serve(async (req: Request) => {
           status: "pending",
         })
         .select("id").single();
-      if (postErr || !posting) return json({ error: "Failed to create job_postings row", detail: postErr?.message }, 500);
+      if (postErr || !posting) {
+        console.error("create-checkout: failed to create job_postings row:", postErr);
+        return json({ error: "Could not start checkout. Please try again." }, 500);
+      }
       postingId = posting.id;
     }
 
-    const origin = site_url || "https://workforceforhumans.com";
+    const origin = ALLOWED_ORIGINS.has(site_url) ? site_url : "https://workforceforhumans.com";
     const sessionParams: Stripe.Checkout.SessionCreateParams = {
       customer: stripeCustomerId,
       client_reference_id: employer.id,
@@ -131,7 +149,8 @@ Deno.serve(async (req: Request) => {
 
     return json({ url: session.url, session_id: session.id });
   } catch (err) {
-    return json({ error: (err as Error).message }, 500);
+    console.error("create-checkout unhandled error:", err);
+    return json({ error: "Checkout could not be started. Please try again." }, 500);
   }
 });
 

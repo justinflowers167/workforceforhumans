@@ -18,7 +18,7 @@ There is nothing to build, lint, or test locally.
 
 - **Preview a page**: open the `*.html` file directly in a browser, or serve the repo root with any static server (e.g. `python3 -m http.server`). All pages talk to the live Supabase backend — there is no local DB.
 - **Deploy an Edge Function**: `supabase functions deploy <name>` (requires Supabase CLI and project link to `dbomfjqijyrkidptrrfi`). The seven functions are `create-checkout`, `stripe-webhook`, `link-employer`, `parse-resume`, `match-jobs`, `send-match-digest`, `intelligence-feed`.
-- **Apply a SQL migration**: files under `supabase/migrations/<timestamp>_<name>.sql` run via Supabase MCP `apply_migration` (or `supabase db push` if linked locally). Apply in filename order.
+- **Apply a SQL migration**: files under `supabase/migrations/<timestamp>_<name>.sql` run via Supabase MCP `apply_migration` (or `supabase db push` if linked locally). Apply in filename order. `00000000_baseline_schema.sql` is the full public-schema snapshot (captured 2026-04-19 via MCP introspection) and must apply first; it is idempotent so running it against the live DB is a no-op. Dated Phase-3 migrations layer on top.
 - **Invoke `send-match-digest` manually**: it's protected by the `DIGEST_SECRET` header `x-digest-secret`, not by user auth. It's the only function intended to be run server-to-server (e.g. pg_cron + http extension).
 - **`stripe-webhook` is server-to-server** (Stripe → Supabase). Authenticated by Stripe signature verification on the raw body. `verify_jwt = false` in `supabase/config.toml` — do not change.
 

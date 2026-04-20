@@ -184,7 +184,7 @@ Deno.serve(async (req) => {
     return json({ ok: true, parsed, review });
   } catch (err) {
     console.error("parse-resume error:", err);
-    return json({ error: (err as Error).message || "internal error" }, 500);
+    return json({ error: "Resume could not be parsed. Please try again." }, 500);
   }
 });
 

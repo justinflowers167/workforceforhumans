@@ -125,6 +125,7 @@ button.ghost:hover{border-color:var(--amber);color:var(--amber-dk);}
     <!-- Matches -->
     <div class="card">
       <h2>Matches for you</h2>
+      <div id="match-status" class="status" hidden></div>
       <div id="matches" class="muted">No matches yet. Upload or paste your resume to get started.</div>
     </div>
 
@@ -273,7 +274,14 @@ button.ghost:hover{border-color:var(--amber);color:var(--amber-dk);}
     });
     const out = await r.json().catch(()=>({}));
     btn.disabled = false; btn.textContent = 'Find new matches';
-    if (!r.ok) { alert('Error: ' + (out.error||r.status)); return; }
+    const ms = $('match-status');
+    if (!r.ok) {
+      ms.className = 'status error';
+      ms.textContent = out.error || 'Could not fetch matches. Please try again.';
+      ms.hidden = false;
+      return;
+    }
+    ms.hidden = true;
     const { data: { user } } = await db.auth.getUser();
     const { data: js } = await db.from('job_seekers').select('id').eq('auth_user_id', user.id).single();
     await loadMatches(js.id);
