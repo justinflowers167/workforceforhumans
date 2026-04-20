@@ -193,3 +193,183 @@ These would dilute focus. Keep them on a "Next" list.
 - Seeded `platform_stats` so the hero stat cards show real counts instead of being hidden on failure. Unblocked by content/business work, not code.
 - Real testimonials, verified employer logos. Unblocked by real users/buyers.
 - Automated test suite. The biggest lift to push Eng hygiene from 8 → 9.
+
+---
+
+## Launch Readiness Week — Mon 2026-04-20 → Sun 2026-04-26
+
+**Outcome for the week:** WFH is publicly launchable by end of day Sun 2026-04-26 — no empty job board, a human face on the site, analytics running, legal pages in place, weekly digest live on a cron.
+
+Framing comes from the CSO read on 2026-04-19 (post-Phase 7 ship): the site is ~85% technically ready and ~50% market-ready. The gap is content, pipes, and legal — not code. This week closes the gap.
+
+Each day has a single outcome, a task list, a done-when gate, and a slip budget. Dependencies that need a human other than Justin are front-loaded to Monday AM so they have maximum runway.
+
+### Mon 2026-04-20 — Jobs inventory, part 1 (foundation)
+
+**Outcome:** USAJobs.gov source is researched, the `jobs` table can carry external-sourced rows, and the `refresh-jobs` Edge Function scaffold deploys cleanly.
+
+**Tasks:**
+1. Read USAJobs.gov API docs (https://developer.usajobs.gov/). Capture: auth model (User-Agent + Authorization-Key headers, both free), rate limits, search endpoint shape, filter parameters (remote-eligible, entry-level, keywords).
+2. Design the data-model change. Recommended shape:
+   - `jobs.source text not null default 'employer'` — values `'employer'` (paid verified) or `'usajobs'` (external).
+   - `jobs.source_url text` — external apply URL.
+   - `jobs.source_ref text unique` — external job ID, for idempotent upserts.
+   - Keep `employer_id` required. Seed one synthetic `employers` row ("USAJobs — external") as part of the same migration so `jobs_full` and existing FKs continue to work without schema ripple.
+3. Write migration `supabase/migrations/20260420_phase8_jobs_external_source.sql`. Idempotent (`add column if not exists`, `on conflict do nothing` for the synthetic row). Apply via Supabase MCP `apply_migration`.
+4. Scaffold `supabase/functions/refresh-jobs/index.ts` following the existing pattern (CORS headers, `json()` helper, service-role client, `x-refresh-secret` header auth modeled on `send-match-digest`). Skeleton only: OPTIONS preflight, POST trigger, error envelope. No business logic yet.
+5. Add `[functions.refresh-jobs] verify_jwt = false` to `supabase/config.toml` — it's server-to-server, not user-facing.
+6. Update `CLAUDE.md` to document the new function + the `source` / `source_url` / `source_ref` columns.
+
+**Dependencies:** none today — all research + code.
+
+**Done when:** migration applied on live DB; synthetic external employer row exists; `refresh-jobs` deploys and returns `{ok:true}` on an empty POST with the right secret header; CLAUDE.md updated.
+
+**Slip budget:** if USAJobs API docs reveal a blocker, fall back to Greenhouse/Lever public boards for 5 curated companies (Anthropic, Vercel, etc.). Same data model holds.
+
+### Tue 2026-04-21 — Jobs inventory, part 2 (ship + schedule)
+
+**Outcome:** 50+ current, WFH-relevant USAJobs.gov roles on `jobs.html` by 6pm, refreshing daily at 7am ET.
+
+**Tasks:**
+1. Implement the pull in `refresh-jobs`: fetch USAJobs.gov filtered for remote-eligible + entry-to-mid-level + keywords relevant to WFH audiences (career changer, skills-based hiring, workforce transition, veterans, upskilling).
+2. Claude filter layer: for each candidate job, pass to Claude Sonnet 4.6 with prompt "is this a realistic fit for a WFH audience (displaced workers, career changers)? Return JSON `{keep:bool, reason:string}`". Cap at top 50 per run.
+3. Upsert into `jobs` with `source='usajobs'`, `source_ref=<external-id>`, `source_url=<apply-url>`, `employer_id=<synthetic-external-employer-id>`. Idempotent by `source_ref`.
+4. Schedule via pg_cron: `select cron.schedule('refresh-jobs-daily', '0 11 * * *', ...)` — 11 UTC = 7am ET. Use `pg_net.http_post` with the `x-refresh-secret` header. Store `REFRESH_SECRET` via `supabase secrets set`.
+5. Update `jobs_full` view to expose `source`, `source_url`, `source_ref`.
+6. Frontend: update `jobs.html` card template to render a clear "Sourced from USAJobs.gov — apply on their site ↗" tag on `source='usajobs'` rows. Verified paid-employer rows keep their existing premium treatment. Distinct visual rhythm so the two are not confused.
+
+**Dependencies:** Mon outcome shipped.
+
+**Done when:** one manual `refresh-jobs` run upserts 20–50 USAJobs rows; the next daily schedule is registered in `cron.job`; `jobs.html` renders the source tag on external rows and nothing on employer rows; the Apply CTA on sourced rows opens the external URL in a new tab.
+
+**Slip budget:** if the Claude filter quality is poor on first pass, disable the filter and let all USAJobs results through with the source tag visible. Re-tune the filter in week 2.
+
+### Wed 2026-04-22 — Founder presence + analytics
+
+**Outcome:** Justin is a human on the site, and we know what's working.
+
+**Tasks — About page:**
+1. Create `about.html` (HTML-per-page, `data-nav="marketing"`, shared chrome via `/assets/site.js`).
+2. Draft ~400 words covering: I&O role at Quantinuum, why WFH exists (practitioner view on displacement, not theorist), human-led + AI-built stance, founder promise ("every piece of content should leave you more capable and more hopeful").
+3. Headshot (500×500 JPG, warm + professional). File at `/assets/founder.jpg`.
+4. LinkedIn link in-page.
+5. Footer link injected via `/assets/site.js`. Add a "Meet the founder →" CTA on the homepage hero (index.html).
+6. Add to `sitemap.xml`. Ensure `robots.txt` allows indexing. `noindex` must NOT be on this page.
+
+**Tasks — Plausible analytics:**
+1. Sign up for Plausible (privacy-first, $9/mo), provision `workforceforhumans.com` domain.
+2. Add the Plausible script tag to the `<head>` injection in `/assets/site.js` so it loads consistently on every page. Single source of truth.
+3. Update `_headers` CSP: add `plausible.io` to `script-src` and `connect-src`.
+4. Verify a test page view appears in the Plausible dashboard within 5 minutes.
+5. Wire three custom events: `CTA click — employer checkout`, `Event — resume upload`, `Event — find matches`.
+
+**Dependencies (flagged Monday AM):** founder headshot ready (blocker for page completion); Plausible account (5-minute signup but needs DNS access to verify domain).
+
+**Done when:** about.html is indexable, linked from nav + footer; Plausible dashboard shows live traffic from all 11 pages; the three custom events fire correctly in the Plausible event log.
+
+**Slip budget:** if the headshot isn't ready, ship about.html with a placeholder "photo coming soon" silhouette — don't block the page on the asset.
+
+### Thu 2026-04-23 — Legal minimums
+
+**Outcome:** Privacy Policy and Terms of Service pages are published, covering PII + Stripe + third-party processors. Launch-blocking if missing.
+
+**Tasks:**
+1. Pull a reputable template (Termly free tier, iubenda, or a lawyer-friend template). **Do not generate from scratch via LLM** — legal templates should be vetted.
+2. Customize for WFH specifics:
+   - PII collected: email, resume content (text + uploaded file), profile data, location.
+   - Third-party processors: Anthropic (resume parsing + match scoring), OpenAI (intelligence-feed embeddings, optional), Resend (email), Stripe (payments), Supabase (auth + storage + DB), Plausible (analytics).
+   - Data retention: resumes retained while account active; deletable on request.
+   - User rights: access, deletion, export. Point of contact: `hello@workforceforhumans.com`.
+3. Create `privacy.html` and `terms.html` (marketing layout, `data-nav="marketing"`).
+4. Footer links in `/assets/site.js` — both pages linked from every page.
+5. Add to `sitemap.xml`; allow indexing (these need to be public and findable).
+6. Lawyer-friend review before merge. Capture review sign-off in the PR description.
+
+**Dependencies (flagged Monday AM):** lawyer-friend availability — Monday message: "two legal pages for 30-min review Thursday afternoon, I'll send the draft Wed EOD."
+
+**Done when:** both pages are live, linked from every page footer, indexable. Lawyer review note pasted into the PR description.
+
+**Slip budget:** if the lawyer review slips to Friday, ship the pages with a "v1 — under legal review" footer marker and update when cleared. Do not delay public launch on a 1-day review gap.
+
+### Fri 2026-04-24 — Retention engine + E2E QA
+
+**Outcome:** `send-match-digest` runs weekly on its own cron; the full golden-path suite is regression-tested.
+
+**Tasks:**
+1. Verify Supabase secrets: `DIGEST_SECRET`, `RESEND_API_KEY`, `DIGEST_FROM`, `SITE_URL`. Set any missing via `supabase secrets set`.
+2. Read `supabase/functions/send-match-digest/index.ts` for Phase 7 compatibility. Does the digest email template include the new `rationale` and `growth_note`? If not, update the HTML template to render them — this is the member's first AI-visible touchpoint in email.
+3. Schedule via pg_cron: Friday 9am ET = 13 UTC. `select cron.schedule('send-match-digest-weekly', '0 13 * * 5', $$select net.http_post(...)$$)` using the `x-digest-secret` header.
+4. E2E test: sign in as the member test account, ensure at least one match has `score >= 60` and `emailed_at IS NULL`. Manually invoke the digest via `curl -X POST ... -H "x-digest-secret: ..."`. Verify email arrives. Confirm the rendered match cards include rationale + growth_note.
+5. Full golden-path regression on desktop + 375px mobile:
+   1. Browse jobs with filters
+   2. Magic-link sign-in
+   3. Resume upload + review
+   4. View matches (click disclosure, see rationale + growth_note)
+   5. Employer checkout start
+6. Log any regressions; fix same-day if Sev 1-2.
+
+**Dependencies:** Phase 7 PR merged to master before the cron's first real send (so the digest email template updates ride along with match display).
+
+**Done when:** pg_cron schedule registered; one real digest delivered to the test account with rationale + growth_note rendering; all 5 golden paths pass.
+
+**Slip budget:** if the digest email template rework is bigger than expected, ship the cron with the existing template on Fri and iterate template polish in week 2. The cron being live matters more than template polish.
+
+### Sat 2026-04-25 — Mobile QA artifact + buffer
+
+**Outcome:** A 375px real-device screencap of the 5 golden paths exists, and any regressions it surfaces are patched.
+
+**Tasks:**
+1. On a real iPhone (SE-class or 375px equivalent), record screencaps walking each of the 5 golden paths with brief narration. ~3–5 min total.
+2. File the recording at `docs/mobile-qa-2026-04-25.mp4` or as a Google Drive link in ROADMAP.md (if file size is prohibitive).
+3. Patch any regressions found on-device that DevTools didn't catch. Likely candidates: touch targets on new About / Privacy / Terms pages; Plausible script CSP; sourced-job card tag wrapping at 375px; disclosure marker alignment.
+4. Buffer for any Mon–Fri slippage.
+
+**Dependencies (flagged Monday AM):** physical device owned — confirm access.
+
+**Done when:** video artifact committed or linked from ROADMAP.md; any Sev 1-2 mobile regressions closed.
+
+### Sun 2026-04-26 — Re-rate + launch-readiness call
+
+**Outcome:** Rubric refreshed, PRs merged, explicit go/no-go call on public launch timing.
+
+**Tasks:**
+1. Re-score the 8-lens rubric. Projected vs. current:
+
+   | Lens | Apr 19 | Apr 26 projected | Why |
+   |---|---|---|---|
+   | Voice | 9 | 9 | unchanged |
+   | Design | 8 | 8 | polish pass deferred |
+   | Product | 8 | 9 | Phase 7 + jobs inventory |
+   | AI | 8 | 9 | Phase 7 shipped + Claude job filter |
+   | Eng hygiene | 8 | 8 | automated tests deferred |
+   | Mobile | 7 | 8 | real-device QA artifact |
+   | Trust | 7 | 8 | founder page + legal pages (9 needs real testimonials) |
+   | A11y/SEO | 9 | 9 | unchanged |
+
+   Expected overall: **8.5 → round to 9.**
+2. Append the new row to the scorecard history table.
+3. Merge any remaining PRs to master.
+4. Write the "what shipped / what slipped" note inline in ROADMAP.md.
+5. **Go/no-go on public launch:** if 9/10 overall, set launch date for Thu 2026-04-30 (give 3 days of post-launch monitoring buffer before the following week). If 8/10 with a clear gating lens, name it and plan week 2 accordingly.
+
+**Done when:** updated scorecard committed; explicit next-week decision captured in ROADMAP.md.
+
+### Monday-AM dependency front-load
+
+These cannot be pushed later in the week without cascading slip:
+
+1. **Message lawyer-friend:** "Sending you two legal pages (Privacy + ToS) for a 30-min review Thursday afternoon. Draft by Wed EOD."
+2. **Confirm headshot:** ready or schedule a Tue/Wed photo session.
+3. **Plausible signup + DNS:** 5 minutes but needs domain access.
+4. **Physical device for Sat mobile QA:** confirm access.
+5. **Supabase CLI + project link:** verify `supabase link --project-ref dbomfjqijyrkidptrrfi` still works for the week's deploys.
+
+### Explicitly NOT in this week (backlog, not forgotten)
+
+- Real testimonials outreach (week 2+)
+- Employer GTM pitch page + outbound plan (week 2–3)
+- Automated test suite (month 2)
+- Framework migration (9→10 conversation, not launch)
+- Greenhouse/Lever boards as additional job sources (week 2, if USAJobs proves thin)
+- Per-job real URLs + dynamic sitemap (blocked on framework decision)
+- Seeded platform_stats with real hero counts (content/business, not code)
