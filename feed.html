@@ -33,7 +33,7 @@
 /* STATS BAR */
 .feed-stats{background:#fff;border-bottom:1px solid var(--stone);padding:.75rem 5vw;display:flex;gap:2.5rem;overflow-x:auto}
 .feed-stat{display:flex;align-items:center;gap:.5rem;white-space:nowrap}
-.feed-stat .num{font-family:var(--font-d);font-size:1.1rem;font-weight:700;color:var(--amber)}
+.feed-stat .num{font-family:var(--font-d);font-size:1.1rem;font-weight:700;color:var(--amber-txt)}
 .feed-stat .lbl{font-size:.8rem;color:var(--slate)}
 
 /* TABS */
@@ -250,13 +250,13 @@ function renderLayoffs() {
   let html = `
     <div class="filter-bar">
       <span class="filter-label">Filter:</span>
-      <select id="filter-type" onchange="renderLayoffs()">
+      <select id="filter-type" aria-label="Filter by layoff type" onchange="renderLayoffs()">
         <option value="">All Types</option>
         <option value="layoff">Layoffs</option>
         <option value="hiring-surge">Hiring Surges</option>
         <option value="industry-news">Industry News</option>
       </select>
-      <select id="filter-severity" onchange="renderLayoffs()">
+      <select id="filter-severity" aria-label="Filter by severity" onchange="renderLayoffs()">
         <option value="">All Severity</option>
         <option value="critical">Critical</option>
         <option value="high">High</option>

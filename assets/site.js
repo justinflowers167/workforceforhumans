@@ -50,7 +50,7 @@
         '</div>' +
       '</nav>' +
       '<div class="nav-scrim" aria-hidden="true"></div>' +
-      '<aside class="nav-drawer" id="nav-drawer" aria-hidden="true">' +
+      '<aside class="nav-drawer" id="nav-drawer" aria-hidden="true" inert>' +
         '<ul class="drawer-links">' +
           '<li><a href="jobs.html" data-match="jobs.html">Find Jobs</a></li>' +
           '<li><a href="learn.html" data-match="learn.html">Level Up</a></li>' +
@@ -80,7 +80,7 @@
         '</div>' +
       '</nav>' +
       '<div class="nav-scrim" aria-hidden="true"></div>' +
-      '<aside class="nav-drawer" id="nav-drawer" aria-hidden="true">' +
+      '<aside class="nav-drawer" id="nav-drawer" aria-hidden="true" inert>' +
         '<ul class="drawer-links">' +
           '<li><a href="jobs.html" data-match="jobs.html">Jobs</a></li>' +
           '<li><a href="learn.html" data-match="learn.html">Learn</a></li>' +
@@ -118,7 +118,7 @@
         '</div>' +
       '</nav>' +
       '<div class="nav-scrim" aria-hidden="true"></div>' +
-      '<aside class="nav-drawer" id="nav-drawer" aria-hidden="true">' +
+      '<aside class="nav-drawer" id="nav-drawer" aria-hidden="true" inert>' +
         '<ul class="drawer-links">' +
           '<li><a href="employer.html" data-match="employer.html">My Listings</a></li>' +
           '<li><a href="jobs.html" data-match="jobs.html">View Site</a></li>' +
@@ -204,6 +204,7 @@
         body.classList.add('nav-open');
         burger.setAttribute('aria-expanded', 'true');
         drawer.setAttribute('aria-hidden', 'false');
+        drawer.removeAttribute('inert');
         scrim.setAttribute('aria-hidden', 'false');
         var firstLink = drawer.querySelector('a');
         if (firstLink) firstLink.focus({ preventScroll: true });
@@ -212,6 +213,7 @@
         body.classList.remove('nav-open');
         burger.setAttribute('aria-expanded', 'false');
         drawer.setAttribute('aria-hidden', 'true');
+        drawer.setAttribute('inert', '');
         scrim.setAttribute('aria-hidden', 'true');
       };
       burger.addEventListener('click', function () {

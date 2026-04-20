@@ -51,7 +51,7 @@
 /* SIDEBAR FILTERS */
 .sidebar{position:sticky;top:80px;align-self:start;}
 .filter-card{background:#fff;border-radius:14px;padding:1.5rem;border:1px solid var(--stone);margin-bottom:1rem;}
-.filter-card h3{font-size:0.8rem;font-weight:600;text-transform:uppercase;letter-spacing:0.12em;color:var(--terra);margin-bottom:1rem;}
+.filter-card h2{font-size:0.8rem;font-weight:600;text-transform:uppercase;letter-spacing:0.12em;color:var(--terra-dk);margin-bottom:1rem;}
 .filter-group{margin-bottom:0.6rem;}
 .filter-option{display:flex;align-items:center;gap:0.5rem;padding:0.35rem 0;cursor:pointer;}
 .filter-option input[type=checkbox]{accent-color:var(--amber);width:15px;height:15px;cursor:pointer;}
@@ -117,7 +117,7 @@
 /* STATS BAR */
 .stats-bar{background:#fff;border-bottom:1px solid var(--stone);padding:0.75rem 5vw;display:flex;gap:2.5rem;overflow-x:auto;}
 .stat-pill{display:flex;align-items:center;gap:0.5rem;white-space:nowrap;}
-.stat-pill .num{font-family:var(--font-d);font-size:1.1rem;font-weight:700;color:var(--amber);}
+.stat-pill .num{font-family:var(--font-d);font-size:1.1rem;font-weight:700;color:var(--amber-txt);}
 .stat-pill .lbl{font-size:0.8rem;color:var(--slate);}
 
 /* JOB DETAIL MODAL */
@@ -127,6 +127,7 @@
 .modal-header{background:var(--navy);padding:2rem;position:relative;}
 .modal-close{position:absolute;top:1rem;right:1rem;background:rgba(255,255,255,0.1);border:none;color:#fff;width:32px;height:32px;border-radius:50%;font-size:1.1rem;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background 0.2s;}
 .modal-close:hover{background:rgba(255,255,255,0.2);}
+@media(max-width:640px){.modal-close{width:44px;height:44px;}}
 .modal-job-title{font-family:var(--font-d);font-size:1.6rem;color:#fff;margin-bottom:0.5rem;}
 .modal-employer{font-size:0.92rem;color:rgba(255,255,255,0.6);}
 .modal-body{padding:2rem;}
@@ -264,12 +265,12 @@
   <!-- SIDEBAR -->
   <aside class="sidebar">
     <div class="filter-card">
-      <h3>Industry</h3>
+      <h2>Industry</h2>
       <div id="category-filters"></div>
     </div>
 
     <div class="filter-card">
-      <h3>Job Type</h3>
+      <h2>Job Type</h2>
       <div class="filter-option"><input type="checkbox" id="ft-fulltime" onchange="applyFilters()"/><label for="ft-fulltime">Full-Time</label></div>
       <div class="filter-option"><input type="checkbox" id="ft-parttime" onchange="applyFilters()"/><label for="ft-parttime">Part-Time</label></div>
       <div class="filter-option"><input type="checkbox" id="ft-contract" onchange="applyFilters()"/><label for="ft-contract">Contract</label></div>
@@ -277,7 +278,7 @@
     </div>
 
     <div class="filter-card">
-      <h3>Experience Level</h3>
+      <h2>Experience Level</h2>
       <div class="filter-option"><input type="checkbox" id="el-none" onchange="applyFilters()"/><label for="el-none">No Experience Required</label></div>
       <div class="filter-option"><input type="checkbox" id="el-entry" onchange="applyFilters()"/><label for="el-entry">Entry Level</label></div>
       <div class="filter-option"><input type="checkbox" id="el-mid" onchange="applyFilters()"/><label for="el-mid">Mid-Level</label></div>
@@ -285,14 +286,14 @@
     </div>
 
     <div class="filter-card">
-      <h3>Work Style</h3>
+      <h2>Work Style</h2>
       <div class="filter-option"><input type="checkbox" id="ws-remote" onchange="applyFilters()"/><label for="ws-remote">Remote</label></div>
       <div class="filter-option"><input type="checkbox" id="ws-hybrid" onchange="applyFilters()"/><label for="ws-hybrid">Hybrid</label></div>
       <div class="filter-option"><input type="checkbox" id="ws-onsite" onchange="applyFilters()"/><label for="ws-onsite">On-Site</label></div>
     </div>
 
     <div class="filter-card">
-      <h3>Min Pay (Hourly)</h3>
+      <h2>Min Pay (Hourly)</h2>
       <div class="pay-range">
         <span style="font-size:0.85rem;color:var(--slate);">$</span>
         <input type="number" id="pay-min" placeholder="e.g. 18" min="0" max="200" onchange="applyFilters()"/>
@@ -301,7 +302,7 @@
     </div>
 
     <div class="filter-card">
-      <h3>Special</h3>
+      <h2>Special</h2>
       <div class="filter-option"><input type="checkbox" id="sp-entry-hl" onchange="applyFilters()"/><label for="sp-entry-hl">🌱 Entry-Level Highlighted</label></div>
       <div class="filter-option"><input type="checkbox" id="sp-senior" onchange="applyFilters()"/><label for="sp-senior">🔭 50+ Friendly</label></div>
       <div class="filter-option"><input type="checkbox" id="sp-featured" onchange="applyFilters()"/><label for="sp-featured">⭐ Featured Listings</label></div>
@@ -314,7 +315,7 @@
   <section class="results-pane">
     <div class="results-header">
       <p class="results-count" id="results-count">Loading jobs…</p>
-      <select class="sort-select" id="sort-select" onchange="applyFilters()">
+      <select class="sort-select" id="sort-select" aria-label="Sort jobs by" onchange="applyFilters()">
         <option value="posted_at">Most Recent</option>
         <option value="featured">Featured First</option>
         <option value="pay_max">Highest Pay</option>
