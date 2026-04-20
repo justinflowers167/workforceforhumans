@@ -17,14 +17,24 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-const SYSTEM_PROMPT = `You are a job-matching analyst for Workforce for Humans. Score each job (0-100) for this candidate based on fit: skills overlap, desired roles, pay expectations, location/remote, seniority, and realistic growth path (career-changers get credit for transferable skills). Return ONLY valid JSON:
+const SYSTEM_PROMPT = `You are a job-matching analyst for Workforce for Humans — a platform that helps people displaced by AI, layoffs, and automation find real work and real training. You and the member make the dreamwork a reality: they drive, you support with honest reads on fit and growth.
 
-{"matches": [{"job_id": string, "score": integer, "rationale": string, "reasons": string[]}]}
+Score each job (0-100) for this candidate based on fit: skills overlap, desired roles, pay expectations, location/remote, seniority, and realistic growth path (career-changers get credit for transferable skills). Return ONLY valid JSON:
 
-- score is an integer 0-100
-- rationale: 1-2 sentence explanation
-- reasons: 2-4 short tags like "skills overlap", "remote ok", "pay match"
-- Only include jobs that score 40 or higher. Sort descending by score. Cap at 10.`;
+{"matches":[{"job_id":string,"score":integer,"rationale":string,"reasons":string[],"growth_note":string}]}
+
+Match this voice: direct, empathetic without saccharine, action verbs over adjectives, validates struggle without dwelling. Examples of the Workforce for Humans voice:
+- "Whether you've been laid off, need a career change, or are starting from zero — we connect real people with employers who are actively hiring. No degree gatekeeping. No runaround."
+- "Free guides and resources to help you find work, build skills, and navigate your career — no matter where you're starting from."
+- "Pick one agentic framework, build something small, and document it. That portfolio is your leverage."
+
+Field specs:
+- score: integer 0-100.
+- rationale: 2-3 sentences. Name what about THIS candidate's profile fits THIS job. Second person ("you"). Concrete, not generic. No hedging ("might", "could possibly").
+- growth_note: 1-2 sentences. The NEXT EDGE — what the candidate would sharpen into this role. Start with verbs: "Sharpening...", "Adding...", "Naming...", "A small portfolio piece in...". Never "you lack", "missing", "weakness". If the fit is already tight, name the stretch inside the role itself, not a gap in the profile.
+- reasons: 2-4 short tags like "skills overlap", "remote ok", "pay match".
+
+Only include jobs scoring 40 or higher. Sort descending by score. Cap at 10. Return ONLY the JSON object — no prose before or after.`;
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
@@ -92,7 +102,7 @@ Deno.serve(async (req) => {
     const client = new Anthropic({ apiKey: ANTHROPIC_API_KEY });
     const resp = await client.messages.create({
       model: MODEL,
-      max_tokens: 4000,
+      max_tokens: 6000,
       system: SYSTEM_PROMPT,
       messages: [{ role: "user", content: JSON.stringify({ candidate: profilePayload, jobs: jobsPayload }) }],
     });
@@ -101,7 +111,7 @@ Deno.serve(async (req) => {
     const e = raw.lastIndexOf("}");
     if (s < 0 || e < 0) throw new Error("no JSON in model output");
     const parsed = JSON.parse(raw.slice(s, e + 1));
-    const matches: Array<{ job_id: string; score: number; rationale: string; reasons: string[] }> = parsed.matches || [];
+    const matches: Array<{ job_id: string; score: number; rationale: string; reasons: string[]; growth_note?: string }> = parsed.matches || [];
     const top = matches.slice(0, TOP_N);
 
     await admin
@@ -120,6 +130,7 @@ Deno.serve(async (req) => {
         score: m.score,
         rationale: m.rationale,
         match_reasons: m.reasons || [],
+        growth_note: m.growth_note ?? null,
       }));
       await admin.from("match_scores").insert(rows);
     }
