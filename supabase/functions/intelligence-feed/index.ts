@@ -11,7 +11,15 @@ const db = createClient(supabaseUrl, supabaseServiceKey);
 
 const OPENAI_API_KEY = Deno.env.get("OPENAI_API_KEY") || "";
 
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
+};
+
 Deno.serve(async (req) => {
+  if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
+
   try {
     const results = {
       warn_act: 0,
@@ -52,12 +60,13 @@ Deno.serve(async (req) => {
     }
 
     return new Response(JSON.stringify({ success: true, results }), {
-      headers: { "Content-Type": "application/json" },
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (e) {
-    return new Response(JSON.stringify({ success: false, error: e.message }), {
+    console.error("intelligence-feed error:", e);
+    return new Response(JSON.stringify({ success: false, error: "feed aggregation failed" }), {
       status: 500,
-      headers: { "Content-Type": "application/json" },
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }
 });

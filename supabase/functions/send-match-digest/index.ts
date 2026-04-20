@@ -116,7 +116,7 @@ Deno.serve(async (req) => {
     return json({ ok: true, sent, marked: sentIds.length });
   } catch (err) {
     console.error("send-match-digest error:", err);
-    return json({ error: (err as Error).message || "internal error" }, 500);
+    return json({ error: "internal error" }, 500);
   }
 });
 

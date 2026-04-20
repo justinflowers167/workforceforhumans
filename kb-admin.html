@@ -41,9 +41,7 @@
 .editor-panel{background:#fff;border-radius:20px;width:100%;max-width:860px;margin:auto;overflow:hidden}
 .editor-header{background:var(--navy);padding:1.5rem 2rem;display:flex;align-items:center;justify-content:space-between}
 .editor-header h2{font-family:var(--font-d);color:#fff;font-size:1.3rem}
-.editor-close{background:rgba(255,255,255,.1);border:none;color:#fff;width:32px;height:32px;border-radius:50%;font-size:1.1rem;cursor:pointer;display:flex;align-items:center;justify-content:center}
-.editor-close:hover{background:rgba(255,255,255,.2)}
-@media(max-width:640px){.editor-close{width:44px;height:44px}}
+/* .modal-close is defined in /assets/site.css */
 .editor-body{padding:2rem;max-height:70vh;overflow-y:auto}
 .field{margin-bottom:1.25rem}
 .field label{display:block;font-size:.82rem;font-weight:600;color:var(--navy);margin-bottom:.35rem}
@@ -110,7 +108,7 @@
   <div class="editor-panel">
     <div class="editor-header">
       <h2 id="editor-title">New Article</h2>
-      <button class="editor-close" onclick="closeEditor()">✕</button>
+      <button class="modal-close" onclick="closeEditor()">✕</button>
     </div>
     <div class="editor-body">
       <input type="hidden" id="edit-id"/>
@@ -169,6 +167,23 @@
     <div class="editor-footer">
       <button class="btn btn-secondary" onclick="closeEditor()">Cancel</button>
       <button class="btn btn-primary" id="save-btn" onclick="saveArticle()">Save Article</button>
+    </div>
+  </div>
+</div>
+
+<!-- CONFIRM DELETE MODAL -->
+<div class="editor-overlay" id="confirm-overlay" onclick="if(event.target===this)resolveConfirm(false)">
+  <div class="editor-panel" style="max-width:440px">
+    <div class="editor-header">
+      <h2>Delete article?</h2>
+      <button class="modal-close" data-confirm-cancel>✕</button>
+    </div>
+    <div class="editor-body" style="padding:1.5rem 2rem">
+      <p style="color:var(--slate);line-height:1.6">You're about to delete <strong id="confirm-title" style="color:var(--navy)"></strong>. This cannot be undone.</p>
+    </div>
+    <div class="editor-footer">
+      <button class="btn btn-secondary" data-confirm-cancel>Cancel</button>
+      <button class="btn btn-primary" data-confirm-ok style="background:var(--terra)">Delete</button>
     </div>
   </div>
 </div>
@@ -354,8 +369,21 @@ async function saveArticle() {
 }
 
 // ─── DELETE ──────────────────────────────────────────
+let _confirmResolve = null;
+function resolveConfirm(ok) {
+  document.getElementById('confirm-overlay').classList.remove('open');
+  if (_confirmResolve) { _confirmResolve(ok); _confirmResolve = null; }
+}
+function confirmDelete(title) {
+  document.getElementById('confirm-title').textContent = title;
+  document.getElementById('confirm-overlay').classList.add('open');
+  return new Promise(resolve => { _confirmResolve = resolve; });
+}
+document.querySelectorAll('[data-confirm-cancel]').forEach(el => el.addEventListener('click', () => resolveConfirm(false)));
+document.querySelectorAll('[data-confirm-ok]').forEach(el => el.addEventListener('click', () => resolveConfirm(true)));
+
 async function deleteArticle(id, title) {
-  if (!confirm(`Delete "${title}"? This cannot be undone.`)) return;
+  if (!(await confirmDelete(title))) return;
   const { error } = await db.from('kb_articles').delete().eq('id', id);
   if (error) { toast('Error deleting: ' + error.message, 'error'); return; }
   toast('Article deleted', 'success');

@@ -161,6 +161,10 @@
 </div>
 
 <script>
+// ─── HTML ESCAPE HELPERS (XSS defense for DB-sourced content) ─────────
+const esc = (s) => s == null ? '' : String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const safeUrl = (u) => { try { const url = new URL(u, 'https://workforceforhumans.com'); return (url.protocol === 'http:' || url.protocol === 'https:') ? url.toString() : ''; } catch { return ''; } };
+
 // ─── STATE ─────────────────────────────────────────────
 let currentTab = 'layoffs';
 let feedItems = [];
@@ -285,19 +289,21 @@ function renderLayoffs() {
       const dateLabel = daysAgo === 0 ? 'Today' : daysAgo === 1 ? 'Yesterday' : `${daysAgo}d ago`;
       const typeEmoji = {layoff:'🔴',['hiring-surge']:'🟢',['industry-news']:'📰',['policy-change']:'📋',opportunity:'💡'}[item.item_type] || '📌';
 
+      const sev = ['low','medium','high','critical'].includes(item.severity) ? item.severity : 'medium';
+      const srcUrl = safeUrl(item.source_url);
       html += `
-        <div class="feed-card severity-${item.severity || 'medium'}">
+        <div class="feed-card severity-${sev}">
           <div class="fc-top">
-            <div class="fcard-title">${typeEmoji} ${item.title}</div>
-            <span class="fc-severity ${item.severity || 'medium'}">${item.severity || 'medium'}</span>
+            <div class="fcard-title">${typeEmoji} ${esc(item.title)}</div>
+            <span class="fc-severity ${sev}">${sev}</span>
           </div>
-          ${item.summary ? `<div class="fc-summary">${item.summary}</div>` : ''}
+          ${item.summary ? `<div class="fc-summary">${esc(item.summary)}</div>` : ''}
           <div class="fc-meta">
-            <span class="fc-chip source">${formatSource(item.source)}</span>
-            ${item.company_name ? `<span class="fc-chip company">${item.company_name}</span>` : ''}
-            ${item.affected_count ? `<span class="fc-chip count">${item.affected_count.toLocaleString()} affected</span>` : ''}
-            ${item.location_state ? `<span class="fc-chip">📍 ${US_STATES[item.location_state] || item.location_state}</span>` : ''}
-            ${item.source_url ? `<a class="fc-link" href="${item.source_url}" target="_blank">Read more →</a>` : ''}
+            <span class="fc-chip source">${esc(formatSource(item.source))}</span>
+            ${item.company_name ? `<span class="fc-chip company">${esc(item.company_name)}</span>` : ''}
+            ${item.affected_count ? `<span class="fc-chip count">${(+item.affected_count).toLocaleString()} affected</span>` : ''}
+            ${item.location_state ? `<span class="fc-chip">📍 ${esc(US_STATES[item.location_state] || item.location_state)}</span>` : ''}
+            ${srcUrl ? `<a class="fc-link" href="${esc(srcUrl)}" target="_blank" rel="noopener noreferrer">Read more →</a>` : ''}
             <span class="fc-date">${dateLabel}</span>
           </div>
         </div>`;
@@ -354,15 +360,16 @@ function renderAgencies() {
   } else {
     filtered.forEach(a => {
       const typeLabel = (a.agency_type || '').replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+      const webUrl = safeUrl(a.website);
       html += `
         <div class="agency-card">
-          <div class="ag-type">${typeLabel}</div>
-          <div class="ag-name">${a.name}</div>
-          ${a.description ? `<div class="ag-desc">${a.description}</div>` : ''}
-          <div class="ag-location">📍 ${a.location_city ? a.location_city + ', ' : ''}${a.location_state ? US_STATES[a.location_state] || a.location_state : 'Nationwide'}${a.serves_remote ? ' · 🌐 Virtual services' : ''}</div>
-          ${a.services && a.services.length ? `<div class="ag-services">${a.services.map(s => `<span class="ag-service">${serviceLabels[s] || s}</span>`).join('')}</div>` : ''}
-          ${a.populations && a.populations.length ? `<div class="ag-populations">${a.populations.map(p => `<span class="ag-pop">${popLabels[p] || p}</span>`).join('')}</div>` : ''}
-          ${a.website ? `<a class="ag-link" href="${a.website}" target="_blank">Visit Website →</a>` : ''}
+          <div class="ag-type">${esc(typeLabel)}</div>
+          <div class="ag-name">${esc(a.name)}</div>
+          ${a.description ? `<div class="ag-desc">${esc(a.description)}</div>` : ''}
+          <div class="ag-location">📍 ${a.location_city ? esc(a.location_city) + ', ' : ''}${a.location_state ? esc(US_STATES[a.location_state] || a.location_state) : 'Nationwide'}${a.serves_remote ? ' · 🌐 Virtual services' : ''}</div>
+          ${a.services && a.services.length ? `<div class="ag-services">${a.services.map(s => `<span class="ag-service">${esc(serviceLabels[s] || s)}</span>`).join('')}</div>` : ''}
+          ${a.populations && a.populations.length ? `<div class="ag-populations">${a.populations.map(p => `<span class="ag-pop">${esc(popLabels[p] || p)}</span>`).join('')}</div>` : ''}
+          ${webUrl ? `<a class="ag-link" href="${esc(webUrl)}" target="_blank" rel="noopener noreferrer">Visit Website →</a>` : ''}
         </div>`;
     });
   }
@@ -418,17 +425,18 @@ function renderTraining() {
     html += `<div class="empty-state" style="grid-column:1/-1"><div class="icon">📚</div><h3>No matching resources</h3><p>Try adjusting your filters.</p></div>`;
   } else {
     filtered.forEach(t => {
+      const srcUrl = safeUrl(t.source_url);
       html += `
         <div class="training-card${t.is_featured ? ' featured' : ''}">
-          <div class="tc-provider">${t.provider || t.source}</div>
-          <div class="tc-title">${t.title}</div>
-          ${t.description ? `<div class="tc-desc">${t.description}</div>` : ''}
+          <div class="tc-provider">${esc(t.provider || t.source)}</div>
+          <div class="tc-title">${esc(t.title)}</div>
+          ${t.description ? `<div class="tc-desc">${esc(t.description)}</div>` : ''}
           <div class="tc-chips">
             <span class="tc-chip ${t.is_free ? 'free' : 'paid'}">${t.is_free ? '✓ Free' : '$ Paid / Aid'}</span>
-            <span class="tc-chip level">${(t.skill_level || 'all-levels').replace('-', ' ')}</span>
-            <span class="tc-chip type">${(t.content_type || 'course').replace('-', ' ')}</span>
+            <span class="tc-chip level">${esc((t.skill_level || 'all-levels').replace('-', ' '))}</span>
+            <span class="tc-chip type">${esc((t.content_type || 'course').replace('-', ' '))}</span>
           </div>
-          <a class="tc-link" href="${t.source_url}" target="_blank">Start Learning →</a>
+          ${srcUrl ? `<a class="tc-link" href="${esc(srcUrl)}" target="_blank" rel="noopener noreferrer">Start Learning →</a>` : ''}
         </div>`;
     });
   }

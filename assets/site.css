@@ -237,12 +237,19 @@ body.nav-open .nav-scrim{opacity:1;pointer-events:auto;}
   .footer-grid{grid-template-columns:1fr;gap:2rem;}
 }
 
+/* ─── SHARED MODAL CLOSE BUTTON ───
+   Used by jobs.html job-detail modal, employer.html listing modal,
+   kb-admin.html article editor. Desktop 36×36, mobile 44×44. */
+.modal-close{position:absolute;top:1rem;right:1rem;background:rgba(255,255,255,0.1);border:none;color:#fff;width:36px;height:36px;border-radius:50%;font-size:1.1rem;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background 0.2s;}
+.modal-close:hover{background:rgba(255,255,255,0.2);}
+
 /* ─── MOBILE TAP TARGETS (≥44px per WCAG 2.5.5) ─── */
 @media(max-width:640px){
   .btn-ghost,.btn-amber,
   button,.tab,.chip,
   .quick-tag,.meta-chip,
   .apply-btn,.page-btn{min-height:44px;}
+  .modal-close{width:44px;height:44px;}
   .filter-option{padding:0.6rem 0;}
   .filter-option input[type="checkbox"]{width:20px;height:20px;}
   .toggle input[type="checkbox"]{width:22px;height:22px;}

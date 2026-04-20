@@ -52,7 +52,10 @@ Deno.serve(async (req) => {
     .eq("id", candidate.id)
     .select("id, name, contact_email, subscription_id, subscription_status")
     .single();
-  if (updErr) return json({ error: updErr.message }, 500);
+  if (updErr) {
+    console.error("link-employer: update failed:", updErr);
+    return json({ error: "Could not link employer. Please try again." }, 500);
+  }
 
   return json({ employer: updated, linked: true });
 });
