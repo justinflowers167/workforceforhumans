@@ -96,6 +96,7 @@
 .meta-chip.remote{color:var(--mist);background:rgba(139,168,181,0.1);border-color:rgba(139,168,181,0.3);}
 .meta-chip.entry{color:var(--amber-dk);background:rgba(245,166,35,0.1);border-color:rgba(245,166,35,0.3);font-weight:600;}
 .meta-chip.senior{color:var(--terra);background:rgba(200,95,62,0.08);border-color:rgba(200,95,62,0.2);font-weight:600;}
+.meta-chip.usajobs-src{color:#154c94;background:rgba(21,76,148,0.07);border-color:rgba(21,76,148,0.22);font-weight:600;}
 
 .job-snippet{font-size:0.88rem;color:var(--slate);line-height:1.65;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;font-weight:300;}
 
@@ -596,6 +597,7 @@ function renderJobCard(j) {
       ${j.is_remote ? `<span class="meta-chip remote">🌐 Remote</span>` : ''}
       ${j.is_entry_level_highlighted ? `<span class="meta-chip entry">🌱 Entry Level</span>` : ''}
       ${j.is_senior_friendly ? `<span class="meta-chip senior">🔭 50+ Friendly</span>` : ''}
+      ${j.source === 'usajobs' ? `<span class="meta-chip usajobs-src">🏛️ Sourced from USAJobs.gov</span>` : ''}
     </div>
     <p class="job-snippet">${(j.description || '').replace(/<[^>]+>/g,'')}</p>
     <div class="card-bottom">
@@ -624,6 +626,7 @@ async function openModal(jobId) {
     j.is_entry_level_highlighted && `<span class="meta-chip entry">🌱 Entry Level</span>`,
     j.is_senior_friendly && `<span class="meta-chip senior">🔭 50+ Friendly</span>`,
     j.education_required && j.education_required !== 'no-requirement' && `<span class="meta-chip">${j.education_required.replace(/-/g,' ')}</span>`,
+    j.source === 'usajobs' && `<span class="meta-chip usajobs-src">🏛️ Sourced from USAJobs.gov — apply on their site</span>`,
   ].filter(Boolean).join('');
 
   renderList('modal-responsibilities', j.responsibilities, 'modal-resp-section');
