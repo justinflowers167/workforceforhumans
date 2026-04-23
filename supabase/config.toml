@@ -16,3 +16,9 @@ verify_jwt = false
 # x-refresh-secret header (REFRESH_SECRET env var), not user JWT.
 [functions.refresh-jobs]
 verify_jwt = false
+
+# prune-inactive-data: weekly pg_cron retention purge of stale resumes and
+# match_scores. Authenticated by x-prune-secret header (PRUNE_SECRET env var),
+# not user JWT.
+[functions.prune-inactive-data]
+verify_jwt = false

@@ -299,6 +299,8 @@ Sequencing principle: stay revenue-aware. Every item on this phase either (a) un
 - **Code work:** small — add a testimonials strip + verified-logo wall to `index.html`, source from a new `testimonials` JSON file or hardcoded block. Defer row modeling in Supabase until >5 testimonials land.
 - **Done when:** 3 quotes + attributed names live on homepage OR 1 verified employer logo + one-sentence case-study live.
 
+**Shipped (2026-04-23, code scaffold only):** new `<section id="social-proof">` on `index.html` between the employer pitch and newsletter sections. `hidden` by default; renderer reads two inline arrays — `WFH_TESTIMONIALS` and `WFH_EMPLOYER_LOGOS` — and reveals the section when either populates. No placeholders ship. Logo wall supports linked items (with `rel=noopener` + `safeUrl()` protocol allowlist, matching Phase 6 XSS hardening) and an optional one-sentence case study per logo. Avatar colors rotate navy/amber/terra. When Justin collects real quotes or lands a verified employer, the swap is a single array-element edit in `index.html` — section appears on reload. **Done-when still gated on business action** (3 real quotes OR 1 verified logo), which is user-owned per the plan.
+
 ### 3. Legal sign-off + banner removal (lawyer-owned, 1 hour)
 
 - **Outcome:** "v1 — under legal review" banners come off `privacy.html` + `terms.html`. Italicized "subject to counsel review" notes in Privacy §7 (state-specific rights) and Terms §10/§11 (warranty + liability) get replaced with cleared language.
@@ -319,6 +321,8 @@ Sequencing principle: stay revenue-aware. Every item on this phase either (a) un
   - Delete `match_scores` rows where `emailed_at < now() - interval '12 months'`.
   - Log counts to `console.log` for observability.
 - **Done when:** migration + function + cron schedule + dry-run test (temporarily flip intervals to something testable, verify counts, flip back).
+
+**Shipped (2026-04-23, code-side):** `supabase/functions/prune-inactive-data/index.ts` — server-to-server auth via `x-prune-secret` + `PRUNE_SECRET` env var, mirroring the `refresh-jobs` / `send-match-digest` pattern. Candidate resumes are gated both on `updated_at` cutoff AND the owning seeker's `auth.users.last_sign_in_at` (resolved via `supabase.auth.admin.getUserById`) so active accounts with old resumes are never touched. Storage-bucket objects are removed first (best-effort), then DB rows, then `match_scores` on the 12-month cutoff. Migration `20260423_phase9_prune_inactive_data.sql` schedules `cron.prune-inactive-data-weekly` at 15 UTC Sunday (11am EDT) — deliberately after the Friday digest so freshly emailed matches aren't swept in the same week. `config.toml` updated. **User action required:** seed `PRUNE_SECRET` in Supabase Vault + matching Edge Function secret, same pattern as `REFRESH_SECRET` / `DIGEST_SECRET`. Migration + function are 401-safe until both exist.
 
 ### 6. Plausible baseline (founder-owned, 5 min)
 
