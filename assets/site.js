@@ -13,6 +13,24 @@
   var body = document.body;
   var variant = (body && body.dataset.nav) || 'marketing';
 
+  // --- Plausible analytics (privacy-first, no cookies) ---
+  // Inject the script tag once per page load. Safe window.plausible()
+  // shim means custom-event calls before script load are queued and
+  // flushed once it arrives.
+  try {
+    if (!document.querySelector('script[data-plausible]')) {
+      var ps = document.createElement('script');
+      ps.defer = true;
+      ps.setAttribute('data-plausible', '1');
+      ps.setAttribute('data-domain', 'workforceforhumans.com');
+      ps.src = 'https://plausible.io/js/script.js';
+      document.head.appendChild(ps);
+    }
+    window.plausible = window.plausible || function () {
+      (window.plausible.q = window.plausible.q || []).push(arguments);
+    };
+  } catch (e) { /* analytics is best-effort; never break the page */ }
+
   // --- Active link detection ---
   // Normalize pathname to a page filename; "/" → "index.html".
   var path = location.pathname.split('/').pop() || 'index.html';
@@ -163,6 +181,7 @@
             '<li><a href="kb.html">Knowledge Base</a></li>' +
             '<li><a href="feed.html">Intelligence Feed</a></li>' +
             '<li><a href="index.html#employers">For Employers</a></li>' +
+            '<li><a href="about.html">About the founder</a></li>' +
             '<li><a href="mailto:hello@workforceforhumans.com">Contact</a></li>' +
             '<li><a href="mailto:employers@workforceforhumans.com">Post a Job</a></li>' +
           '</ul>' +

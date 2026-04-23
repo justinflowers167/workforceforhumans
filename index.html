@@ -328,6 +328,9 @@ const db=createClient(SUPABASE_URL,SUPABASE_ANON);
         <a href="jobs.html" class="quick-tag">Apprenticeship</a>
         <a href="learn.html" class="quick-tag">Training Programs</a>
       </div>
+      <p style="margin-top:1.25rem;font-size:0.88rem;color:rgba(255,255,255,0.55);">
+        Built by a practitioner who's lived this. <a href="about.html" style="color:var(--amber);text-decoration:none;border-bottom:1px solid rgba(245,166,35,0.4);padding-bottom:1px;">Meet the founder →</a>
+      </p>
     </div>
     <div class="hero-right">
       <div class="stat-card"><div class="stat-icon a">💼</div><div><div class="stat-num" id="s-jobs">—</div><div class="stat-lbl">Active job openings</div></div><div class="stat-badge">↑ Live</div></div>
@@ -539,6 +542,7 @@ async function startCheckout() {
   if (!name || !email) { msg.textContent = 'Please enter your name and work email.'; msg.style.color = 'var(--terra)'; return; }
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { msg.textContent = 'Please enter a valid email address.'; msg.style.color = 'var(--terra)'; return; }
   btn.disabled = true; btn.textContent = 'Setting up checkout…'; msg.textContent = '';
+  if (window.plausible) window.plausible('CTA: employer-checkout-start', { props: { plan: selectedPlan } });
   try {
     const res = await fetch(SUPABASE_URL + '/functions/v1/create-checkout', {
       method: 'POST',
