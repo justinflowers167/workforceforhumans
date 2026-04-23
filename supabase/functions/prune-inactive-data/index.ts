@@ -43,7 +43,7 @@ Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
 
   const provided = req.headers.get("x-prune-secret") || "";
-  if (!PRUNE_SECRET || provided !== PRUNE_SECRET) return json({ error: "unauthorized" }, 401);
+  if (!PRUNE_SECRET || !timingSafeEqual(provided, PRUNE_SECRET)) return json({ error: "unauthorized" }, 401);
 
   try {
     const admin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
@@ -141,4 +141,12 @@ function json(body: unknown, status = 200) {
     status,
     headers: { ...corsHeaders, "Content-Type": "application/json" },
   });
+}
+
+// Constant-time compare for shared-secret header auth — avoids timing side-channel.
+function timingSafeEqual(a: string, b: string): boolean {
+  if (a.length !== b.length) return false;
+  let diff = 0;
+  for (let i = 0; i < a.length; i++) diff |= a.charCodeAt(i) ^ b.charCodeAt(i);
+  return diff === 0;
 }
