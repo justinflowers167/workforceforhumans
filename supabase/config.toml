@@ -11,3 +11,8 @@ verify_jwt = false
 # create-checkout: called from index.html anonymously (buyer hasn't signed in yet).
 [functions.create-checkout]
 verify_jwt = false
+
+# refresh-jobs: daily pg_cron pull of USAJobs.gov roles. Authenticated by
+# x-refresh-secret header (REFRESH_SECRET env var), not user JWT.
+[functions.refresh-jobs]
+verify_jwt = false
