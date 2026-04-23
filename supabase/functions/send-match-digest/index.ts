@@ -27,7 +27,7 @@ Deno.serve(async (req) => {
 
     const { data: pending, error: qErr } = await admin
       .from("match_scores")
-      .select("id, job_seeker_id, match_target_id, score, rationale, match_reasons, job_seekers!inner(id, email, first_name, newsletter_opt_in)")
+      .select("id, job_seeker_id, match_target_id, score, rationale, growth_note, match_reasons, job_seekers!inner(id, email, first_name, newsletter_opt_in)")
       .eq("match_type", "job")
       .is("emailed_at", null)
       .gte("score", 60)
@@ -68,13 +68,23 @@ Deno.serve(async (req) => {
           j.pay_min || j.pay_max
             ? `$${j.pay_min ?? ""}${j.pay_max ? `–$${j.pay_max}` : ""} ${j.pay_type === "hourly" ? "/hr" : "/yr"}`
             : "";
+        // Phase 7 email template: render rationale + growth_note in the same
+        // "Claude's read" shape we show on member.html. Either field may be
+        // null on pre-Phase-7 rows (already-emailed_at filter excludes most).
+        const fitHtml = r.rationale
+          ? `<div style="font-size:14px;line-height:1.5;margin:10px 0 6px;color:#111827;">${escapeHtml(r.rationale)}</div>`
+          : "";
+        const edgeHtml = r.growth_note
+          ? `<div style="font-size:13px;line-height:1.5;margin:6px 0 8px;color:#4b5563;"><b style="color:#c85f3e;">Next edge:</b> ${escapeHtml(r.growth_note)}</div>`
+          : "";
         return `
           <div style="border:1px solid #e5e7eb;border-radius:8px;padding:16px;margin-bottom:12px;">
             <div style="font-weight:600;font-size:16px;">${escapeHtml(j.title)}</div>
             <div style="color:#4b5563;font-size:14px;margin:4px 0;">${escapeHtml(j.employers?.name || "")} · ${escapeHtml(loc)} ${pay ? "· " + escapeHtml(pay) : ""}</div>
-            <div style="font-size:14px;margin:8px 0;">${escapeHtml(r.rationale || "")}</div>
+            ${fitHtml}
+            ${edgeHtml}
             <div style="font-size:13px;color:#6b7280;">Match score: <b>${r.score}</b></div>
-            <a href="${SITE_URL}/jobs.html#${j.id}" style="display:inline-block;margin-top:8px;background:#111827;color:#fff;padding:8px 14px;border-radius:6px;text-decoration:none;font-size:14px;">View role</a>
+            <a href="${SITE_URL}/jobs.html?id=${escapeHtml(j.id)}" style="display:inline-block;margin-top:8px;background:#111827;color:#fff;padding:8px 14px;border-radius:6px;text-decoration:none;font-size:14px;">View role</a>
           </div>`;
       }).join("");
 
