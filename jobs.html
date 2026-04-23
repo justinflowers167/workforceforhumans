@@ -360,7 +360,7 @@
       </div>
     </div>
     <div class="modal-footer">
-      <a class="apply-main" id="modal-apply-btn" href="#" target="_blank">Apply for This Job →</a>
+      <a class="apply-main" id="modal-apply-btn" href="#" target="_blank" rel="noopener noreferrer">Apply for This Job →</a>
       <button class="save-job-btn">♡ Save Job</button>
     </div>
   </div>
@@ -369,6 +369,14 @@
 <div id="site-footer"></div>
 
 <script>
+// ─── HTML ESCAPE HELPERS (XSS defense for DB-sourced content) ─────────
+// Mirrors the Phase 6 convention from feed.html. Required on jobs.html as of
+// Phase 8 Tue — aggregated USAJobs rows now flow through the same
+// renderJobCard / openModal / renderList template literals that previously
+// only carried employer-authored data.
+const esc = (s) => s == null ? '' : String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const safeUrl = (u) => { try { const url = new URL(u, 'https://workforceforhumans.com'); return (url.protocol === 'http:' || url.protocol === 'https:') ? url.toString() : ''; } catch { return ''; } };
+
 // ─── STATE ───────────────────────────────────────────────
 const PAGE_SIZE = 15;
 let currentPage = 1;
@@ -580,28 +588,30 @@ function renderJobCard(j) {
   const postedLabel = daysAgo === 0 ? 'Today' : daysAgo === 1 ? 'Yesterday' : `${daysAgo}d ago`;
   const initials = (j.employer_name || 'EM').split(' ').slice(0,2).map(w=>w[0]).join('');
 
+  const safeLogo = safeUrl(j.employer_logo);
+  const employerNameEsc = esc(j.employer_name);
   return `
-  <a class="job-card${j.is_featured ? ' featured':''}" href="#" onclick="openModal('${j.id}');return false;">
+  <a class="job-card${j.is_featured ? ' featured':''}" href="#" onclick="openModal('${esc(j.id)}');return false;">
     <div class="card-top">
-      <div class="employer-logo">${j.employer_logo ? `<img src="${j.employer_logo}" alt="${j.employer_name}"/>` : initials}</div>
+      <div class="employer-logo">${safeLogo ? `<img src="${safeLogo}" alt="${employerNameEsc}"/>` : esc(initials)}</div>
       <div class="card-title-block">
-        <div class="job-title">${j.title}</div>
-        <div class="employer-name">${j.employer_name || ''}${j.employer_verified ? '<span class="verified-badge">✓ Verified</span>':''}</div>
+        <div class="job-title">${esc(j.title)}</div>
+        <div class="employer-name">${employerNameEsc}${j.employer_verified ? '<span class="verified-badge">✓ Verified</span>':''}</div>
       </div>
     </div>
     <div class="card-meta">
-      <span class="meta-chip">📍 ${loc}</span>
-      <span class="meta-chip">${j.category_icon || ''} ${j.category_name || ''}</span>
-      <span class="meta-chip">${formatEmploymentType(j.employment_type)}</span>
-      ${pay ? `<span class="meta-chip pay">💰 ${pay}</span>` : ''}
+      <span class="meta-chip">📍 ${esc(loc)}</span>
+      <span class="meta-chip">${esc(j.category_icon || '')} ${esc(j.category_name || '')}</span>
+      <span class="meta-chip">${esc(formatEmploymentType(j.employment_type))}</span>
+      ${pay ? `<span class="meta-chip pay">💰 ${esc(pay)}</span>` : ''}
       ${j.is_remote ? `<span class="meta-chip remote">🌐 Remote</span>` : ''}
       ${j.is_entry_level_highlighted ? `<span class="meta-chip entry">🌱 Entry Level</span>` : ''}
       ${j.is_senior_friendly ? `<span class="meta-chip senior">🔭 50+ Friendly</span>` : ''}
       ${j.source === 'usajobs' ? `<span class="meta-chip usajobs-src">🏛️ Sourced from USAJobs.gov</span>` : ''}
     </div>
-    <p class="job-snippet">${(j.description || '').replace(/<[^>]+>/g,'')}</p>
+    <p class="job-snippet">${esc((j.description || '').replace(/<[^>]+>/g,''))}</p>
     <div class="card-bottom">
-      <span class="posted-date">Posted ${postedLabel}</span>
+      <span class="posted-date">Posted ${esc(postedLabel)}</span>
       <span class="apply-btn">View &amp; Apply →</span>
     </div>
   </a>`;
@@ -619,13 +629,13 @@ async function openModal(jobId) {
   const pay = formatPay(j);
   const loc = j.is_remote ? 'Remote' : [j.location_city, j.location_state].filter(Boolean).join(', ');
   document.getElementById('modal-chips').innerHTML = [
-    loc && `<span class="meta-chip">📍 ${loc}</span>`,
-    `<span class="meta-chip">${formatEmploymentType(j.employment_type)}</span>`,
-    pay && `<span class="meta-chip pay">💰 ${pay}</span>`,
+    loc && `<span class="meta-chip">📍 ${esc(loc)}</span>`,
+    `<span class="meta-chip">${esc(formatEmploymentType(j.employment_type))}</span>`,
+    pay && `<span class="meta-chip pay">💰 ${esc(pay)}</span>`,
     j.is_remote && `<span class="meta-chip remote">🌐 Remote</span>`,
     j.is_entry_level_highlighted && `<span class="meta-chip entry">🌱 Entry Level</span>`,
     j.is_senior_friendly && `<span class="meta-chip senior">🔭 50+ Friendly</span>`,
-    j.education_required && j.education_required !== 'no-requirement' && `<span class="meta-chip">${j.education_required.replace(/-/g,' ')}</span>`,
+    j.education_required && j.education_required !== 'no-requirement' && `<span class="meta-chip">${esc(j.education_required.replace(/-/g,' '))}</span>`,
     j.source === 'usajobs' && `<span class="meta-chip usajobs-src">🏛️ Sourced from USAJobs.gov — apply on their site</span>`,
   ].filter(Boolean).join('');
 
@@ -634,7 +644,10 @@ async function openModal(jobId) {
   renderList('modal-benefits', j.benefits, 'modal-benefits-section');
 
   const applyBtn = document.getElementById('modal-apply-btn');
-  applyBtn.href = j.apply_url || (j.apply_email ? `mailto:${j.apply_email}` : '#');
+  // XSS hardening: URL-scheme-validate external apply_url so a hostile
+  // javascript: href can never be set. apply_email stays a plain mailto.
+  const applyHref = safeUrl(j.apply_url) || (j.apply_email ? `mailto:${encodeURIComponent(j.apply_email)}` : '#');
+  applyBtn.href = applyHref;
 
   // Increment view count
   db.from('jobs').update({ view_count: (j.view_count||0)+1 }).eq('id', jobId);
@@ -652,7 +665,7 @@ function renderList(elId, items, sectionId) {
   const el = document.getElementById(elId);
   if (!items || items.length === 0) { section.style.display = 'none'; return; }
   section.style.display = 'block';
-  el.innerHTML = items.map(i => `<li>${i}</li>`).join('');
+  el.innerHTML = items.map(i => `<li>${esc(i)}</li>`).join('');
 }
 
 function closeModal(e) {

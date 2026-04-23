@@ -32,6 +32,11 @@ comment on column public.jobs.source_ref is
 -- unambiguously from code. Required columns on public.employers today: id
 -- (default gen), name, slug (unique), contact_email. All other columns
 -- nullable. on conflict (id) do nothing keeps this idempotent.
+--
+-- MAGIC CONSTANT — must stay in lockstep with these two other references:
+--   - supabase/migrations/20260421_phase8_refresh_jobs_pipeline.sql (RPC default)
+--   - supabase/migrations/20260422_phase8_qa_hotfix.sql (RPC default, posted_at clamp)
+-- Drift fails loudly at the jobs.employer_id FK constraint.
 insert into public.employers (id, name, slug, contact_email)
 values (
   '00000000-0000-0000-0000-00000000a001'::uuid,

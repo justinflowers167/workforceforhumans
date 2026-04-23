@@ -92,18 +92,27 @@ Deno.serve(async (req) => {
       return json({ ok: true, considered: 0, filtered: 0, inserted: 0, note: "empty fetch" });
     }
 
-    // 3. Claude relevance filter in batches. Permissive fallback on error.
+    // 3. Claude relevance filter in batches. Permissive fallback on error —
+    // an empty feed is worse than a degraded one. Track failure rate so the
+    // response surfaces `degraded: true` when monitoring should alert.
     const keeps = new Set<string>();
+    let totalBatches = 0;
+    let failedBatches = 0;
     for (let i = 0; i < candidates.length; i += CLAUDE_BATCH) {
+      totalBatches += 1;
       const batch = candidates.slice(i, i + CLAUDE_BATCH);
       try {
         const batchKeeps = await filterBatch(anthropic, batch);
         for (const id of batchKeeps) keeps.add(id);
       } catch (err) {
+        failedBatches += 1;
         console.error("Claude filter batch failed; keeping batch verbatim:", err);
         for (const j of batch) keeps.add(j.source_ref);
       }
     }
+    const failureRate = totalBatches ? failedBatches / totalBatches : 0;
+    const degraded = totalBatches > 0 && failedBatches * 2 >= totalBatches;
+    console.log(`refresh-jobs filter: batches=${totalBatches} failed=${failedBatches} rate=${failureRate.toFixed(2)} degraded=${degraded}`);
 
     // 4. Keep the filter decisions, sort by posted date desc, cap at MAX_KEEP.
     const kept = candidates
@@ -127,6 +136,9 @@ Deno.serve(async (req) => {
       considered,
       filtered: kept.length,
       inserted,
+      degraded,
+      failed_batches: failedBatches,
+      total_batches: totalBatches,
     });
   } catch (err) {
     console.error("refresh-jobs error:", err);
@@ -181,33 +193,55 @@ function normalizeUSAJobsItem(item: any): any | null {
     schedName.includes("intermitt") ? "contract" :
     "full-time";
 
+  // pay_type mapping for USAJobs RateIntervalCode. Anything unknown falls
+  // back to salary. WC (without compensation) nulls the pay range so the
+  // card doesn't render a misleading $0.
+  const rateCode = pay ? String(pay.RateIntervalCode || "").toUpperCase() : "";
+  const payType = rateCode === "PH" ? "hourly" : "salary";
+  const payMinRaw = pay && rateCode !== "WC" ? parseFloat(pay.MinimumRange) : NaN;
+  const payMaxRaw = pay && rateCode !== "WC" ? parseFloat(pay.MaximumRange) : NaN;
+
   return {
     source_ref: sourceRef,
     title,
-    slug: `usajobs-${sourceRef}-${slugify(title, 48)}`.slice(0, 120),
+    // Slug namespace "ext-usajobs-<sourceRef>" is guaranteed-unique by
+    // construction: sourceRef is USAJobs's 9-digit MatchedObjectId, and
+    // "ext-" is a prefix employers' slugify(title) cannot produce. This
+    // avoids the rare case where an employer-authored slug collides with
+    // a USAJobs row and fails the whole RPC on the jobs_slug_key unique
+    // constraint.
+    slug: `ext-usajobs-${sourceRef}`,
     description,
     location_city: loc.CityName || null,
     location_state: loc.CountrySubDivisionCode || null,
     is_remote: isRemote,
     employment_type: employmentType,
-    experience_level: inferExperienceLevel(d?.JobGrade?.[0]?.Code),
-    pay_type: pay && String(pay.RateIntervalCode) === "PH" ? "hourly" : "salary",
-    pay_min: pay ? parseFloat(pay.MinimumRange) || null : null,
-    pay_max: pay ? parseFloat(pay.MaximumRange) || null : null,
+    experience_level: inferExperienceLevel(d?.JobGrade),
+    pay_type: payType,
+    pay_min: Number.isFinite(payMinRaw) ? payMinRaw : null,
+    pay_max: Number.isFinite(payMaxRaw) ? payMaxRaw : null,
     apply_url: (Array.isArray(d.ApplyURI) && d.ApplyURI[0]) || d.PositionURI || null,
     source_url: d.PositionURI || null,
     posted_at: d.PublicationStartDate || null,
   };
 }
 
-function inferExperienceLevel(gradeCode: string | undefined): string {
+function inferExperienceLevel(grades: unknown): string {
   // USAJobs grades: GS (General Schedule) 1-15, FV (FAA), FG variants, etc.
-  // GS-1 to GS-7 ≈ entry; GS-9 to GS-12 ≈ mid; GS-13+ ≈ senior. Fall back
-  // to entry-level when we can't parse (makes the filter more generous).
-  if (!gradeCode) return "entry-level";
-  const m = /(\d+)/.exec(String(gradeCode));
-  if (!m) return "entry-level";
-  const n = parseInt(m[1], 10);
+  // Career-ladder postings list MULTIPLE grades like ["7","9","11"] — the
+  // entry point (minimum) is the honest experience level to show a WFH
+  // audience member, not the ceiling. Fall back to entry-level when we
+  // can't parse (makes the filter generous).
+  const arr = Array.isArray(grades) ? grades : (grades ? [grades] : []);
+  const nums = arr
+    .map((g: any) => {
+      const code = String(g?.Code ?? g ?? "");
+      const m = /(\d+)/.exec(code);
+      return m ? parseInt(m[1], 10) : NaN;
+    })
+    .filter((n: number) => Number.isFinite(n));
+  if (!nums.length) return "entry-level";
+  const n = Math.min(...nums);
   if (n <= 7) return "entry-level";
   if (n <= 12) return "mid-level";
   return "senior";

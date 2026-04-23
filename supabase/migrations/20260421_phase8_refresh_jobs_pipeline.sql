@@ -105,6 +105,10 @@ begin
       source, source_url, source_ref
     )
     select
+      -- Synthetic USAJobs external-feed employer. MAGIC CONSTANT — must stay
+      -- in lockstep with the seed in 20260420_phase8_jobs_external_source.sql
+      -- and the RPC redefinition in 20260422_phase8_qa_hotfix.sql. Drift fails
+      -- loudly at the jobs.employer_id FK constraint.
       '00000000-0000-0000-0000-00000000a001'::uuid,
       coalesce(nullif(r->>'title',''), 'Untitled role'),
       r->>'slug',
