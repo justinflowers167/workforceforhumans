@@ -238,6 +238,25 @@ section{padding:6rem 0;}
   color:#fff;flex-shrink:0;}
 .testi-name{font-size:0.88rem;font-weight:600;color:var(--navy);}
 .testi-det{font-size:0.78rem;color:var(--slate);}
+.testi-head{display:flex;align-items:flex-end;justify-content:space-between;
+  flex-wrap:wrap;gap:1.5rem;margin-bottom:1rem;}
+.logo-wall{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));
+  gap:1rem;align-items:center;margin-top:3rem;padding-top:2.5rem;
+  border-top:1px solid var(--stone-dk);}
+.logo-wall-head{font-family:var(--font-b);font-size:0.78rem;font-weight:600;
+  color:var(--slate);letter-spacing:0.08em;text-transform:uppercase;
+  grid-column:1/-1;margin-bottom:0.25rem;}
+.logo-item{display:flex;align-items:center;justify-content:center;
+  padding:1rem;border-radius:12px;background:var(--cream);
+  border:1px solid var(--stone);min-height:72px;transition:all 0.2s;}
+.logo-item:hover{border-color:var(--amber);background:var(--amber-lt);}
+.logo-item img{max-width:100%;max-height:40px;filter:grayscale(1) opacity(0.75);
+  transition:filter 0.2s;}
+.logo-item:hover img{filter:grayscale(0) opacity(1);}
+.logo-item-name{font-family:var(--font-d);font-weight:700;font-size:0.95rem;
+  color:var(--navy);}
+.logo-case{grid-column:1/-1;margin-top:1rem;font-size:0.9rem;color:var(--slate);
+  font-style:italic;line-height:1.6;text-align:center;}
 
 /* NEWSLETTER */
 .nl-sec{background:var(--navy);padding:5rem 0;}
@@ -453,6 +472,19 @@ const db=createClient(SUPABASE_URL,SUPABASE_ANON);
   </div>
 </section>
 
+<section class="testi-sec" id="social-proof" hidden>
+  <div class="container">
+    <div class="testi-head rv">
+      <div>
+        <div class="eye">Early Voices</div>
+        <h2 class="h2">Built with people<br/><em>actually using it.</em></h2>
+      </div>
+    </div>
+    <div class="testi-grid rv d1" id="testi-grid"></div>
+    <div class="logo-wall rv d2" id="logo-wall" hidden></div>
+  </div>
+</section>
+
 <section class="nl-sec">
   <div class="nl-inner">
     <div class="rv">
@@ -559,9 +591,64 @@ async function startCheckout() {
   }
 }
 
+// ─── SOCIAL PROOF ─────────────────────────────────
+// Phase 9 scaffold. Section is hidden by default; it reveals itself when
+// either array has at least one entry. Populate these two arrays with real
+// content (no placeholders) and the section appears on reload.
+//
+// TESTIMONIALS: 3+ real quotes unlocks the testimonials strip. Each needs
+//   quote + name + detail (role, location, or situation). Colors rotate
+//   through navy/amber/terra for the initial letter avatar.
+// EMPLOYER_LOGOS: 1+ verified employer unlocks the logo wall. If an item
+//   has `caseStudy`, it renders as a one-sentence line below the logos.
+const WFH_TESTIMONIALS = [
+  // { quote: "…", name: "…", detail: "…" },
+];
+const WFH_EMPLOYER_LOGOS = [
+  // { name: "Acme Corp", logo: "/assets/logos/acme.svg", href: "https://acme.com",
+  //   caseStudy: "Hiring ex-retail workers as fulfillment team leads — 4 placed in 90 days." },
+];
+function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+function safeUrl(u){try{const p=new URL(u,window.location.origin);return['http:','https:','mailto:'].includes(p.protocol)?p.href:'#';}catch{return'#';}}
+function renderSocialProof(){
+  const sec=document.getElementById('social-proof');
+  const grid=document.getElementById('testi-grid');
+  const wall=document.getElementById('logo-wall');
+  if(!sec||!grid||!wall)return;
+  const avColors=['var(--navy)','var(--amber)','var(--terra)'];
+  if(WFH_TESTIMONIALS.length){
+    grid.innerHTML=WFH_TESTIMONIALS.map((t,i)=>{
+      const initial=esc((t.name||'?').trim().charAt(0).toUpperCase());
+      const bg=avColors[i%avColors.length];
+      const fg=bg==='var(--amber)'?'var(--navy)':'#fff';
+      return `<div class="testi-card"><div class="testi-stars">★★★★★</div>`
+        +`<p class="testi-q">"${esc(t.quote)}"</p>`
+        +`<div class="testi-auth"><div class="testi-av" style="background:${bg};color:${fg};">${initial}</div>`
+        +`<div><div class="testi-name">${esc(t.name)}</div><div class="testi-det">${esc(t.detail||'')}</div></div></div></div>`;
+    }).join('');
+    grid.hidden=false;
+  }else{grid.hidden=true;}
+  if(WFH_EMPLOYER_LOGOS.length){
+    const head='<div class="logo-wall-head">Trusted by hiring teams at</div>';
+    const items=WFH_EMPLOYER_LOGOS.map(e=>{
+      const inner=e.logo
+        ? `<img src="${esc(e.logo)}" alt="${esc(e.name)}" loading="lazy"/>`
+        : `<span class="logo-item-name">${esc(e.name)}</span>`;
+      return e.href
+        ? `<a class="logo-item" href="${safeUrl(e.href)}" rel="noopener" target="_blank" aria-label="${esc(e.name)}">${inner}</a>`
+        : `<div class="logo-item" aria-label="${esc(e.name)}">${inner}</div>`;
+    }).join('');
+    const caseStudies=WFH_EMPLOYER_LOGOS.filter(e=>e.caseStudy)
+      .map(e=>`<div class="logo-case">"${esc(e.caseStudy)}" — ${esc(e.name)}</div>`).join('');
+    wall.innerHTML=head+items+caseStudies;
+    wall.hidden=false;
+  }else{wall.hidden=true;}
+  if(WFH_TESTIMONIALS.length||WFH_EMPLOYER_LOGOS.length)sec.hidden=false;
+}
+
 const obs=new IntersectionObserver(en=>{en.forEach(e=>{if(e.isIntersecting)e.target.classList.add('on');});},{threshold:0.1,rootMargin:'0px 0px -40px 0px'});
 document.querySelectorAll('.rv').forEach(el=>obs.observe(el));
-document.addEventListener('DOMContentLoaded',()=>{loadStats();loadFeat();});
+document.addEventListener('DOMContentLoaded',()=>{loadStats();loadFeat();renderSocialProof();});
 </script>
 </body>
 </html>
