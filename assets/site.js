@@ -190,8 +190,8 @@
       '<div class="footer-bot">' +
         '<div class="fcopy">&copy; 2025 WorkforceForHumans LLC &middot; Colorado, USA</div>' +
         '<div class="flegal">' +
-          '<a href="mailto:privacy@workforceforhumans.com">Privacy</a>' +
-          '<a href="mailto:legal@workforceforhumans.com">Terms</a>' +
+          '<a href="privacy.html">Privacy</a>' +
+          '<a href="terms.html">Terms</a>' +
           '<a href="mailto:access@workforceforhumans.com">Accessibility</a>' +
         '</div>' +
       '</div>' +
