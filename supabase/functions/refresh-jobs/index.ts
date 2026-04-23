@@ -94,7 +94,7 @@ Deno.serve(async (req) => {
   try {
     // Server-to-server auth — cron fires with the pre-shared secret.
     const providedSecret = req.headers.get("x-refresh-secret") || "";
-    if (!REFRESH_SECRET || providedSecret !== REFRESH_SECRET) {
+    if (!REFRESH_SECRET || !timingSafeEqual(providedSecret, REFRESH_SECRET)) {
       return json({ error: "unauthorized" }, 401);
     }
 
@@ -430,4 +430,12 @@ function json(body: unknown, status = 200) {
     status,
     headers: { ...corsHeaders, "Content-Type": "application/json" },
   });
+}
+
+// Constant-time compare for shared-secret header auth — avoids timing side-channel.
+function timingSafeEqual(a: string, b: string): boolean {
+  if (a.length !== b.length) return false;
+  let diff = 0;
+  for (let i = 0; i < a.length; i++) diff |= a.charCodeAt(i) ^ b.charCodeAt(i);
+  return diff === 0;
 }
