@@ -6,7 +6,8 @@
 //      data.usajobs.gov. Dedup by MatchedObjectId.
 //   2. Run each candidate through claude-sonnet-4-6 as a WFH-relevance
 //      filter ({keep, reason}). Permissive on filter errors so the feed
-//      doesn't starve if Claude hiccups.
+//      doesn't starve if Claude hiccups. If ANTHROPIC_API_KEY is not set,
+//      skip the filter entirely and take top-N by posted date.
 //   3. Top-N by posted date, bulk upsert via the public.upsert_usajobs RPC
 //      (security-definer; service-role only; resolves the partial unique
 //      index on (source, source_ref) where source_ref is not null).
@@ -62,12 +63,14 @@ Deno.serve(async (req) => {
     if (!USAJOBS_AUTH_KEY || !USAJOBS_USER_AGENT) {
       return json({ error: "USAJobs credentials not configured" }, 500);
     }
-    if (!ANTHROPIC_API_KEY) {
-      return json({ error: "Anthropic key not configured" }, 500);
-    }
+
+    // ANTHROPIC_API_KEY is OPTIONAL. When absent, we skip the relevance
+    // filter and just take top-N by posted_at — infrastructure works
+    // end-to-end without Claude, quality improves when the key is added.
+    const useClaudeFilter = !!ANTHROPIC_API_KEY;
 
     const admin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
-    const anthropic = new Anthropic({ apiKey: ANTHROPIC_API_KEY });
+    const anthropic = useClaudeFilter ? new Anthropic({ apiKey: ANTHROPIC_API_KEY }) : null;
 
     // 1. Fetch across keyword buckets.
     const raw: any[] = [];
@@ -92,27 +95,35 @@ Deno.serve(async (req) => {
       return json({ ok: true, considered: 0, filtered: 0, inserted: 0, note: "empty fetch" });
     }
 
-    // 3. Claude relevance filter in batches. Permissive fallback on error —
-    // an empty feed is worse than a degraded one. Track failure rate so the
+    // 3. Relevance filter — Claude if the key is set, otherwise pass all
+    // candidates through. Permissive fallback on Claude error (an empty
+    // feed is worse than a degraded one). Track failure rate so the
     // response surfaces `degraded: true` when monitoring should alert.
     const keeps = new Set<string>();
     let totalBatches = 0;
     let failedBatches = 0;
-    for (let i = 0; i < candidates.length; i += CLAUDE_BATCH) {
-      totalBatches += 1;
-      const batch = candidates.slice(i, i + CLAUDE_BATCH);
-      try {
-        const batchKeeps = await filterBatch(anthropic, batch);
-        for (const id of batchKeeps) keeps.add(id);
-      } catch (err) {
-        failedBatches += 1;
-        console.error("Claude filter batch failed; keeping batch verbatim:", err);
-        for (const j of batch) keeps.add(j.source_ref);
+    if (useClaudeFilter && anthropic) {
+      for (let i = 0; i < candidates.length; i += CLAUDE_BATCH) {
+        totalBatches += 1;
+        const batch = candidates.slice(i, i + CLAUDE_BATCH);
+        try {
+          const batchKeeps = await filterBatch(anthropic, batch);
+          for (const id of batchKeeps) keeps.add(id);
+        } catch (err) {
+          failedBatches += 1;
+          console.error("Claude filter batch failed; keeping batch verbatim:", err);
+          for (const j of batch) keeps.add(j.source_ref);
+        }
       }
+    } else {
+      // No Claude key — unfiltered pass-through. All candidates are kept;
+      // the top-N-by-date cap below keeps the daily output bounded to 50.
+      for (const c of candidates) keeps.add(c.source_ref);
+      console.log("refresh-jobs: ANTHROPIC_API_KEY not set, skipping relevance filter");
     }
     const failureRate = totalBatches ? failedBatches / totalBatches : 0;
     const degraded = totalBatches > 0 && failedBatches * 2 >= totalBatches;
-    console.log(`refresh-jobs filter: batches=${totalBatches} failed=${failedBatches} rate=${failureRate.toFixed(2)} degraded=${degraded}`);
+    console.log(`refresh-jobs filter: mode=${useClaudeFilter ? "claude" : "none"} batches=${totalBatches} failed=${failedBatches} rate=${failureRate.toFixed(2)} degraded=${degraded}`);
 
     // 4. Keep the filter decisions, sort by posted date desc, cap at MAX_KEEP.
     const kept = candidates
@@ -136,6 +147,7 @@ Deno.serve(async (req) => {
       considered,
       filtered: kept.length,
       inserted,
+      filter: useClaudeFilter ? "claude" : "none",
       degraded,
       failed_batches: failedBatches,
       total_batches: totalBatches,
