@@ -1,9 +1,13 @@
 // Phase 8 — Launch Readiness, Tue 2026-04-21.
 // Daily USAJobs.gov → public.jobs pipeline.
 //
-//   1. Fetch public, remote-eligible roles across 4 WFH-audience keyword
-//      buckets (analyst / specialist / coordinator / technician) from
-//      data.usajobs.gov. Dedup by MatchedObjectId.
+// NOTE: "WFH" throughout this file means Workforce for Humans (the product),
+// NOT work-from-home. Onsite, hybrid, and remote roles are all in scope —
+// the audience includes displaced workers who will commute or relocate.
+//
+//   1. Fetch public roles across WFH-audience keyword buckets (federal
+//      job-series-aligned phrases like "management analyst", "contract
+//      specialist") from data.usajobs.gov. Dedup by MatchedObjectId.
 //   2. Run each candidate through claude-sonnet-4-6 as a WFH-relevance
 //      filter ({keep, reason}). Permissive on filter errors so the feed
 //      doesn't starve if Claude hiccups. If ANTHROPIC_API_KEY is not set,
@@ -26,7 +30,28 @@ const USAJOBS_AUTH_KEY = Deno.env.get("USAJOBS_AUTH_KEY") || "";
 const USAJOBS_USER_AGENT = Deno.env.get("USAJOBS_USER_AGENT") || "";
 const REFRESH_SECRET = Deno.env.get("REFRESH_SECRET") || "";
 
-const KEYWORD_BUCKETS = ["analyst", "specialist", "coordinator", "technician"];
+// Phase 9 tuning (2026-04-23): two problems with the original fetch —
+//   (a) single-word buckets ("specialist", "technician") pulled physician-
+//       heavy results, diluting relevance;
+//   (b) the URL carried RemoteIndicator=True, restricting to remote-only
+//       roles even though the WFH (Workforce for Humans) audience includes
+//       workers fine with onsite / hybrid / relocation.
+// Combined, those two left only 7 unique rows per day. Fix: swap to
+// federal GS job-series-aligned phrases (0343 mgmt/program analysis, 1102
+// contract, 0560 budget, 0201 HR, 2210 IT, 0301 admin) AND drop the
+// RemoteIndicator filter. The per-row is_remote flag is still derived
+// downstream in normalizeUSAJobsItem, so card chips stay accurate.
+// Keeps the function ANTHROPIC_API_KEY-optional.
+const KEYWORD_BUCKETS = [
+  "management analyst",
+  "program analyst",
+  "budget analyst",
+  "contract specialist",
+  "human resources",
+  "information technology specialist",
+  "administrative",
+  "project coordinator",
+];
 const RESULTS_PER_BUCKET = 50;
 const MAX_KEEP = 50;
 const CLAUDE_BATCH = 10;
@@ -41,7 +66,7 @@ const RELEVANCE_PROMPT = `You are a relevance filter for Workforce for Humans �
 
 For each job, decide if it's a realistic fit for that audience:
 - Entry-to-mid-level (NOT requiring PhD, NOT requiring decade-plus specialized experience).
-- Remote-eligible or flexibly located.
+- Any work location — onsite, hybrid, or remote all qualify; the audience includes workers who will commute or relocate.
 - Skills-based hiring friendly (credential-gated roles like "must hold current TS/SCI clearance" are OK — the audience includes veterans and federal workers).
 - Real foothold — a genuine opening someone could apply to, not a placeholder posting.
 
@@ -159,7 +184,10 @@ Deno.serve(async (req) => {
 });
 
 async function fetchBucket(keyword: string): Promise<any[]> {
-  const url = `https://data.usajobs.gov/api/search?Keyword=${encodeURIComponent(keyword)}&ResultsPerPage=${RESULTS_PER_BUCKET}&WhoMayApply=public&RemoteIndicator=True`;
+  // NOTE: RemoteIndicator is intentionally omitted — onsite/hybrid roles are
+  // in scope for the WFH (Workforce for Humans) audience. is_remote is
+  // derived per-row downstream from the location text for display chips.
+  const url = `https://data.usajobs.gov/api/search?Keyword=${encodeURIComponent(keyword)}&ResultsPerPage=${RESULTS_PER_BUCKET}&WhoMayApply=public`;
   const resp = await fetch(url, {
     headers: {
       "Authorization-Key": USAJOBS_AUTH_KEY,

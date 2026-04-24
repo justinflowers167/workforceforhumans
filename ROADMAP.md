@@ -287,10 +287,12 @@ Sequencing principle: stay revenue-aware. Every item on this phase either (a) un
 
 ### 1. Turn on the Claude filter (user-owned, ~5 min)
 
-- **Outcome:** `refresh-jobs` runs with `filter: "claude"` mode; the daily USAJobs pull drops from 7 unfiltered physician-heavy rows to ~20 WFH-audience-relevant ones.
+- **Outcome:** `refresh-jobs` runs with `filter: "claude"` mode; the daily USAJobs pull becomes a curated Workforce-for-Humans-audience shortlist rather than a raw date-sorted pass-through.
 - **Action:** paste `ANTHROPIC_API_KEY` into Supabase Edge Function secrets dashboard. No code change — PR #20 already wired the optional-key path.
-- **Done when:** manual `curl` against `refresh-jobs` returns `{filter:"claude", degraded:false}` and DB shows a mix of non-MD federal roles (medical records, logistics specialists, program analysts, etc.).
+- **Done when:** manual `curl` against `refresh-jobs` returns `{filter:"claude", degraded:false}` and DB shows a mix of federal roles relevant to displaced knowledge workers.
 - **Follow-up (30 min):** review 1–2 days of output with the founder eye — is the filter too strict? Too generous? Tune the prompt if needed.
+
+**Shipped (2026-04-24, code-side — v9):** upstream fix discovered while pulling 30 targeted jobs for the founder tonight. Two root causes had capped the feed at 7 rows/day: (a) single-word keyword buckets (`analyst`, `specialist`, `coordinator`, `technician`) were returning physician-heavy noise after URL-restricted filtering, and (b) the fetch URL carried `RemoteIndicator=True`, which read "WFH" as *work-from-home* instead of *Workforce for Humans* — onsite/hybrid federal roles had been silently excluded from the audience the platform actually serves. Fix: swap to 8 GS-job-series-aligned phrases (`management analyst`, `program analyst`, `budget analyst`, `contract specialist`, `human resources`, `information technology specialist`, `administrative`, `project coordinator`) and drop the remote-only filter. Manual cron fire after deploy: `considered: 381 → filtered: 50 → inserted: 50`. DB now shows 57 active `source='usajobs'` rows (mix of onsite/hybrid/remote) alongside 10 employer rows. **CLAUDE.md amended** with a top-of-file WFH-terminology callout so future sessions can't misread the acronym. Enabling the Claude filter (item #1 proper) layers on top of this now-healthier candidate pool.
 
 ### 2. Real social proof (business-owned, multi-day)
 
