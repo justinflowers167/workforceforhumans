@@ -35,8 +35,8 @@
 - [ ] `privacy.html` + `terms.html` TOC anchors scroll to the right section; amber "v1 — under legal review" banner visible and readable
 - [ ] Footer links wrap in 1–2 columns on narrow; Privacy + Terms now go to `/privacy.html` + `/terms.html` (not mailto)
 - [ ] "Meet the founder →" hero note on index.html amber underline visible and tap-sized
-- [ ] Plausible dashboard (after DNS verification) shows an event for each of the three custom triggers: `CTA: employer-checkout-start`, `Event: resume-upload`, `Event: find-matches`
-- [ ] No CSP console errors on `plausible.io` script/connect
+- [ ] PostHog **Live events** view shows an event for each of the three custom triggers: `CTA: employer-checkout-start`, `Event: resume-upload`, `Event: find-matches` (Cloudflare Web Analytics shows the matching pageviews)
+- [ ] No CSP console errors on `us.i.posthog.com`, `us-assets.i.posthog.com`, or `static.cloudflareinsights.com`
 
 ---
 

@@ -147,7 +147,7 @@ button.add{background:transparent;color:var(--terra);border:1px dashed var(--sto
   }
 
   async function callParse(resumeId) {
-    if (window.plausible) window.plausible('Event: resume-upload');
+    if (window.posthog) window.posthog.capture('Event: resume-upload');
     const r = await fetch(`${SUPABASE_URL}/functions/v1/parse-resume`, {
       method: 'POST',
       headers: { 'Content-Type':'application/json', 'Authorization': `Bearer ${accessToken}` },

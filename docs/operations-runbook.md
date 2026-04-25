@@ -199,7 +199,7 @@ limit 10;
 | Anthropic spend cap | https://console.anthropic.com/settings/limits | Set monthly cap |
 | Cloudflare Pages | https://dash.cloudflare.com/?to=/:account/pages | Deployments |
 | Cloudflare Web Analytics | https://dash.cloudflare.com/?to=/:account/web-analytics | Pageviews, referrers |
-| PostHog | https://us.posthog.com/project/your-project | Live events, funnels |
+| PostHog | https://us.posthog.com | Live events, funnels (top of dashboard → WFH project) |
 | Stripe dashboard | https://dashboard.stripe.com/dashboard | Payments, subscriptions, webhooks |
 | Stripe webhooks | https://dashboard.stripe.com/webhooks | Re-deliver failed events |
 | Resend | https://resend.com/emails | Email delivery, bounces |

@@ -123,7 +123,8 @@ article code{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:.88rem;
 
 <h3>Usage data</h3>
 <ul>
-  <li>Aggregated page views, referrer, country, device category — all collected via <a href="https://plausible.io/privacy-focused-web-analytics" rel="noopener" target="_blank">Plausible Analytics</a>, which is cookieless and does not track individuals across sites. No IP addresses are stored.</li>
+  <li>Aggregated page views, referrer, country, device category — collected via <a href="https://www.cloudflare.com/web-analytics/" rel="noopener" target="_blank">Cloudflare Web Analytics</a>, which is cookieless and does not store IP addresses or track individuals across sites.</li>
+  <li>Intentional interaction events (e.g. clicking the employer-checkout CTA, uploading a resume, requesting new matches) — collected via <a href="https://posthog.com/privacy" rel="noopener" target="_blank">PostHog</a>. PostHog stores a minimal first-party identifier so a single browsing session can be stitched together; we do not link this identifier to your account, and we do not enable cross-site tracking, session recording, or general autocapture.</li>
 </ul>
 
 <h2 id="how-we-use-it">3. How we use it</h2>
@@ -167,9 +168,14 @@ article code{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:.88rem;
       <td>Employer billing email, name, and Stripe-side payment instrument.</td>
     </tr>
     <tr>
-      <td><a href="https://plausible.io/privacy" rel="noopener" target="_blank">Plausible</a></td>
-      <td>Privacy-first analytics.</td>
-      <td>Page views, referrer, device, country. No cookies, no cross-site tracking.</td>
+      <td><a href="https://www.cloudflare.com/privacypolicy/" rel="noopener" target="_blank">Cloudflare</a></td>
+      <td>Static-site hosting (Cloudflare Pages) and cookieless pageview analytics (Cloudflare Web Analytics).</td>
+      <td>Request metadata (URL, referrer, device, country). No cookies, no cross-site tracking, IP not stored.</td>
+    </tr>
+    <tr>
+      <td><a href="https://posthog.com/privacy" rel="noopener" target="_blank">PostHog</a></td>
+      <td>Custom-event analytics for product-improvement decisions (US Cloud region).</td>
+      <td>Intentional interaction events only (CTA clicks, resume upload, match request). Minimal first-party session identifier; no autocapture, no session recording, no cross-site tracking.</td>
     </tr>
     <tr>
       <td>USAJobs.gov</td>
@@ -211,7 +217,7 @@ article code{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:.88rem;
   <li><strong>Supabase session token</strong> — stored in browser storage so you stay signed in. Cleared on sign-out.</li>
   <li><strong>Stripe</strong> — sets its own cookies on the checkout page it hosts; governed by Stripe's policy.</li>
 </ul>
-<p>We do <strong>not</strong> use advertising cookies, session-replay tools, cross-site pixels, or third-party tracking. Our analytics (Plausible) is cookieless.</p>
+<p>We do <strong>not</strong> use advertising cookies, session-replay tools, cross-site pixels, or third-party tracking. Our pageview analytics (Cloudflare Web Analytics) is cookieless. Our event analytics (PostHog) stores a minimal first-party session identifier so a browsing session can be stitched together — it is not linked to your account and is never shared with third parties for advertising.</p>
 
 <h2 id="security">9. Security</h2>
 <ul>
