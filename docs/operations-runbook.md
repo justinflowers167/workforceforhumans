@@ -18,7 +18,7 @@ Phase 9 closed all the *code-side* items. What remains is business + content wor
 - [ ] 3 real testimonials OR 1 verified employer logo on `index.html` — populate `WFH_TESTIMONIALS` / `WFH_EMPLOYER_LOGOS` arrays (Phase 9 §2 — code scaffold already in place)
 - [ ] Real founder headshot replacing silhouette in `about.html` (drop file in `/assets/`, swap `<img>` src)
 - [ ] (Bonus) Capture Lighthouse re-run on 5 indexable pages (target SEO + A11y ≥ 95) — see §5 quarterly. Spot-check before announcement.
-- [ ] (Bonus, 1-click) Enable Supabase Auth leaked-password protection: https://supabase.com/dashboard/project/dbomfjqijyrkidptrrfi/auth/providers — flagged by the 2026-04-25 advisor sweep.
+- [ ] (1-click, founder-owned) Enable Supabase Auth leaked-password protection: https://supabase.com/dashboard/project/dbomfjqijyrkidptrrfi/auth/providers — last open advisor finding from the 2026-04-25 sweep. Phase 10 §C migrations closed the other two on the same day (RLS perf rewrite + newsletter UPDATE narrowing).
 
 When the first 4 are done, you're cleared for soft-launch announcement.
 
