@@ -574,7 +574,7 @@ async function startCheckout() {
   if (!name || !email) { msg.textContent = 'Please enter your name and work email.'; msg.style.color = 'var(--terra)'; return; }
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { msg.textContent = 'Please enter a valid email address.'; msg.style.color = 'var(--terra)'; return; }
   btn.disabled = true; btn.textContent = 'Setting up checkout…'; msg.textContent = '';
-  if (window.plausible) window.plausible('CTA: employer-checkout-start', { props: { plan: selectedPlan } });
+  if (window.posthog) window.posthog.capture('CTA: employer-checkout-start', { plan: selectedPlan });
   try {
     const res = await fetch(SUPABASE_URL + '/functions/v1/create-checkout', {
       method: 'POST',

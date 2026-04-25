@@ -13,22 +13,24 @@
   var body = document.body;
   var variant = (body && body.dataset.nav) || 'marketing';
 
-  // --- Plausible analytics (privacy-first, no cookies) ---
-  // Inject the script tag once per page load. Safe window.plausible()
-  // shim means custom-event calls before script load are queued and
-  // flushed once it arrives.
+  // --- Analytics: PostHog (custom events) + Cloudflare Web Analytics
+  // (pageviews, auto-injected by CF Pages at the edge — no snippet here).
+  // PostHog free tier covers 1M events/mo; autocapture is OFF so only
+  // intentional capture() calls count toward quota. The standard PostHog
+  // snippet auto-creates window.posthog and queues capture() calls before
+  // the loader script arrives.
   try {
-    if (!document.querySelector('script[data-plausible]')) {
-      var ps = document.createElement('script');
-      ps.defer = true;
-      ps.setAttribute('data-plausible', '1');
-      ps.setAttribute('data-domain', 'workforceforhumans.com');
-      ps.src = 'https://plausible.io/js/script.js';
-      document.head.appendChild(ps);
+    if (!window.posthog || !window.posthog.__SV) {
+      !function(t,e){var o,n,p,r;e.__SV||(window.posthog=e,e._i=[],e.init=function(i,s,a){function g(t,e){var o=e.split(".");2==o.length&&(t=t[o[0]],e=o[1]),t[e]=function(){t.push([e].concat(Array.prototype.slice.call(arguments,0)))}}(p=t.createElement("script")).type="text/javascript",p.crossOrigin="anonymous",p.async=!0,p.src=s.api_host.replace(".i.posthog.com","-assets.i.posthog.com")+"/static/array.js",(r=t.getElementsByTagName("script")[0]).parentNode.insertBefore(p,r);var u=e;for(void 0!==a?u=e[a]=[]:a="posthog",u.people=u.people||[],u.toString=function(t){var e="posthog";return"posthog"!==a&&(e+="."+a),t||(e+=" (stub)"),e},u.people.toString=function(){return u.toString(1)+".people (stub)"},o="init capture register register_once register_for_session unregister unregister_for_session getFeatureFlag getFeatureFlagPayload isFeatureEnabled reloadFeatureFlags updateEarlyAccessFeatureEnrollment getEarlyAccessFeatures on onFeatureFlags onSessionId getSurveys getActiveMatchingSurveys renderSurvey canRenderSurvey getNextSurveyStep identify setPersonProperties group resetGroups setPersonPropertiesForFlags resetPersonPropertiesForFlags setGroupPropertiesForFlags resetGroupPropertiesForFlags reset opt_in_capturing opt_out_capturing has_opted_in_capturing has_opted_out_capturing clear_opt_in_out_capturing startSessionRecording stopSessionRecording getSessionId getSessionReplayUrl loaded".split(" "),n=0;n<o.length;n++)g(u,o[n]);e._i.push([i,s,a])},e.__SV=1)}(document,window.posthog||[]);
+      window.posthog.init('phc_uFTsrhGcJoRPqCRq3KZBrLnXFXCGcZkQ6xj9sD8mcVM5', {
+        api_host: 'https://us.i.posthog.com',
+        autocapture: false,
+        capture_pageview: true,
+        capture_pageleave: true,
+        disable_session_recording: true,
+        person_profiles: 'identified_only'
+      });
     }
-    window.plausible = window.plausible || function () {
-      (window.plausible.q = window.plausible.q || []).push(arguments);
-    };
   } catch (e) { /* analytics is best-effort; never break the page */ }
 
   // --- Active link detection ---

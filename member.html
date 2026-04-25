@@ -277,7 +277,7 @@ button.ghost:hover{border-color:var(--amber);color:var(--amber-dk);}
 
   $('rescore').onclick = async () => {
     const btn = $('rescore'); btn.disabled = true; btn.textContent = 'Scoring…';
-    if (window.plausible) window.plausible('Event: find-matches');
+    if (window.posthog) window.posthog.capture('Event: find-matches');
     const { data: { session } } = await db.auth.getSession();
     const r = await fetch(`${SUPABASE_URL}/functions/v1/match-jobs`, {
       method: 'POST',
