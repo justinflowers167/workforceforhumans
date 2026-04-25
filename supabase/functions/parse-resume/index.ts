@@ -3,8 +3,18 @@
 
 import Anthropic from "https://esm.sh/@anthropic-ai/sdk@0.32.1?target=deno";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2?target=deno";
-import pdfParse from "https://esm.sh/pdf-parse@1.1.1?target=deno";
-import mammoth from "https://esm.sh/mammoth@1.8.0?target=deno";
+
+// pdf-parse and mammoth are intentionally NOT imported at module top.
+// esm.sh occasionally fails to serve pdf-parse@1.1.1 (it has node-only
+// test-fixture loading at module init that some bundlers trip on),
+// which would crash the entire function during cold start — including
+// the OPTIONS preflight, breaking every browser fetch with "Failed to
+// fetch". Founder hit this 2026-04-25.
+//
+// Lazy-loaded inside extractTextFromFile() instead: the function boots
+// reliably, paste-text mode always works, and a PDF/DOCX import failure
+// surfaces as a clean 500 with a JSON body rather than a CORS-blocked
+// network error.
 
 const ANTHROPIC_API_KEY = Deno.env.get("ANTHROPIC_API_KEY")!;
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
@@ -62,10 +72,14 @@ async function extractTextFromFile(path: string, admin: ReturnType<typeof create
   const buf = new Uint8Array(await data.arrayBuffer());
   const lower = path.toLowerCase();
   if (lower.endsWith(".pdf")) {
+    const mod: any = await import("https://esm.sh/pdf-parse@1.1.1?target=deno");
+    const pdfParse = mod.default || mod;
     const parsed = await pdfParse(buf);
     return parsed.text || "";
   }
   if (lower.endsWith(".docx")) {
+    const mod: any = await import("https://esm.sh/mammoth@1.8.0?target=deno");
+    const mammoth = mod.default || mod;
     const result = await mammoth.extractRawText({ buffer: buf });
     return result.value || "";
   }
