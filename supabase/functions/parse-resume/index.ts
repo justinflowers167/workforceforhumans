@@ -3,18 +3,21 @@
 
 import Anthropic from "https://esm.sh/@anthropic-ai/sdk@0.32.1?target=deno";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2?target=deno";
+import { encodeBase64 } from "https://deno.land/std@0.224.0/encoding/base64.ts";
 
-// pdf-parse and mammoth are intentionally NOT imported at module top.
-// esm.sh occasionally fails to serve pdf-parse@1.1.1 (it has node-only
-// test-fixture loading at module init that some bundlers trip on),
-// which would crash the entire function during cold start — including
-// the OPTIONS preflight, breaking every browser fetch with "Failed to
-// fetch". Founder hit this 2026-04-25.
+// PDF-parsing strategy (revised 2026-04-25): we send PDFs directly to
+// Claude as a document content block instead of extracting text first
+// with pdf-parse. Two reasons: (a) pdf-parse@1.1.1 was repeatedly
+// crashing on Deno cold-starts at esm.sh — first the static import
+// killed the entire function (OPTIONS-500 → "Failed to fetch"), then
+// the lazy-loaded import threw at runtime. (b) Claude's native PDF
+// understanding is structurally better than text-stripping — it sees
+// columns, tables, headers, dates as a coherent document.
 //
-// Lazy-loaded inside extractTextFromFile() instead: the function boots
-// reliably, paste-text mode always works, and a PDF/DOCX import failure
-// surfaces as a clean 500 with a JSON body rather than a CORS-blocked
-// network error.
+// DOCX still goes through mammoth (lazy-loaded — no Deno-native PDF-
+// equivalent for Word). If mammoth ever breaks at esm.sh the way
+// pdf-parse did, the DOCX path will return a clean 500 instead of
+// taking down the function.
 
 const ANTHROPIC_API_KEY = Deno.env.get("ANTHROPIC_API_KEY")!;
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
@@ -66,24 +69,58 @@ Rules:
 - Be specific and honest. No fluff.
 - Output valid JSON only. No prose, no code fences.`;
 
-async function extractTextFromFile(path: string, admin: ReturnType<typeof createClient>): Promise<string> {
-  const { data, error } = await admin.storage.from("resumes").download(path);
+// Returns either a plain-text string (paste/builder/docx/txt) OR a Claude
+// content-block array containing a `document` block (for PDF), so the
+// caller can pass either shape directly into messages.create().
+async function getResumeUserMessage(
+  resume: any,
+  admin: ReturnType<typeof createClient>,
+): Promise<string | any[]> {
+  if (resume.raw_text && String(resume.raw_text).trim().length >= 40) {
+    return `Resume:\n\n${String(resume.raw_text).slice(0, 20000)}`;
+  }
+  if (!resume.file_path) {
+    throw new Error("resume has no raw_text and no file_path");
+  }
+
+  const { data, error } = await admin.storage.from("resumes").download(resume.file_path);
   if (error || !data) throw new Error(`storage download failed: ${error?.message}`);
   const buf = new Uint8Array(await data.arrayBuffer());
-  const lower = path.toLowerCase();
+  const lower = String(resume.file_path).toLowerCase();
+
   if (lower.endsWith(".pdf")) {
-    const mod: any = await import("https://esm.sh/pdf-parse@1.1.1?target=deno");
-    const pdfParse = mod.default || mod;
-    const parsed = await pdfParse(buf);
-    return parsed.text || "";
+    // Send the PDF directly to Claude as a document content block.
+    // Sonnet 4.6 reads PDFs natively and we avoid pdf-parse's known
+    // Deno cold-start crashes.
+    const base64 = encodeBase64(buf);
+    return [
+      {
+        type: "document",
+        source: { type: "base64", media_type: "application/pdf", data: base64 },
+      },
+      {
+        type: "text",
+        text: "Parse this resume and return the JSON described in the system prompt. JSON only — no prose, no code fences.",
+      },
+    ];
   }
+
   if (lower.endsWith(".docx")) {
     const mod: any = await import("https://esm.sh/mammoth@1.8.0?target=deno");
     const mammoth = mod.default || mod;
     const result = await mammoth.extractRawText({ buffer: buf });
-    return result.value || "";
+    const text = result.value || "";
+    if (text.trim().length < 40) throw new Error("resume text too short");
+    // Persist extracted text so re-parses don't have to re-extract.
+    await admin.from("resumes").update({ raw_text: text }).eq("id", resume.id);
+    return `Resume:\n\n${text.slice(0, 20000)}`;
   }
-  return new TextDecoder().decode(buf);
+
+  // Plain text fallback (rare — uploads are normally pdf/docx).
+  const text = new TextDecoder().decode(buf);
+  if (text.trim().length < 40) throw new Error("resume text too short");
+  await admin.from("resumes").update({ raw_text: text }).eq("id", resume.id);
+  return `Resume:\n\n${text.slice(0, 20000)}`;
 }
 
 Deno.serve(async (req) => {
@@ -115,14 +152,13 @@ Deno.serve(async (req) => {
     // @ts-ignore joined shape
     if (resume.job_seekers.auth_user_id !== authUserId) return json({ error: "forbidden" }, 403);
 
-    let text = resume.raw_text || "";
-    if (!text && resume.file_path) {
-      text = await extractTextFromFile(resume.file_path, admin);
-      await admin.from("resumes").update({ raw_text: text }).eq("id", resume.id);
-    }
-    if (!text || text.trim().length < 40) {
-      await admin.from("resumes").update({ status: "failed", error_message: "resume text too short" }).eq("id", resume.id);
-      return json({ error: "resume text is empty or too short" }, 400);
+    let userContent: string | any[];
+    try {
+      userContent = await getResumeUserMessage(resume, admin);
+    } catch (err: any) {
+      const msg = String(err?.message || err).slice(0, 500);
+      await admin.from("resumes").update({ status: "failed", error_message: msg }).eq("id", resume.id);
+      return json({ error: msg.includes("too short") ? "Resume text is empty or too short." : "Could not read the resume file. Try re-uploading or pasting the text." }, 400);
     }
 
     const client = new Anthropic({ apiKey: ANTHROPIC_API_KEY });
@@ -130,7 +166,7 @@ Deno.serve(async (req) => {
       model: MODEL,
       max_tokens: 4000,
       system: SYSTEM_PROMPT,
-      messages: [{ role: "user", content: `Resume:\n\n${text.slice(0, 20000)}` }],
+      messages: [{ role: "user", content: userContent as any }],
     });
 
     const raw = resp.content.map((b: any) => (b.type === "text" ? b.text : "")).join("");
