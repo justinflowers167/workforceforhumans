@@ -1,7 +1,7 @@
 # WFH Founder Runbook
 
 **Living document. Update when reality shifts.**
-Last updated: 2026-04-25
+Last updated: 2026-04-25 (Phase 9 close)
 
 This is the systematic checklist for keeping Workforce for Humans healthy as a solo operator. If you're staring at the platform and wondering "what should I be doing," start here.
 
@@ -9,21 +9,28 @@ This is the systematic checklist for keeping Workforce for Humans healthy as a s
 
 ---
 
-## 1. One-time setup checklist (Phase 9 + soft-launch contingencies)
+## 1. Soft-launch checklist (remaining gates between you and a public announcement)
 
-Items that block "ready to publicly announce." Cross off as done.
+Phase 9 closed all the *code-side* items. What remains is business + content work — none of these are coding tasks I can do for you.
 
-- [ ] Open and merge PR for `refresh-jobs v11` perf fix → https://github.com/justinflowers167/workforceforhumans/pull/new/claude/nifty-gould-7a5643
-- [ ] Add `workforceforhumans.com` to Cloudflare Web Analytics (§9 link)
-- [ ] Add `workforceforhumans.com` to PostHog (§9 link)
-- [ ] Capture Lighthouse re-run on 5 indexable pages (target SEO + A11y ≥ 95) — see §6 quarterly
-- [ ] Lawyer review of `privacy.html` + `terms.html`; remove "v1 — under legal review" banners (Phase 9 §3)
-- [ ] Mobile QA video on real iPhone, save to `docs/mobile-qa-2026-MM-DD.mp4` (Phase 9 §4)
-- [ ] 3 real testimonials OR 1 verified employer logo on `index.html` — populate `WFH_TESTIMONIALS` / `WFH_EMPLOYER_LOGOS` arrays (Phase 9 §2)
-- [ ] Real founder headshot replacing silhouette in `about.html`
-- [ ] Set monthly Anthropic spend cap at https://console.anthropic.com/settings/limits
+- [ ] Lawyer review of `privacy.html` + `terms.html`; remove "v1 — under legal review" banners (Phase 9 §3 — was one of the original 6 contingencies)
+- [ ] Mobile QA video on a real iPhone, save to `docs/mobile-qa-2026-MM-DD.mp4` (Phase 9 §4 — runbook §5 lists the 5 golden paths, see also `docs/mobile-qa-checklist.md`)
+- [ ] 3 real testimonials OR 1 verified employer logo on `index.html` — populate `WFH_TESTIMONIALS` / `WFH_EMPLOYER_LOGOS` arrays (Phase 9 §2 — code scaffold already in place)
+- [ ] Real founder headshot replacing silhouette in `about.html` (drop file in `/assets/`, swap `<img>` src)
+- [ ] (Bonus) Capture Lighthouse re-run on 5 indexable pages (target SEO + A11y ≥ 95) — see §5 quarterly. Spot-check before announcement.
+- [ ] (Bonus, 1-click) Enable Supabase Auth leaked-password protection: https://supabase.com/dashboard/project/dbomfjqijyrkidptrrfi/auth/providers — flagged by the 2026-04-25 advisor sweep.
 
-When all 8 are checked, you're cleared for soft-launch announcement.
+When the first 4 are done, you're cleared for soft-launch announcement.
+
+### Closed in Phase 9 (2026-04-25)
+
+- ✅ `refresh-jobs v11` perf fix merged (PR #24) — Claude filter live, runs in 35s
+- ✅ Cloudflare Web Analytics confirmed collecting (was added 22 days prior; CSP fixed in PR #25 unblocked the JS beacon)
+- ✅ PostHog Cloud added; 3 custom events verified live (`CTA: employer-checkout-start`, `Event: resume-upload`, `Event: find-matches`)
+- ✅ Anthropic monthly spend cap set
+- ✅ `prune-inactive-data` deployed + cron scheduled (Sun 15 UTC)
+- ✅ Operations runbook checked in
+- ✅ 3 hotfixes shipped: `trg_resumes_flip_others` trigger (PR #26), parse-resume cold-start (PR #27), parse-resume direct-to-Claude PDF (PR #28)
 
 ---
 
@@ -87,7 +94,13 @@ Total: 60 min.
 - **New employer paid via Stripe** → before manually verifying their job posting, sanity-check the company. Search the contact email's domain. If it's a free-mailer (gmail/hotmail) for a "company," that's a yellow flag — reply-and-confirm before allowing the listing live. Anti-fraud protects platform reputation.
 - **Cron failure (digest, refresh-jobs, or prune)** → §8.6 SQL to inspect the latest `net._http_response` for that job. If status_code 5xx, check edge-function logs (Supabase dashboard → Edge Functions → [function] → Logs). If 401, the secret in Vault and Edge Function env got out of sync — see §10.1 rotate.
 - **Stripe webhook 4xx/5xx** → §10.2 procedure to diagnose and retry.
-- **Anthropic budget alert** → reduce cost by lowering `PRE_FILTER_MAX` (currently 200) or `CLAUDE_BATCH` (currently 10) in `supabase/functions/refresh-jobs/index.ts`. Or temporarily unset `ANTHROPIC_API_KEY` to fall back to pass-through mode (free).
+- **Anthropic budget alert / monthly spend crossing $20** → ranked levers (cheapest first):
+  1. **Add prompt caching** to `match-jobs` and `parse-resume` — the `SYSTEM_PROMPT` block is identical across calls and is the largest input chunk. Anthropic prompt caching cuts cached-input tokens to ~10% of standard rate. Single SDK config flag per call site. Highest ROI.
+  2. **Lower `PRE_FILTER_MAX`** in `refresh-jobs/index.ts` from 200 → 100 — halves Claude calls per cron run, accepts thinner candidate pool. Cron cost drops ~50%.
+  3. **Lower `CLAUDE_BATCH`** from 10 → 5 — fewer tokens per Claude call but doubles the number of calls; small token-spend reduction at the cost of more Anthropic API rate-limit pressure. Marginal.
+  4. **Switch `refresh-jobs` filter model** from `claude-sonnet-4-6` → `claude-haiku-4-5` — Haiku is ~5× cheaper on input + output. Filter is a binary keep/reject decision; Haiku usually sufficient. Single constant change in `refresh-jobs/index.ts`. Significant savings.
+  5. **Switch `parse-resume` first-pass to Haiku, escalate ambiguous to Sonnet** — Haiku for clean PDFs, Sonnet only when JSON parse fails. Bigger refactor; consider only if items 1–4 don't fit budget.
+  6. **Temporarily unset `ANTHROPIC_API_KEY`** — `refresh-jobs` falls back to pass-through (free) with a quality drop. Last-resort kill switch. Match-jobs and parse-resume will start returning errors though, so this only buys time on the cron, not a sustainable cost reduction.
 - **Resume parse failures spike** → check `parse-resume` edge-function logs. Common cause: PDF format change at source.
 - **Magic link not arriving for a member** → check Supabase Auth logs (dashboard → Authentication → Logs) for the email; check Resend dashboard for delivery + bounce.
 - **PostHog crosses 500k events/mo** → consider sampling or move to Cloudflare Workers Analytics Engine ($5/mo, 10M events).
@@ -99,7 +112,7 @@ Total: 60 min.
 
 | Service | Free-tier limit | Current burn (approx) | When to act |
 |---|---|---|---|
-| Anthropic | Pay-as-you-go | $10 deposit, ~$0.10/refresh-jobs run = ~$3/mo cron alone | Set monthly cap in console; reduce PRE_FILTER_MAX if exceeded |
+| Anthropic | Pay-as-you-go ($10 deposit, monthly cap set 2026-04-25) | ~$0.10/refresh-jobs run = ~$3/mo cron alone; ~$0.025/parse-resume PDF; ~$0.05–$0.10/match-jobs run | See §6 trigger for the 6-step cost-reduction lever ranking. Prompt caching is the biggest unrealized win. |
 | Supabase DB | 500 MB | ~5 MB | Comfortable for months |
 | Supabase egress | 5 GB/mo | trivial | Alert at 4 GB |
 | Supabase edge invocations | 500k/mo | ~30 daily refresh + ~52/yr digest + ~52/yr prune + member traffic | Comfortable |

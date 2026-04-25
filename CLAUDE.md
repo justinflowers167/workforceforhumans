@@ -82,7 +82,7 @@ const admin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 ```
 
 - **`parse-resume`** and **`match-jobs`** use the Anthropic SDK with model **`claude-sonnet-4-6`**. Both parse model output by slicing from the first `{` to the last `}` — the system prompts instruct JSON-only output but the slice is defensive. Keep this pattern if you add another Claude call.
-- **`parse-resume`** downloads from the `resumes` storage bucket and decodes PDF via `pdf-parse` and DOCX via `mammoth` (both from esm.sh). After parsing it updates `resumes`, `job_seekers`, and syncs `skills` + `job_seeker_skills` — upserting by lowercased name.
+- **`parse-resume`** downloads from the `resumes` storage bucket. **PDFs are sent directly to Claude as a `document` content block** — `pdf-parse` was dropped in Phase 9 hotfixes (2026-04-25) because esm.sh kept failing to serve it on Deno cold-starts; Sonnet 4.6 reads PDFs natively with better layout understanding (columns, tables) than text-stripping anyway. **DOCX still uses `mammoth` (lazy-loaded inside the function)** so a future esm.sh hiccup with mammoth returns a clean 500 instead of crashing the whole function. After parsing, `parse-resume` updates `resumes`, `job_seekers`, and syncs `skills` + `job_seeker_skills` — upserting by lowercased name. The `is_current=true` re-assert at the end of a successful parse is now redundant with the `trg_resumes_flip_others` DB trigger (which enforces the one-current invariant in the same transaction as any insert/update) but harmless.
 - **`match-jobs`** scores up to 50 active jobs for the authenticated seeker. The system prompt asks Claude to filter to score ≥ 40 and sort desc; the code then `.slice(0, 10)` on whatever the model returns (no code-side score filter). Before insert it deletes the seeker's non-emailed `match_scores` rows for `match_type = 'job'`, then inserts the fresh top-N.
 - **`send-match-digest`** is auth'd by the `x-digest-secret` header (not user auth). It picks up `match_scores` rows with `emailed_at IS NULL` and `score >= 60`, groups by seeker, sends a single email per seeker via Resend, then stamps `emailed_at`. Respects `job_seekers.newsletter_opt_in = false`.
 - **`create-checkout`** accepts `{plan, email, name, site_url}` from the browser. Plans `basic` / `featured` are one-time payments; `employer` is a $499/mo subscription. The function upserts the `employers` row, creates a Stripe customer if missing, inserts a `job_postings` row in `pending` state for one-time plans, and includes `{employer_id, job_posting_id, plan}` in `session.metadata` (plus `client_reference_id = employer.id`) so the webhook can fulfill. Uses inline `price_data` — no `STRIPE_PRICE_*` env vars needed.
@@ -118,6 +118,15 @@ Configure these via `supabase secrets set`:
 - `USAJOBS_AUTH_KEY`, `USAJOBS_USER_AGENT`, `REFRESH_SECRET` — for `refresh-jobs` daily USAJobs.gov pull. `USAJOBS_USER_AGENT` must be a contactable email registered with developer.usajobs.gov; `REFRESH_SECRET` is the pre-shared value pg_cron sends in the `x-refresh-secret` header.
 - `PRUNE_SECRET` — for the weekly `prune-inactive-data` retention cron. Pre-shared value pg_cron sends in the `x-prune-secret` header; must match the value seeded into Supabase Vault by the Phase 9 migration.
 - `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `SUPABASE_ANON_KEY` are auto-injected by Supabase.
+
+### Analytics
+
+The site has two parallel analytics paths, both free-tier, configured Phase 9 (2026-04-25):
+
+- **Cloudflare Web Analytics** (pageviews, referrer, country, device, Web Vitals) — auto-injected at the edge by Cloudflare Pages, no snippet in the repo. CSP allows `static.cloudflareinsights.com` (script-src) + `cloudflareinsights.com` (connect-src) in `_headers`.
+- **PostHog Cloud, US region** (custom events) — snippet in `/assets/site.js`. Configured tightly: `autocapture: false`, `disable_session_recording: true`, `person_profiles: 'identified_only'` to keep us comfortably under the 1M-events/mo free-tier cap. Three custom events wired: `CTA: employer-checkout-start` (in `index.html`), `Event: resume-upload` (in `resume.html`), `Event: find-matches` (in `member.html`). Project token `phc_uFTsr…` is a public client-side key (like the Supabase anon key) — embedding it in the snippet is intentional. CSP allows `us-assets.i.posthog.com` (script-src) + `us.i.posthog.com` (connect-src).
+
+Plausible was previously wired but never configured with a real account; swapped out in PR #25 driven by founder budget pressure.
 
 ## Conventions to follow
 

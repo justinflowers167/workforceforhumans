@@ -233,6 +233,20 @@ Re-scored against the 8-lens rubric; see the new row in the scorecard history be
 | 2026-04-16 | 7 | 9 | 8 | 8 | 8 | 6 | 4 | 6 | 5 |
 | 2026-04-19 | 8 | 9 | 8 | 8 | 8 | 8 | 7 | 7 | 9 |
 | 2026-04-23 | 8 | 9 | 8 | 9 | 9 | 8 | 7 | 8 | 9 |
+| 2026-04-25 | 8 | 9 | 8 | 9 | 9 | 8 | 7 | 8 | 9 |
+
+**Per-lens notes (2026-04-25, Phase 9 close):**
+
+- **Voice (9, unchanged):** No content rewrites this phase. New PostHog/CF analytics processor entries in `privacy.html` kept the calm-disclosure register established in Phase 8.
+- **Design (8, unchanged):** No visual work. Typography polish remains the explicit Phase 11 lever.
+- **Product depth (9, unchanged):** Claude filter live + parse-resume now uses Claude's native PDF reading (subjectively better extraction quality on the founder's test resume — captured columns, tables, federal compliance context that text-extraction would have flattened). No new member-facing surfaces.
+- **AI (9, unchanged but materially better):** The architectural pivot from `pdf-parse` to Claude `document` content blocks is the AI lens improvement of the phase. Same numeric score, structurally better quality. PostHog wired to capture `find-matches` lets us actually measure match-feature engagement going forward.
+- **Eng hygiene (8, unchanged):** Three production hotfixes shipped same-day with full test cycles + commit messages capturing root cause for future readers; that responsiveness is real engineering culture. New `trg_resumes_flip_others` DB trigger pushes a key invariant down to the data layer (any client gets it for free) — that's the kind of move 9-rated platforms make routinely. Still no automated test suite — that's the explicit 8 → 9 gate, deferred to Phase 11.
+- **Mobile (7, unchanged):** No mobile work this phase. Real-device QA artifact still the named 7 → 8 gate.
+- **Trust (8, unchanged):** Privacy disclosure updated to accurately describe two new analytics processors before they went live (proactive trust posture). Soft-launch contingencies for testimonials + lawyer review remain Trust 8 → 9 gates.
+- **A11y/SEO (9, unchanged):** No regressions. CSP widened for analytics processors but the indexable-page surface is unchanged.
+
+**Overall read (2026-04-25):** **8** — same numeric score as Phase 8 close, but the platform is *materially* more launch-ready. Phase 9 successfully closed every code-side soft-launch contingency; remaining gates between here and a public announcement are entirely user/business-owned (testimonials, lawyer sign-off, mobile QA video, headshot). The discovered hotfixes during the verification work demonstrated the platform is operationally responsive — bugs get caught, fixed, deployed, and merged within hours, not days. That's a quiet but real Phase 9 outcome.
 
 **Per-lens notes (2026-04-23, end of Launch Readiness Week):**
 
@@ -294,6 +308,8 @@ Sequencing principle: stay revenue-aware. Every item on this phase either (a) un
 
 **Shipped (2026-04-24, code-side — v9):** upstream fix discovered while pulling 30 targeted jobs for the founder tonight. Two root causes had capped the feed at 7 rows/day: (a) single-word keyword buckets (`analyst`, `specialist`, `coordinator`, `technician`) were returning physician-heavy noise after URL-restricted filtering, and (b) the fetch URL carried `RemoteIndicator=True`, which read "WFH" as *work-from-home* instead of *Workforce for Humans* — onsite/hybrid federal roles had been silently excluded from the audience the platform actually serves. Fix: swap to 8 GS-job-series-aligned phrases (`management analyst`, `program analyst`, `budget analyst`, `contract specialist`, `human resources`, `information technology specialist`, `administrative`, `project coordinator`) and drop the remote-only filter. Manual cron fire after deploy: `considered: 381 → filtered: 50 → inserted: 50`. DB now shows 57 active `source='usajobs'` rows (mix of onsite/hybrid/remote) alongside 10 employer rows. **CLAUDE.md amended** with a top-of-file WFH-terminology callout so future sessions can't misread the acronym. Enabling the Claude filter (item #1 proper) layers on top of this now-healthier candidate pool.
 
+**Closed (2026-04-25):** ANTHROPIC_API_KEY set in Edge Function secrets; manual fire of `refresh-jobs` returned `{filter:"claude", degraded:false, considered:376, filtered:50, inserted:50}` in 35s wall-clock. Sample of 25 freshest rows is on-audience federal roles across all 8 keyword buckets — no prompt tuning required. The first run with the key actually surfaced a perf cliff (sequential Claude on full ~380-row pool ran 135s and tripped Supabase's ~150s edge gateway, returning 502 with zero rows inserted), fixed in PR #24 (`refresh-jobs v11`): parallel bucket fetches, top-200 pre-filter trim, concurrent Claude batches in chunks of 5 via `Promise.allSettled`. Same model, same prompt, same candidate pool — 4× faster runtime.
+
 ### 2. Real social proof (business-owned, multi-day)
 
 - **Outcome:** 3 real testimonials OR 1 verified employer logo visible on `index.html` homepage + `/about.html`. Trust moves from 8 → 9.
@@ -324,12 +340,61 @@ Sequencing principle: stay revenue-aware. Every item on this phase either (a) un
   - Log counts to `console.log` for observability.
 - **Done when:** migration + function + cron schedule + dry-run test (temporarily flip intervals to something testable, verify counts, flip back).
 
-**Shipped (2026-04-23, code-side):** `supabase/functions/prune-inactive-data/index.ts` — server-to-server auth via `x-prune-secret` + `PRUNE_SECRET` env var, mirroring the `refresh-jobs` / `send-match-digest` pattern. Candidate resumes are gated both on `updated_at` cutoff AND the owning seeker's `auth.users.last_sign_in_at` (resolved via `supabase.auth.admin.getUserById`) so active accounts with old resumes are never touched. Storage-bucket objects are removed first (best-effort), then DB rows, then `match_scores` on the 12-month cutoff. Migration `20260423_phase9_prune_inactive_data.sql` schedules `cron.prune-inactive-data-weekly` at 15 UTC Sunday (11am EDT) — deliberately after the Friday digest so freshly emailed matches aren't swept in the same week. `config.toml` updated. **User action required:** seed `PRUNE_SECRET` in Supabase Vault + matching Edge Function secret, same pattern as `REFRESH_SECRET` / `DIGEST_SECRET`. Migration + function are 401-safe until both exist.
+**Shipped (2026-04-23, code-side):** `supabase/functions/prune-inactive-data/index.ts` — server-to-server auth via `x-prune-secret` + `PRUNE_SECRET` env var, mirroring the `refresh-jobs` / `send-match-digest` pattern. Candidate resumes are gated both on `updated_at` cutoff AND the owning seeker's `auth.users.last_sign_in_at` (resolved via `supabase.auth.admin.getUserById`) so active accounts with old resumes are never touched. Storage-bucket objects are removed first (best-effort), then DB rows, then `match_scores` on the 12-month cutoff. Migration `20260423_phase9_prune_inactive_data.sql` schedules `cron.prune-inactive-data-weekly` at 15 UTC Sunday (11am EDT) — deliberately after the Friday digest so freshly emailed matches aren't swept in the same week. `config.toml` updated.
 
-### 6. Plausible baseline (founder-owned, 5 min)
+**Closed (2026-04-25):** `PRUNE_SECRET` generated server-side via `vault.create_secret()` and seeded in Supabase Vault; matching Edge Function secret pasted by founder. Migration applied to live (was missing from prior week's batch — the function code existed in the repo but was never deployed; deployed today as v1). Manual fire returned `{ok:true, resumes_considered:0, resumes_deleted:0, storage_files_deleted:0, match_scores_deleted:0}` in 7.3s — all-zero deletes correctly because the platform is only weeks old and nothing has crossed the 12/24-month thresholds. Cron `prune-inactive-data-weekly` confirmed scheduled alongside `refresh-jobs-daily` and `send-match-digest-weekly`.
 
-- **Outcome:** `workforceforhumans.com` domain verified in Plausible; 3 custom events (`CTA: employer-checkout-start`, `Event: resume-upload`, `Event: find-matches`) confirmed firing.
-- **Done when:** screenshot of Plausible dashboard pasted into a Phase 9 follow-up note showing at least one day of traffic + one event of each kind.
+### 6. Analytics baseline (founder-owned, 5 min) — *was Plausible, swapped 2026-04-25*
+
+- **Outcome:** `workforceforhumans.com` ingesting pageview metrics + 3 custom events (`CTA: employer-checkout-start`, `Event: resume-upload`, `Event: find-matches`) into a real analytics dashboard.
+- **Done when:** at least one day of pageview data + one event of each custom kind visible in the dashboard(s).
+
+**Closed (2026-04-25):** Pivoted from Plausible (paid, $9/mo) to two free services driven by founder budget pressure on Anthropic spend:
+
+- **Cloudflare Web Analytics** — auto-injected at the edge by Cloudflare Pages. Discovered already collecting **22 days of pageview/referrer/country/device data** under the founder's CF account (added during initial Pages setup, never noticed). The original CSP was blocking the JS beacon though, so only server-side request metadata was being captured; PR #25 widened CSP to allow `static.cloudflareinsights.com` + `cloudflareinsights.com` so the full RUM beacon now fires.
+- **PostHog Cloud (US region)** — custom events. Tightly configured: `autocapture: false`, `disable_session_recording: true`, `person_profiles: 'identified_only'` to stay comfortably under the 1M-events/mo free cap. Snippet in `assets/site.js`; project token `phc_uFTsr…` (public client-side key, like the Supabase anon key — safe to embed). All 3 events verified live in the Activity stream during the close-out session.
+- **`privacy.html` updated** — Plausible row in the §4 processor table replaced with separate Cloudflare and PostHog rows; §2 Usage data and §8 Cookies sections rewritten to accurately describe each provider's data scope. Phase 9 §3 (lawyer review) should sign off on the new wording.
+
+Soft-launch contingency for "analytics baseline" closed; the remaining Phase 9 §1–6 items still pending are all business actions (testimonials, lawyer review, mobile QA video, headshot).
+
+---
+
+### 7. Discovered hotfixes during Phase 9 close (2026-04-25)
+
+Three production bugs surfaced while doing the verification work — each shipped same-day with a follow-up PR. None blocked the Phase 9 outcome statement; all three actually validated the work because the rapid surface-fix-merge cycle proved the platform is operationally responsive.
+
+- **PR #24 — `refresh-jobs v11` perf cliff.** See §1 close-out above. Sequential Claude on full candidate pool blew past Supabase's edge gateway. Fix: parallel + chunked. 135s → 35s.
+- **PR #26 — `trg_resumes_flip_others` DB trigger.** The partial unique index `resumes_one_current_per_seeker (job_seeker_id) WHERE is_current` was tripping every repeat resume upload. Documented intent ("`parse-resume` flips others to false after parse") couldn't satisfy the constraint because parse-resume runs *after* the INSERT — by then the constraint had already failed. New BEFORE INSERT/UPDATE trigger flips other current rows to false in the same transaction so the unique-index check sees a clean state. Enforced at the DB layer means any client (resume.html, parse-resume, future CLI tools) gets the invariant for free. CLAUDE.md updated to match.
+- **PR #27 + #28 — `parse-resume` PDF crash.** First the static `import pdf-parse from "https://esm.sh/..."` was crashing the function during cold-start (OPTIONS-500 → "Failed to fetch" in browser). Lazy-loading inside `extractTextFromFile()` (PR #27) fixed the cold-start but the lazy import itself still threw at runtime. Architectural pivot in PR #28: drop `pdf-parse` entirely, send PDFs directly to Claude as `document` content blocks. Sonnet 4.6 reads PDFs natively — better extraction quality (columns, tables, headers) and one less flaky third-party dependency. `mammoth` (DOCX) stays lazy-loaded with the same defensive pattern. Cost impact: PDF parse went from ~$0.005 → ~$0.025; negligible at scale, major reliability win.
+
+**Net Phase 9 PR count:** 5 merged (refresh-jobs perf #24, runbook+analytics #25, trigger #26, parse-resume cold-start #27, parse-resume PDF→Claude #28).
+
+---
+
+### 8. Security + performance advisor sweep (2026-04-25)
+
+End-of-phase Supabase advisor run; categorized for Phase 10 prioritization.
+
+**Critical findings (act in Phase 10 first):**
+
+- **`newsletter_subscribers` UPDATE policy** allows `WITH CHECK (true)` AND `USING (true)` — any authenticated user can update any subscriber row. Real risk. One-line migration to scope to `auth.uid()` ownership.
+- **`auth_rls_initplan` × 16 tables** — RLS policies use `auth.uid()` directly instead of `(select auth.uid())`, causing per-row re-evaluation. Significant perf hit at scale. Single migration sweeps all 16. ([remediation](https://supabase.com/docs/guides/database/postgres/row-level-security#call-functions-with-select))
+- **Supabase Auth leaked-password protection** disabled — single dashboard click. ([guide](https://supabase.com/docs/guides/auth/password-security#password-strength-and-leaked-password-protection))
+
+**Intentional / by-design (no action; documented for future review):**
+
+- `security_definer_view` on `public.jobs_full` (ERROR-level) — this view is intentionally SECURITY DEFINER so the browser can read joined employer fields without exposing `employers.*` directly. Correct posture; review if the join shape changes.
+- `rls_policy_always_true` × 6 INSERT policies (applications, assessment_submissions, job_alerts, leads, newsletter_subscribers, partner_inquiries) — public-write tables for lead capture / newsletter signup; the `WITH CHECK (true)` on INSERT is by design. The newsletter UPDATE policy is the exception (see Critical above).
+- `extension_in_public` × 3 (pg_trgm, vector, pg_net) — cosmetic; moving extensions to a dedicated schema is invasive and offers no functional benefit at this scale.
+- `multiple_permissive_policies` on `jobs` SELECT — owner + public-read coexist intentionally.
+- `rls_enabled_no_policy` on `stripe_webhook_events` — service-role-only access, no policies = no anon/authenticated access (correct).
+
+**Low-priority hygiene (Phase 11 cleanup):**
+
+- `unindexed_foreign_keys` × 11 — minor at current scale.
+- `unused_index` × 25+ — pre-created indexes on low-traffic tables; prune after a quarter of real traffic.
+
+---
 
 ### Phase 9 — out of scope (deferred to Phase 10+)
 
@@ -339,6 +404,59 @@ Sequencing principle: stay revenue-aware. Every item on this phase either (a) un
 - Framework migration (Astro marketing + islands member) — still the 9 → 10 conversation; revisit only on the triggering signals named earlier in this doc.
 - Per-job + per-KB-article real URLs — blocked on framework decision.
 - Greenhouse/Lever job feeds as a second aggregator source — only if USAJobs quality (post-Claude-filter) proves thin. Revisit after one week of `filter:"claude"` data.
+
+---
+
+## Phase 10 — Cost discipline + matching quality (planned 2026-04-27 → 2026-05-10)
+
+**Outcome:** Anthropic spend per active member trends down month-over-month *while* match quality trends up. The platform graduates from "operationally launchable" (Phase 9) to "operationally efficient" — the precondition for paid acquisition without burning runway.
+
+Sequencing principle: prove cost discipline BEFORE acquisition spend. Every dollar saved on infrastructure cost compounds when traffic scales.
+
+### A. Token / cost optimization (priority 1)
+
+Founder hit budget pressure on Anthropic mid-Phase-9 ("running over budget"). Six ranked levers (cheapest to implement, highest yield first), all detailed in `docs/operations-runbook.md` §6 trigger-based actions:
+
+1. **Add prompt caching** to `match-jobs` and `parse-resume` — system prompts are identical across calls, cache them at ~10% of standard input rate. Single SDK config flag per call site. Highest ROI.
+2. **Lower `PRE_FILTER_MAX`** in `refresh-jobs` from 200 → 100 — halves daily cron Claude spend.
+3. **Switch `refresh-jobs` filter model** from `claude-sonnet-4-6` → `claude-haiku-4-5` — Haiku is ~5× cheaper; binary keep/reject decision is well within Haiku's capability.
+4. (Lower priority) `parse-resume` two-stage Haiku → Sonnet.
+5. (Last resort kill switch) Drop `ANTHROPIC_API_KEY` to fall back to pass-through.
+
+**Done when:** monthly Anthropic burn drops ≥ 30% with no measurable filter-quality regression on a 50-row sample review.
+
+### B. Matching quality fixes surfaced 2026-04-25
+
+- **`experience_level` defaulting bug** — USAJobs API often omits `JobGrade`; `inferExperienceLevel()` falls back to `entry-level`, mis-tagging mid/senior roles ("Supervisory Contract Specialist", "Senior Budget Analyst") and hiding them from senior-profile seekers. Founder's own profile (senior IT leader) saw 87 mis-tagged entry roles instead of the actual mid/senior pool. Fix: stricter inference + Claude post-tag check during the existing relevance-filter pass.
+- **Near-duplicate USAJobs postings** — same role published under two `MatchedObjectId`s slips through ID-based dedup. Fix: secondary dedup on `(title, location_city, location_state)` after the ID dedup.
+
+### C. Security / perf advisor closeout
+
+- One migration sweeping `auth.uid()` → `(select auth.uid())` across 16 RLS policies (cited in §8).
+- One migration scoping `newsletter_subscribers` UPDATE policy to `auth.uid()` ownership.
+- Founder enables Supabase Auth leaked-password protection (one dashboard click).
+
+### D. Storage cleanup pattern
+
+When manually deleting `resumes` rows (one-off cleanup like the Phase 9 close did with 3 stale `pending` rows), `storage.protect_delete()` blocks direct `storage.objects` deletion. Phase 10 work: extend `prune-inactive-data` with an admin-callable "delete by ids" mode that uses `admin.storage.from(...).remove(paths)` — gives any future cleanup a clean path that handles both DB row + storage object atomically.
+
+### E. Soft-launch business gates (founder-owned)
+
+- 3 testimonials OR 1 verified employer logo (Phase 9 §2 contingency)
+- Lawyer sign-off on `privacy.html` + `terms.html`; banner removal (Phase 9 §3)
+- Mobile QA video on real iPhone (Phase 9 §4)
+- Real founder headshot for `about.html`
+
+When these land, public soft-launch announcement is unblocked.
+
+### Phase 10 — explicitly out of scope (Phase 11+)
+
+- Automated test suite (still the biggest Eng-hygiene unlock; needs its own focused sprint)
+- Typography/spacing polish (Design 8 → 9)
+- Framework migration (the 9 → 10 conversation, gated on triggers named earlier)
+- Per-job/per-article real URLs (blocked on framework)
+- Greenhouse/Lever as second aggregator (only if USAJobs quality proves thin after a month of Claude-filtered output)
+- Employer GTM outbound sequence (real revenue plumbing; needs a dedicated phase)
 
 ---
 
