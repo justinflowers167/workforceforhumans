@@ -375,11 +375,11 @@ Three production bugs surfaced while doing the verification work — each shippe
 
 End-of-phase Supabase advisor run; categorized for Phase 10 prioritization.
 
-**Critical findings (act in Phase 10 first):**
+**Critical findings:**
 
-- **`newsletter_subscribers` UPDATE policy** allows `WITH CHECK (true)` AND `USING (true)` — any authenticated user can update any subscriber row. Real risk. One-line migration to scope to `auth.uid()` ownership.
-- **`auth_rls_initplan` × 16 tables** — RLS policies use `auth.uid()` directly instead of `(select auth.uid())`, causing per-row re-evaluation. Significant perf hit at scale. Single migration sweeps all 16. ([remediation](https://supabase.com/docs/guides/database/postgres/row-level-security#call-functions-with-select))
-- **Supabase Auth leaked-password protection** disabled — single dashboard click. ([guide](https://supabase.com/docs/guides/auth/password-security#password-strength-and-leaked-password-protection))
+- ✅ **CLOSED 2026-04-25 (PR #30 incoming) — `auth_rls_initplan` × 17 policies** swept in `20260425_phase10_rls_select_auth_uid.sql`. Wrapped every `auth.uid()` / `auth.jwt()` / `auth.role()` / `auth.email()` call in `(select …)` so Postgres caches per query instead of re-evaluating per row. Verified: post-migration advisor returns zero `auth_rls_initplan` warnings.
+- ✅ **PARTIALLY CLOSED 2026-04-25 (PR #30 incoming) — `newsletter_subscribers` UPDATE policy** narrowed in `20260425_phase10_newsletter_update_scope.sql`. `WITH CHECK (true)` → `WITH CHECK (is_active = true)` — mass-unsubscribe attack via the public anon key is blocked. Residual: `USING (true)` is still there because the upsert-from-form pattern needs to find the row by email; advisor still warns on it. Phase 10b clean fix is a token-verified Edge Function for unsubscribe (drops the policy entirely).
+- ⏳ **PENDING (founder dashboard click) — Supabase Auth leaked-password protection** still off. https://supabase.com/dashboard/project/dbomfjqijyrkidptrrfi/auth/providers → toggle on. ([guide](https://supabase.com/docs/guides/auth/password-security#password-strength-and-leaked-password-protection))
 
 **Intentional / by-design (no action; documented for future review):**
 
