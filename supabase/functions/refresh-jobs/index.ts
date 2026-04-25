@@ -97,12 +97,11 @@ Deno.serve(async (req) => {
     const admin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
     const anthropic = useClaudeFilter ? new Anthropic({ apiKey: ANTHROPIC_API_KEY }) : null;
 
-    // 1. Fetch across keyword buckets.
-    const raw: any[] = [];
-    for (const kw of KEYWORD_BUCKETS) {
-      const items = await fetchBucket(kw);
-      raw.push(...items);
-    }
+    // 1. Fetch across keyword buckets in parallel — independent USAJobs
+    // requests, so serializing them just adds latency. Cuts ~8s on the
+    // critical path with 8 buckets.
+    const bucketResults = await Promise.all(KEYWORD_BUCKETS.map((kw) => fetchBucket(kw)));
+    const raw: any[] = bucketResults.flat();
 
     // 2. Dedup by MatchedObjectId, normalize to jobs-row shape.
     const seen = new Set<string>();
@@ -120,6 +119,17 @@ Deno.serve(async (req) => {
       return json({ ok: true, considered: 0, filtered: 0, inserted: 0, note: "empty fetch" });
     }
 
+    // 2b. Trim candidate pool by posted_at desc before the Claude filter.
+    // Sequential Claude on the full ~380-row pool blew past Supabase's
+    // ~150s edge gateway limit (135s observed). We only keep top-50 by
+    // date downstream anyway, so the freshest 200 already overwhelmingly
+    // contains the survivors — trimming costs ~no quality, saves ~50% of
+    // Claude calls + token spend.
+    const PRE_FILTER_MAX = 200;
+    const candidatesForFilter = [...candidates]
+      .sort((a, b) => String(b.posted_at || "").localeCompare(String(a.posted_at || "")))
+      .slice(0, PRE_FILTER_MAX);
+
     // 3. Relevance filter — Claude if the key is set, otherwise pass all
     // candidates through. Permissive fallback on Claude error (an empty
     // feed is worse than a degraded one). Track failure rate so the
@@ -128,17 +138,31 @@ Deno.serve(async (req) => {
     let totalBatches = 0;
     let failedBatches = 0;
     if (useClaudeFilter && anthropic) {
-      for (let i = 0; i < candidates.length; i += CLAUDE_BATCH) {
-        totalBatches += 1;
-        const batch = candidates.slice(i, i + CLAUDE_BATCH);
-        try {
-          const batchKeeps = await filterBatch(anthropic, batch);
-          for (const id of batchKeeps) keeps.add(id);
-        } catch (err) {
-          failedBatches += 1;
-          console.error("Claude filter batch failed; keeping batch verbatim:", err);
-          for (const j of batch) keeps.add(j.source_ref);
-        }
+      // Build all batches, then run in concurrent chunks. Sequential
+      // batches blew past the ~150s edge gateway limit. Chunks of 5 stay
+      // under tier-1 RPM/ITPM caps while cutting total Claude time from
+      // ~110s to ~15s. Promise.allSettled preserves the per-batch
+      // permissive fallback on individual rate-limit / 5xx failures.
+      const batches: any[][] = [];
+      for (let i = 0; i < candidatesForFilter.length; i += CLAUDE_BATCH) {
+        batches.push(candidatesForFilter.slice(i, i + CLAUDE_BATCH));
+      }
+      totalBatches = batches.length;
+      const CHUNK_CONCURRENCY = 5;
+      for (let i = 0; i < batches.length; i += CHUNK_CONCURRENCY) {
+        const chunk = batches.slice(i, i + CHUNK_CONCURRENCY);
+        const results = await Promise.allSettled(
+          chunk.map((b) => filterBatch(anthropic, b)),
+        );
+        results.forEach((r, idx) => {
+          if (r.status === "fulfilled") {
+            for (const id of r.value) keeps.add(id);
+          } else {
+            failedBatches += 1;
+            console.error("Claude filter batch failed; keeping batch verbatim:", r.reason);
+            for (const j of chunk[idx]) keeps.add(j.source_ref);
+          }
+        });
       }
     } else {
       // No Claude key — unfiltered pass-through. All candidates are kept;
