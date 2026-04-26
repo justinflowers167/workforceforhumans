@@ -362,8 +362,17 @@ function inferExperienceLevel(grades: unknown, title: string): string {
   // returns experience_level per kept row and overrides this value
   // downstream — this regex is the safety net for when Claude is
   // unavailable (no key, or batch failure).
+  //
+  // Phase 11 prep (2026-04-26): broaden the senior signal — added
+  // "supervisor" (without -y) which is a distinct federal title pattern,
+  // and an embedded GS-13+ check ("GS-13 Analyst", "GS13 Specialist",
+  // "GS-14/15 ladder") that catches grade-tagged titles even when the
+  // structured JobGrade field is absent.
   const t = String(title || "").toLowerCase();
-  if (/\b(supervisory|senior|sr\.?|lead|principal|manager|director|chief|head)\b/.test(t)) {
+  if (
+    /\b(supervisor|supervisory|senior|sr\.?|lead|principal|manager|director|chief|head)\b/.test(t) ||
+    /\bgs-?1[3-5]\b/.test(t)
+  ) {
     return "senior";
   }
   if (/\b(associate|assistant|entry|intern|trainee|junior|jr\.?)\b/.test(t)) {
