@@ -42,14 +42,10 @@ const PRUNE_SECRET = Deno.env.get("PRUNE_SECRET") || "";
 const RESUME_RETENTION_MONTHS = 24;
 const MATCH_SCORE_RETENTION_MONTHS = 12;
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-prune-secret",
-};
+// No CORS — cron-only server-to-server endpoint. Browser callers must be rejected,
+// so we omit Access-Control-Allow-Origin entirely and let the browser's CORS check fail.
 
 Deno.serve(async (req) => {
-  if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
-
   const provided = req.headers.get("x-prune-secret") || "";
   if (!PRUNE_SECRET || !timingSafeEqual(provided, PRUNE_SECRET)) return json({ error: "unauthorized" }, 401);
 
@@ -241,7 +237,7 @@ async function handleDeleteByIds(
 function json(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), {
     status,
-    headers: { ...corsHeaders, "Content-Type": "application/json" },
+    headers: { "Content-Type": "application/json" },
   });
 }
 
