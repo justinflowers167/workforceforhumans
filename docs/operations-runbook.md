@@ -1,7 +1,7 @@
 # WFH Founder Runbook
 
 **Living document. Update when reality shifts.**
-Last updated: 2026-04-26 (Phase 10 §A/§B/§D shipped)
+Last updated: 2026-04-27 (Phase 12 §A/§B/§C shipped — feed cron, feedback widget, AI-skills loop)
 
 This is the systematic checklist for keeping Workforce for Humans healthy as a solo operator. If you're staring at the platform and wondering "what should I be doing," start here.
 
@@ -199,6 +199,27 @@ order by created desc
 limit 10;
 ```
 
+### 8.7 Feedback triage (Phase 12 §B — weekly ritual)
+
+Founder reads the inbox via SQL — no admin UI in v1. Run this every Monday alongside §3 weekly checks. Claude Haiku 4.5 stamps `claude_priority` (p0/p1/p2/p3) at submission time when `ANTHROPIC_API_KEY` is set; sort by priority ascending so p0/p1 surface first.
+
+```sql
+select id, created_at, page_path, category, claude_priority, claude_summary, message
+from public.feedback
+where status = 'new'
+order by claude_priority asc nulls last, created_at desc;
+```
+
+After acting on (or dismissing) a row:
+
+```sql
+update public.feedback
+set status = 'triaged'  -- or 'actioned' / 'wont-fix' / 'duplicate'
+where id = '<uuid>';
+```
+
+P0 (site broken / data loss / security concern) → drop everything, fix today. P1 (significant UX block, payment friction) → ticket this week. P2 (feature request, polish) → pile up for the next phase. P3 (praise, opinion) → acknowledge if it warrants a reply, then move on.
+
 ---
 
 ## 9. Dashboards index (bookmark these)
@@ -238,7 +259,7 @@ When the Vault value and Edge Function env value drift apart, the cron 401s sile
         )
    select v as new_secret_value from new_value;
    ```
-   (Substitute `REFRESH_SECRET` or `DIGEST_SECRET` for `PRUNE_SECRET` as needed.)
+   (Substitute `REFRESH_SECRET`, `DIGEST_SECRET`, or `INTELLIGENCE_FEED_SECRET` for `PRUNE_SECRET` as needed.)
 
 2. Copy the returned `new_secret_value`.
 
@@ -307,7 +328,47 @@ select net.http_post(
 
 Then poll `net._http_response` for the row with that `id`. Expected response shape: `{ok:true, mode:"delete_resumes_by_ids", requested:N, found:M, resumes_deleted:K, storage_files_deleted:L, storage_files_skipped:S}`. The Sunday cron (default mode, empty body) is unaffected — same secret, different body.
 
-### 10.7 Diagnose magic-link not arriving
+### 10.7 Map training resources to AI skills (Phase 12 §C — hand-curation)
+
+After Phase 12 §C migrations applied, the `training_skills` link table is empty and the "Recommended training to grow into this role" panel under each match card renders nothing until you map. ~30 min of curated SQL inserts maps existing `training_resources` to the seeded AI skills (see ROADMAP §C1 for the seed list).
+
+Find candidates per skill:
+
+```sql
+-- Look at the training catalog and pick the rows that genuinely teach a given AI skill.
+select id, title, provider, source_url, tags, category_slug
+from public.training_resources
+where tags && array['AI','prompt','llm','agent','rag','vector','embedding','fine-tune','ai-tooling']
+   or title ilike any (array['%prompt%','%llm%','%agent%','%rag%','%vector%','%embedding%','%fine-tun%'])
+order by recommend_count desc, title;
+```
+
+Map a training row to one or more AI skills:
+
+```sql
+insert into public.training_skills (training_id, skill_id)
+values
+  ('<training-uuid>', (select id from public.skills where slug = 'prompt-engineering')),
+  ('<training-uuid>', (select id from public.skills where slug = 'agent-frameworks'))
+on conflict do nothing;
+```
+
+A training resource can map to multiple skills — e.g. a "Build an LLM agent" course tags both `agent-frameworks` and `prompt-engineering`. The match-card panel dedups by training id and ranks by `recommend_count` desc.
+
+To audit current coverage:
+
+```sql
+select s.name, s.slug, count(ts.training_id) as mapped_count
+from public.skills s
+left join public.training_skills ts on ts.skill_id = s.id
+where s.is_ai_skill = true
+group by s.id, s.name, s.slug
+order by mapped_count asc, s.name;
+```
+
+Skills with `mapped_count = 0` won't drive any training recommendation — fill those first.
+
+### 10.8 Diagnose magic-link not arriving
 
 1. Supabase dashboard → Authentication → Logs → search the email.
 2. Resend dashboard → Emails → search the recipient.

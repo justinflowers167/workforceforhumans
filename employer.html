@@ -74,6 +74,14 @@ button.danger:hover{background:rgba(200,95,62,0.06);}
 .toast{position:fixed;bottom:1.5rem;right:1.5rem;background:var(--navy);color:#fff;padding:.8rem 1.3rem;border-radius:10px;font-size:.88rem;z-index:600;opacity:0;transform:translateY(8px);transition:all .25s;pointer-events:none;}
 .toast.show{opacity:1;transform:translateY(0);}
 .toast.ok{background:var(--green);} .toast.error{background:var(--terra);}
+
+/* Phase 12 §C2: AI skills picker in the listing modal. */
+.ai-skills-picker{display:flex;flex-wrap:wrap;gap:.4rem;margin-top:.4rem;}
+.ai-skill-pill{display:inline-flex;align-items:center;gap:.35rem;padding:.4rem .7rem;border:1px solid var(--stone);border-radius:999px;background:#fff;font-size:.82rem;color:var(--slate);cursor:pointer;transition:all .15s;}
+.ai-skill-pill:hover{border-color:var(--amber);color:var(--amber-dk);}
+.ai-skill-pill input{margin:0;accent-color:var(--amber);cursor:pointer;}
+.ai-skill-pill:has(input:checked){background:var(--amber-lt);border-color:var(--amber);color:var(--navy);font-weight:500;}
+.ai-skills-note{font-size:.78rem;color:var(--slate);margin-top:.35rem;line-height:1.45;}
 </style>
 </head>
 <body data-nav="employer" data-surface="product">
@@ -165,6 +173,10 @@ button.danger:hover{background:rgba(200,95,62,0.06);}
       </div>
       <div style="margin-bottom:.75rem;"><label>Nice to have (one per line)</label><textarea id="f-nice"></textarea></div>
 
+      <h3 style="font-size:.78rem;font-weight:600;color:var(--terra);text-transform:uppercase;letter-spacing:.08em;margin:1rem 0 .5rem;">AI skills you're looking for</h3>
+      <div class="ai-skills-picker" id="f-ai-skills" aria-label="Select the AI skills this role needs"></div>
+      <p class="ai-skills-note">Why we ask: matched seekers see these skills under your listing along with curated free training, so they know exactly how to grow into the role. Optional, but the more accurate the better.</p>
+
       <h3 style="font-size:.78rem;font-weight:600;color:var(--terra);text-transform:uppercase;letter-spacing:.08em;margin:1rem 0 .5rem;">Location</h3>
       <div class="row-3">
         <div><label>City</label><input type="text" id="f-city"/></div>
@@ -223,6 +235,7 @@ const hide = (id) => $(id).classList.add('hidden');
 
 let me = null;            // employers row for the signed-in user
 let pendingPostings = []; // job_postings rows with status=paid, job_id=null
+let aiSkills = [];        // skills rows where is_ai_skill = true (Phase 12 §C2)
 
 async function boot() {
   const { data: { session } } = await db.auth.getSession();
@@ -277,8 +290,63 @@ async function loadEmployer(session) {
   $('hi-sub').textContent = emp.contact_email;
 
   renderSubscriptionBanner(emp);
-  await loadPending();
-  await loadListings();
+  await Promise.all([loadPending(), loadListings(), loadAiSkills()]);
+}
+
+// Phase 12 §C2: AI skills picker.
+// Fetches the curated AI-skills list once per session and renders pill-
+// shaped checkboxes inside the listing modal. The picker is shared
+// between create + edit modes; openListingModal/editListing reset or
+// pre-check the boxes accordingly.
+async function loadAiSkills() {
+  const { data, error } = await db.from('skills')
+    .select('id, name, slug, description')
+    .eq('is_ai_skill', true)
+    .order('name');
+  if (error) { console.error('loadAiSkills:', error); aiSkills = []; }
+  else { aiSkills = data || []; }
+  renderAiSkillPicker(new Set());
+}
+
+function renderAiSkillPicker(checkedIds) {
+  const host = $('f-ai-skills');
+  if (!host) return;
+  if (!aiSkills.length) {
+    host.innerHTML = '<span class="muted" style="font-size:.82rem;">AI-skills list could not load. Refresh to retry.</span>';
+    return;
+  }
+  host.innerHTML = aiSkills.map(s => {
+    const checked = checkedIds && checkedIds.has(s.id) ? 'checked' : '';
+    const tip = s.description ? ' title="' + escapeHtml(s.description) + '"' : '';
+    return '<label class="ai-skill-pill"' + tip + '>' +
+      '<input type="checkbox" value="' + s.id + '" ' + checked + '/>' +
+      escapeHtml(s.name) +
+    '</label>';
+  }).join('');
+}
+
+function getCheckedAiSkillIds() {
+  const host = $('f-ai-skills');
+  if (!host) return [];
+  return Array.from(host.querySelectorAll('input[type="checkbox"]:checked')).map(el => Number(el.value));
+}
+
+// Sync the job_skills rows for a job to match the picker's current
+// selection. Deletes any previously-linked AI skills the picker no
+// longer has checked, then inserts the current selection. Only AI
+// skills are touched — non-AI links (if any) are left alone, which
+// matters when other surfaces add skills outside this picker.
+async function syncJobAiSkills(jobId, selectedIds) {
+  if (!jobId) return;
+  const allAiIds = aiSkills.map(s => s.id);
+  if (allAiIds.length) {
+    await db.from('job_skills').delete().eq('job_id', jobId).in('skill_id', allAiIds);
+  }
+  if (selectedIds.length) {
+    const rows = selectedIds.map(skill_id => ({ job_id: jobId, skill_id }));
+    const { error } = await db.from('job_skills').insert(rows);
+    if (error) console.error('syncJobAiSkills insert:', error);
+  }
 }
 
 function renderSubscriptionBanner(emp) {
@@ -374,6 +442,7 @@ window.openListingModal = function (jobId, postingId) {
     $('f-exp').value = 'no-requirement';
     $('f-pay-type').value = 'hourly';
     $('f-remote').checked = false; $('f-hybrid').checked = false; $('f-onsite').checked = true;
+    renderAiSkillPicker(new Set()); // fresh picker, nothing checked
   }
   $('modal').classList.add('open');
   document.body.style.overflow = 'hidden';
@@ -407,6 +476,17 @@ window.editListing = async function (id) {
   $('f-remote').checked = !!j.is_remote;
   $('f-hybrid').checked = !!j.is_hybrid;
   $('f-onsite').checked = j.is_onsite !== false;
+
+  // Pre-check AI-skills the job already has linked. Joins job_skills
+  // against the loaded aiSkills list so we only reflect AI-tagged ones.
+  const aiIds = aiSkills.map(s => s.id);
+  let checkedSet = new Set();
+  if (aiIds.length) {
+    const { data: linked } = await db.from('job_skills').select('skill_id').eq('job_id', id).in('skill_id', aiIds);
+    checkedSet = new Set((linked || []).map(r => r.skill_id));
+  }
+  renderAiSkillPicker(checkedSet);
+
   $('modal').classList.add('open');
   document.body.style.overflow = 'hidden';
 };
@@ -454,17 +534,32 @@ $('save-listing').onclick = async () => {
   const editingJobId = $('f-job-id').value;
   const fromPostingId = $('f-posting-id').value;
 
-  let error;
+  let error, savedJobId;
   if (editingJobId) {
     ({ error } = await db.rpc('update_job_listing', { p_job_id: editingJobId, p_payload: payload }));
+    savedJobId = editingJobId;
   } else {
-    ({ error } = await db.rpc('create_job_listing', {
+    // create_job_listing returns the new uuid (per Phase 3 RPC contract).
+    let data;
+    ({ data, error } = await db.rpc('create_job_listing', {
       p_payload: payload,
       p_posting_id: fromPostingId || null,
     }));
+    savedJobId = typeof data === 'string' ? data : null;
   }
 
   if (error) return toast(error.message, 'error');
+
+  // Phase 12 §C2: sync the job's AI-skill links from the picker.
+  // Best-effort — if it fails the job itself still saved cleanly,
+  // and the founder can fix from the edit modal.
+  if (savedJobId) {
+    try {
+      await syncJobAiSkills(savedJobId, getCheckedAiSkillIds());
+    } catch (e) {
+      console.error('AI skills sync failed (non-fatal):', e);
+    }
+  }
 
   toast(editingJobId ? 'Listing updated' : 'Listing posted', 'ok');
   closeModal();

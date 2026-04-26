@@ -518,6 +518,57 @@ Per Phase 5 framework decision (2026-04-19), revisit only when one of: page coun
 
 ---
 
+## Phase 12 — Feature depth (planned 2026-04-27 → 2026-05-10, parallel to Phase 11)
+
+**Outcome:** The platform graduates from "deep on matching" (Phases 7-10) to "deep on the full career-change loop" — fresh signal flowing in, user voice flowing back out, and AI-era role expectations + training tied together so the platform's premise actually delivers on the page.
+
+Three founder-surfaced asks landed in scope on 2026-04-26: feed staleness, no feedback path, no AI-skills→training loop. Each got its own subsection. Phase 11 (hardening) and Phase 12 (depth) run as parallel tracks — Phase 11 sprint while Phase 12 design lands; Phase 12 implementation while Phase 11 tests get backfilled.
+
+### A. Intelligence Feed: fresh, balanced, visual
+
+The feed was 15 days stale because no cron schedule existed for the `intelligence-feed` Edge Function (verified: only `refresh-jobs-daily`, `send-match-digest-weekly`, `prune-inactive-data-weekly` had crons). Visually it was layoff-heavy walls of text — no images, severity encoded only in a 4px left border. Source mix was 2 RSS feeds + a stubbed-out WARN Act fetcher that had been logging "Would check 3 state sources" for ~3 weeks with no real action.
+
+**Shipped (2026-04-27):**
+- New migration `20260427_phase12_intelligence_feed_cron.sql` schedules `cron.intelligence-feed-daily` at 12 UTC (8am EDT, 30 min after the daily refresh-jobs cron at 11 UTC). Reads `INTELLIGENCE_FEED_SECRET` from Vault.
+- `intelligence-feed/index.ts` rewritten: x-intelligence-feed-secret header auth, broadened source list (8 RSS feeds: TechCrunch, BLS, US DOL ETA, Indeed Hiring Lab, Course Report, O*NET, Khan Academy, GovExec Workforce — biased toward neutral/positive), regex classifier now also tags `is_positive` for hiring/training/opportunity items, image extraction from `<media:content>` / `<enclosure>` / `<image>` RSS elements. WARN Act stub deleted.
+- New migration `20260427_phase12_feed_image_and_tone.sql` adds `feed_items.image_url` + `feed_items.is_positive` columns plus a partial index on positive published items.
+- `feed.html` visual rework: thumbnail-left card layout when `image_url` is set (graceful fallback when image fails to load), severity legend bar at the top of the layoffs tab, "🟢 Positive only" toggle chip in the filter bar, hero subline rewrite from "Layoff alerts, workforce agencies, and free training" → "What's shifting in your industry, who's hiring, and what to learn next — refreshed daily."
+
+**Verification gate:** founder confirms within 24h of deploy that (a) cron run history shows `intelligence-feed-daily` green, (b) sample inserted rows have `image_url` populated for at least 30% of items, (c) the layoffs tab visually renders thumbnails and the positive-news toggle filters correctly.
+
+### B. Feedback mechanism
+
+No feedback path existed before Phase 12 — no `feedback` table, no widget, no surface for users to tell us what's broken/missing/great. Roadmap signal was founder intuition only.
+
+**Shipped (2026-04-27):**
+- New migration `20260427_phase12_feedback.sql` creates `public.feedback` (id, page_path, category, message, user_email, user_agent, claude_summary, claude_priority, status, created_at). RLS allows anon insert; no SELECT policy = service-role only reads (founder reads via SQL editor). Triage index on `(claude_priority asc, created_at desc) where status = 'new'`.
+- New `submit-feedback` Edge Function: `verify_jwt = false`, validates length/category, honeypot field silently drops bots, optional Claude Haiku 4.5 triage stamps `claude_summary` + `claude_priority` (p0/p1/p2/p3) per submission. Degrades gracefully when `ANTHROPIC_API_KEY` is unset.
+- New floating feedback widget injected by `/assets/site.js` on every page. Pill button bottom-right, modal with category radio + textarea + optional email + honeypot, success state auto-closes after 1.8s. Pages can opt out via `<body data-feedback="off">` if needed (none currently).
+- New runbook §8.7 query for the weekly triage ritual.
+
+### C. Employer AI skills + training-recommendation loop
+
+The Anthropic-era is the platform's reason for existing, but the job → training loop was broken. Employers couldn't surface what AI skills they wanted; seekers couldn't see what to learn for a specific role.
+
+**Shipped (2026-04-27):**
+- New migration `20260427_phase12_ai_skills_training_link.sql`: extends existing `skills` table with `is_ai_skill boolean` + `description text` (no parallel system; reuses the working `job_skills` / `job_seeker_skills` pipeline), seeds 10 AI skills (Prompt engineering, Agent frameworks, RAG, LLM evaluation, Vector databases, AI safety + policy, Fine-tuning, Embeddings, AI product management, AI tooling fluency), creates new `training_skills(training_id, skill_id)` link table, adds INSERT/DELETE RLS policies on `job_skills` so the owning employer can manage their own job's skill links from the browser.
+- `employer.html` listing modal gains an "AI skills you're looking for" section — pill-shaped multi-select checkbox picker with hover tooltips from `skills.description`. Soft-required (warning if zero, but submittable). On save: post-RPC sync deletes prior AI-skill links for the job and inserts the current selection.
+- `match-jobs/index.ts` payload now includes `ai_skills_required: string[]` per job (pulled from `job_skills` filtered to `is_ai_skill = true`). System prompt updated: when the candidate lacks an AI skill the role requires, `growth_note` MUST name the single most-leveraged one to learn first.
+- `member.html` match cards: under the existing Phase 7 disclosure ("Claude's read on this match"), a new "Recommended training to grow into this role" panel renders up to 3 `training_resources` rows whose skill IDs intersect the job's AI skills, sorted by `recommend_count` desc then `view_count` desc, with free/paid chips and a "Start →" link.
+- Founder follow-up: hand-curate `training_skills` rows mapping the existing 50+ training_resources to the seeded AI skills (~30 min of SQL). Documented in runbook §10.7.
+
+### Phase 12 — explicitly out of scope (Phase 13+)
+
+- WARN Act state-by-state real scrapers (real engineering — separate phase)
+- Per-region personalized feed (uses seeker's `location_state`)
+- Trend detection / weekly auto-digest (Claude-summarized weekly recap of feed_items)
+- User saved/dismissed feed items
+- Real-time push notifications when a high-relevance item lands
+- Admin UI for feedback triage (founder reads SQL for now)
+- AI-skill taxonomy expansion beyond the seeded 10 — refine as real postings come in
+
+---
+
 ## Out of scope for reaching 9 (the original phase 1-5 list, kept for reference)
 
 - Per-job real URLs (replacing `jobs.html?id=<uuid>` with `jobs/<slug>.html`). Blocked on framework decision.

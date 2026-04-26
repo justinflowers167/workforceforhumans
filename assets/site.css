@@ -254,3 +254,78 @@ body.nav-open .nav-scrim{opacity:1;pointer-events:auto;}
   .filter-option input[type="checkbox"]{width:20px;height:20px;}
   .toggle input[type="checkbox"]{width:22px;height:22px;}
 }
+
+/* ─── PHASE 12 §B3: FEEDBACK WIDGET ───
+   Floating pill bottom-right + modal. Injected into every page by
+   site.js unless <body data-feedback="off">. */
+#wfh-fb-pill{
+  position:fixed;right:1.25rem;bottom:1.25rem;z-index:1100;
+  background:var(--amber);color:var(--navy);
+  border:none;border-radius:999px;padding:.6rem 1.1rem;
+  font-family:var(--font-b);font-size:.88rem;font-weight:600;
+  cursor:pointer;display:inline-flex;align-items:center;gap:.4rem;
+  box-shadow:var(--sh-md);transition:transform .15s var(--ease),background .15s;
+  min-height:44px;
+}
+#wfh-fb-pill:hover{background:var(--amber-dk);color:#fff;transform:translateY(-1px);}
+#wfh-fb-pill:focus-visible{outline:none;box-shadow:var(--focus-ring),var(--sh-md);}
+body.wfh-fb-open{overflow:hidden;}
+#wfh-fb-modal{position:fixed;inset:0;z-index:1200;display:flex;align-items:center;justify-content:center;padding:1rem;}
+#wfh-fb-modal[hidden]{display:none;}
+.wfh-fb-scrim{position:absolute;inset:0;background:rgba(15,24,41,0.55);backdrop-filter:blur(2px);}
+.wfh-fb-card{
+  position:relative;background:#fff;border-radius:16px;
+  width:100%;max-width:480px;max-height:90vh;overflow-y:auto;
+  padding:1.75rem 1.75rem 1.5rem;box-shadow:var(--sh-lg);
+}
+.wfh-fb-close{
+  position:absolute;top:.85rem;right:.85rem;
+  background:transparent;border:none;color:var(--slate);
+  width:36px;height:36px;border-radius:50%;font-size:1.4rem;line-height:1;
+  cursor:pointer;display:flex;align-items:center;justify-content:center;
+}
+.wfh-fb-close:hover{background:var(--cream);color:var(--navy);}
+.wfh-fb-card h2{font-family:var(--font-d);font-size:1.4rem;color:var(--navy);margin:0 0 .25rem;line-height:1.2;}
+.wfh-fb-sub{font-size:.88rem;color:var(--slate);margin:0 0 1.25rem;font-weight:300;}
+.wfh-fb-cats{border:none;padding:0;margin:0 0 1.1rem;display:flex;flex-wrap:wrap;gap:.4rem;}
+.wfh-fb-cats label{
+  display:inline-flex;align-items:center;gap:.35rem;
+  padding:.4rem .75rem;border:1px solid var(--stone);border-radius:8px;
+  font-size:.82rem;color:var(--slate);cursor:pointer;background:#fff;
+  transition:border-color .15s,color .15s,background .15s;
+}
+.wfh-fb-cats label:hover{border-color:var(--amber);color:var(--amber-dk);}
+.wfh-fb-cats input[type="radio"]{accent-color:var(--amber);margin:0;}
+.wfh-fb-cats label:has(input:checked){border-color:var(--amber);background:var(--amber-lt);color:var(--navy);font-weight:500;}
+.wfh-fb-lbl{display:block;font-size:.82rem;color:var(--navy);font-weight:500;margin:0 0 .35rem;}
+.wfh-fb-hint{color:var(--slate);font-weight:400;}
+#wfh-fb-msg,#wfh-fb-email{
+  width:100%;box-sizing:border-box;
+  padding:.65rem .85rem;border:1px solid var(--stone);border-radius:8px;
+  font-family:var(--font-b);font-size:.92rem;color:var(--navy);background:#fff;
+  margin-bottom:.9rem;outline:none;
+}
+#wfh-fb-msg{resize:vertical;min-height:110px;}
+#wfh-fb-msg:focus,#wfh-fb-email:focus{border-color:var(--amber);box-shadow:var(--focus-ring);}
+.wfh-fb-hp{position:absolute !important;left:-10000px !important;width:1px;height:1px;opacity:0;}
+.wfh-fb-actions{display:flex;justify-content:flex-end;gap:.5rem;margin-top:.25rem;}
+.wfh-fb-cancel{
+  background:transparent;border:1px solid var(--stone);color:var(--slate);
+  padding:.55rem 1rem;border-radius:8px;font-family:var(--font-b);font-size:.88rem;cursor:pointer;
+}
+.wfh-fb-cancel:hover{border-color:var(--mist);color:var(--navy);}
+.wfh-fb-submit{
+  background:var(--amber);border:none;color:var(--navy);
+  padding:.6rem 1.2rem;border-radius:8px;font-family:var(--font-b);font-size:.88rem;font-weight:600;cursor:pointer;
+  transition:background .15s;
+}
+.wfh-fb-submit:hover:not(:disabled){background:var(--amber-dk);color:#fff;}
+.wfh-fb-submit:disabled{opacity:.6;cursor:wait;}
+.wfh-fb-status{font-size:.85rem;margin-top:.6rem;min-height:1.2em;color:var(--slate);}
+.wfh-fb-status.ok{color:var(--green);}
+.wfh-fb-status.err{color:var(--red);}
+@media(max-width:640px){
+  #wfh-fb-pill{right:.85rem;bottom:.85rem;font-size:.85rem;padding:.55rem .9rem;}
+  .wfh-fb-card{padding:1.4rem 1.25rem 1.2rem;}
+  .wfh-fb-cats label,.wfh-fb-cancel,.wfh-fb-submit{min-height:44px;}
+}
