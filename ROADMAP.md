@@ -479,10 +479,12 @@ The end-of-Phase-10 review (2026-04-26, see commit log for `7ca911c`) surfaced t
 - ✅ `inferExperienceLevel` regex broadened in `refresh-jobs/index.ts` — added "supervisor" (without -y) and a separate `\bgs-?1[3-5]\b` check to catch grade-tagged titles ("GS-13 Analyst") that lack the structured JobGrade field. Senior seekers stop seeing such roles fall to `mid-level` on degraded/no-Claude paths.
 - ✅ `handleDeleteByIds` capped at 100 resume_ids per call in `prune-inactive-data/index.ts`. Returns 400 with a clear "split into multiple invocations" message above the cap. Keeps the supabase-js `.in()` URL bounded and storage.remove latency predictable.
 
-**Outstanding (Phase 11 sprint scope):**
+**Shipped 2026-04-26 (Phase 11 §A sprint, Phase 12 running concurrently):**
 
-- **Constant-time secret comparison.** All three server-to-server functions (`refresh-jobs`, `send-match-digest`, `prune-inactive-data`) currently do `provided !== SECRET`, which short-circuits on first mismatch. Theoretical timing leak is dominated by network jitter at this scale, but a small `timingSafeEqual` helper applied in all three places is a worthwhile project-wide hardening pass.
-- **CORS narrowing on cron-only Edge Functions.** `Access-Control-Allow-Origin: *` on `refresh-jobs` and `prune-inactive-data` is permissive defense-in-depth weakness — those functions are never called from a browser. Tighten or drop CORS entirely on cron-only endpoints.
+- ✅ **Constant-time secret comparison.** All three server-to-server functions (`refresh-jobs`, `send-match-digest`, `prune-inactive-data`) now route the shared-secret header through a small `timingSafeEqual` helper (XOR-accumulate, short-circuit-free). Helper is inlined per-file to match the existing self-contained Edge Function style; no `_shared/` module introduced for a 6-line helper. Early-reject on empty secret preserved so the 401 still fires when the env var is unset.
+- ✅ **CORS dropped entirely on cron-only Edge Functions.** Removed `corsHeaders` const, OPTIONS preflight handler, and the `...corsHeaders` spread in the `json()` response helper across `refresh-jobs`, `send-match-digest`, and `prune-inactive-data`. Scope widened to include `send-match-digest` (also cron-only, same shape). pg_cron + pg_net don't preflight and don't read response CORS headers, so cron behavior is unchanged; any browser caller now fails the CORS check, which is the goal. The 6 user/webhook-callable functions (`parse-resume`, `match-jobs`, `link-employer`, `create-checkout`, `stripe-webhook`, `intelligence-feed`) keep their CORS unchanged.
+
+**§A status:** complete. §A no longer blocks Phase 11 close-out.
 
 ### B. Automated test suite (Eng hygiene 8 → 9)
 
