@@ -166,6 +166,13 @@ Deno.serve(async (req) => {
 // after storage removal succeeded, the file is already gone but the row
 // remains; subsequent runs are safe because file_path lookup will return
 // null and storage.remove([null]) is a no-op.
+// Phase 11 prep (2026-04-26): cap admin batch size at 100 ids to keep
+// the URL query Postgres builds bounded (supabase-js renders `.in()` as
+// a query string, which can hit URI-too-long with thousands of UUIDs)
+// and to keep storage.remove latency predictable. Larger cleanups can
+// be split across multiple invocations.
+const MAX_DELETE_IDS_PER_CALL = 100;
+
 async function handleDeleteByIds(
   admin: ReturnType<typeof createClient>,
   body: any,
@@ -175,6 +182,12 @@ async function handleDeleteByIds(
     : [];
   if (!ids.length) {
     return json({ error: "resume_ids must be a non-empty array of strings" }, 400);
+  }
+  if (ids.length > MAX_DELETE_IDS_PER_CALL) {
+    return json(
+      { error: `resume_ids exceeds per-call cap of ${MAX_DELETE_IDS_PER_CALL}; split into multiple invocations` },
+      400,
+    );
   }
 
   const { data: rows, error: selErr } = await admin

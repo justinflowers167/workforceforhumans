@@ -466,6 +466,58 @@ When these land, public soft-launch announcement is unblocked.
 
 ---
 
+## Phase 11 — Hardening + polish (planned 2026-04-27 → 2026-05-17)
+
+**Outcome:** The platform graduates from "operationally efficient" (Phase 10) to "operationally hardened" — review findings are closed, the biggest Eng-hygiene unlock (automated tests) is in progress, and the visible-design lens (Design 8 → 9) gets its dedicated polish pass. By the end of Phase 11 the rubric should show ≥ 9 on Eng hygiene and Design while every other lens holds steady.
+
+### A. Hygiene cleanups from the Phase 10 review (sweep)
+
+The end-of-Phase-10 review (2026-04-26, see commit log for `7ca911c`) surfaced two IMPORTANT-tier and two MEDIUM-tier items. The two IMPORTANT-tier items shipped as Phase 11 prep alongside this section's authoring; the MEDIUM-tier items are Phase 11 sprint scope.
+
+**Shipped 2026-04-26 (Phase 11 prep):**
+
+- ✅ `inferExperienceLevel` regex broadened in `refresh-jobs/index.ts` — added "supervisor" (without -y) and a separate `\bgs-?1[3-5]\b` check to catch grade-tagged titles ("GS-13 Analyst") that lack the structured JobGrade field. Senior seekers stop seeing such roles fall to `mid-level` on degraded/no-Claude paths.
+- ✅ `handleDeleteByIds` capped at 100 resume_ids per call in `prune-inactive-data/index.ts`. Returns 400 with a clear "split into multiple invocations" message above the cap. Keeps the supabase-js `.in()` URL bounded and storage.remove latency predictable.
+
+**Outstanding (Phase 11 sprint scope):**
+
+- **Constant-time secret comparison.** All three server-to-server functions (`refresh-jobs`, `send-match-digest`, `prune-inactive-data`) currently do `provided !== SECRET`, which short-circuits on first mismatch. Theoretical timing leak is dominated by network jitter at this scale, but a small `timingSafeEqual` helper applied in all three places is a worthwhile project-wide hardening pass.
+- **CORS narrowing on cron-only Edge Functions.** `Access-Control-Allow-Origin: *` on `refresh-jobs` and `prune-inactive-data` is permissive defense-in-depth weakness — those functions are never called from a browser. Tighten or drop CORS entirely on cron-only endpoints.
+
+### B. Automated test suite (Eng hygiene 8 → 9)
+
+The single biggest lever to push Eng hygiene to 9. Scope: Deno test files for the four Anthropic-using Edge Functions (`refresh-jobs`, `match-jobs`, `parse-resume`, `prune-inactive-data`) covering happy path + key failure modes (Claude 5xx, USAJobs empty fetch, malformed body, partial-storage-failure on prune). Mock the Anthropic SDK + supabase-js clients; no live API calls in tests. CI hook via GitHub Actions running `deno test` on every push.
+
+**Done when:** `deno test supabase/functions/` passes locally with > 70% line coverage on the four functions, and a GitHub Actions workflow blocks PRs whose tests fail.
+
+### C. Typography + spacing polish pass (Design 8 → 9)
+
+Member + employer surfaces feel functional but un-polished compared to marketing pages. Specific targets:
+
+- Type hierarchy on `member.html` (profile editor, match cards, resume review) — establish a clear scale, tighten line-heights on dense forms, add letter-spacing on uppercase labels.
+- Employer dashboard tables — currently dense rows with insufficient breathing room.
+- Form input affordances — focus rings, inline error states, helper text.
+- Match-card disclosure ("Claude's read on this match") — reduce visual weight of the open state, make the "Next edge:" label feel more like a coach's annotation.
+
+**Done when:** a side-by-side review of marketing pages vs. product pages no longer shows a visible polish gap, and the rubric Design score lands at 9.
+
+### D. Greenhouse / Lever second aggregator (conditional)
+
+Only if a month of Claude-filtered USAJobs data shows the daily output is thin or off-audience. If the founder review at end-of-Phase-10 says "feed quality is fine, just needs more volume," this becomes a real Phase 11 item; otherwise defer.
+
+### E. Framework decision revisit (re-check the triggers)
+
+Per Phase 5 framework decision (2026-04-19), revisit only when one of: page count > 20, second developer joins, Lighthouse CLS/TBT regression attributable to client-side nav injection, or a feature requires per-job/per-article real URLs. Phase 11 should re-check whether any trigger has fired; if not, defer again.
+
+### Phase 11 — explicitly out of scope (Phase 12+)
+
+- Per-job + per-KB-article real URLs (still framework-gated)
+- Mobile app
+- Real-time anything (notifications, presence)
+- Internationalization
+
+---
+
 ## Out of scope for reaching 9 (the original phase 1-5 list, kept for reference)
 
 - Per-job real URLs (replacing `jobs.html?id=<uuid>` with `jobs/<slug>.html`). Blocked on framework decision.
