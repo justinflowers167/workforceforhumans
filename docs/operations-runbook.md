@@ -1,7 +1,7 @@
 # WFH Founder Runbook
 
 **Living document. Update when reality shifts.**
-Last updated: 2026-04-25 (Phase 9 close)
+Last updated: 2026-04-26 (Phase 10 §A/§B/§D shipped)
 
 This is the systematic checklist for keeping Workforce for Humans healthy as a solo operator. If you're staring at the platform and wondering "what should I be doing," start here.
 
@@ -94,13 +94,13 @@ Total: 60 min.
 - **New employer paid via Stripe** → before manually verifying their job posting, sanity-check the company. Search the contact email's domain. If it's a free-mailer (gmail/hotmail) for a "company," that's a yellow flag — reply-and-confirm before allowing the listing live. Anti-fraud protects platform reputation.
 - **Cron failure (digest, refresh-jobs, or prune)** → §8.6 SQL to inspect the latest `net._http_response` for that job. If status_code 5xx, check edge-function logs (Supabase dashboard → Edge Functions → [function] → Logs). If 401, the secret in Vault and Edge Function env got out of sync — see §10.1 rotate.
 - **Stripe webhook 4xx/5xx** → §10.2 procedure to diagnose and retry.
-- **Anthropic budget alert / monthly spend crossing $20** → ranked levers (cheapest first):
-  1. **Add prompt caching** to `match-jobs` and `parse-resume` — the `SYSTEM_PROMPT` block is identical across calls and is the largest input chunk. Anthropic prompt caching cuts cached-input tokens to ~10% of standard rate. Single SDK config flag per call site. Highest ROI.
-  2. **Lower `PRE_FILTER_MAX`** in `refresh-jobs/index.ts` from 200 → 100 — halves Claude calls per cron run, accepts thinner candidate pool. Cron cost drops ~50%.
-  3. **Lower `CLAUDE_BATCH`** from 10 → 5 — fewer tokens per Claude call but doubles the number of calls; small token-spend reduction at the cost of more Anthropic API rate-limit pressure. Marginal.
-  4. **Switch `refresh-jobs` filter model** from `claude-sonnet-4-6` → `claude-haiku-4-5` — Haiku is ~5× cheaper on input + output. Filter is a binary keep/reject decision; Haiku usually sufficient. Single constant change in `refresh-jobs/index.ts`. Significant savings.
-  5. **Switch `parse-resume` first-pass to Haiku, escalate ambiguous to Sonnet** — Haiku for clean PDFs, Sonnet only when JSON parse fails. Bigger refactor; consider only if items 1–4 don't fit budget.
-  6. **Temporarily unset `ANTHROPIC_API_KEY`** — `refresh-jobs` falls back to pass-through (free) with a quality drop. Last-resort kill switch. Match-jobs and parse-resume will start returning errors though, so this only buys time on the cron, not a sustainable cost reduction.
+- **Anthropic budget alert / monthly spend crossing $20** → ranked levers (cheapest first). Items 1, 2, 4 shipped 2026-04-26 in Phase 10 §A; remaining items are standby:
+  1. ✅ ~~**Add prompt caching** to `match-jobs` and `parse-resume`~~ — Shipped 2026-04-26. `cache_control: { type: "ephemeral" }` markers added to the system block on all three Anthropic call sites. Honest caveat: current system prompts are below Anthropic's 1024-token minimum cacheable prefix, so the markers are no-ops today; forward-compatible when prompts grow.
+  2. ✅ ~~**Lower `PRE_FILTER_MAX`** in `refresh-jobs/index.ts` from 200 → 100~~ — Shipped 2026-04-26. Halves Claude calls per cron run from ~20 batches → ~10.
+  3. **Lower `CLAUDE_BATCH`** from 10 → 5 — fewer tokens per Claude call but doubles the number of calls; small token-spend reduction at the cost of more Anthropic API rate-limit pressure. Marginal. **Standby.**
+  4. ✅ ~~**Switch `refresh-jobs` filter model** from `claude-sonnet-4-6` → `claude-haiku-4-5`~~ — Shipped 2026-04-26. ~5× cheaper input + output. Filter is binary keep/reject; well within Haiku's range. Combined with item 2, expected cron Anthropic spend drops ~10× (~$3/mo → ~$0.30/mo).
+  5. **Switch `parse-resume` first-pass to Haiku, escalate ambiguous to Sonnet** — Haiku for clean PDFs, Sonnet only when JSON parse fails. Bigger refactor; only if items 1–4 don't fit budget. **Standby.**
+  6. **Temporarily unset `ANTHROPIC_API_KEY`** — `refresh-jobs` falls back to pass-through (free) with a quality drop. Last-resort kill switch. Match-jobs and parse-resume will start returning errors though, so this only buys time on the cron, not a sustainable cost reduction. **Standby.**
 - **Resume parse failures spike** → check `parse-resume` edge-function logs. Common cause: PDF format change at source.
 - **Magic link not arriving for a member** → check Supabase Auth logs (dashboard → Authentication → Logs) for the email; check Resend dashboard for delivery + bounce.
 - **PostHog crosses 500k events/mo** → consider sampling or move to Cloudflare Workers Analytics Engine ($5/mo, 10M events).
@@ -286,7 +286,28 @@ Then poll `net._http_response` for the row with that `id`.
 
 Drop a new file in `content/market-pulse/YYYY-MM-DD.md` (Friday's date). No deploy step beyond the normal git push — Cloudflare Pages picks it up automatically. (Note: site does not currently render these; they accrete as content for a future renderer.)
 
-### 10.6 Diagnose magic-link not arriving
+### 10.6 Targeted resume cleanup (delete by ids)
+
+When you need to remove specific stale resume rows + their backing storage objects (e.g. abandoned `pending` uploads, test data, GDPR-style targeted erasure), invoke `prune-inactive-data` with the admin mode body. `storage.protect_delete()` blocks raw `delete from storage.objects` SQL, so this function is the sanctioned path.
+
+```sql
+select net.http_post(
+  url := 'https://dbomfjqijyrkidptrrfi.supabase.co/functions/v1/prune-inactive-data',
+  headers := jsonb_build_object(
+    'Content-Type', 'application/json',
+    'x-prune-secret', (select decrypted_secret from vault.decrypted_secrets where name = 'PRUNE_SECRET' limit 1)
+  ),
+  body := jsonb_build_object(
+    'mode', 'delete_resumes_by_ids',
+    'resume_ids', jsonb_build_array('<uuid-1>', '<uuid-2>')
+  ),
+  timeout_milliseconds := 60000
+) as request_id;
+```
+
+Then poll `net._http_response` for the row with that `id`. Expected response shape: `{ok:true, mode:"delete_resumes_by_ids", requested:N, found:M, resumes_deleted:K, storage_files_deleted:L, storage_files_skipped:S}`. The Sunday cron (default mode, empty body) is unaffected — same secret, different body.
+
+### 10.7 Diagnose magic-link not arriving
 
 1. Supabase dashboard → Authentication → Logs → search the email.
 2. Resend dashboard → Emails → search the recipient.

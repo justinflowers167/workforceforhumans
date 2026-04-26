@@ -1,19 +1,27 @@
 // Phase 9 — Soft Launch, 2026-04-27+.
-// Retention-commitment enforcement.
+// Retention-commitment enforcement, plus (Phase 10 §D, 2026-04-26) an admin
+// "delete by ids" mode for ad-hoc cleanups that need to reach storage.
 //
 // Backs the language in privacy.html §6 ("pruned during periodic review" /
 // "older scores may be purged during periodic database maintenance") with an
 // actual scheduled job. Runs weekly via pg_cron (see the companion migration
 // 20260423_phase9_prune_inactive_data.sql).
 //
-// What it does:
-//   1. Delete resumes rows where updated_at < now() - 24 months AND the
-//      owning job_seekers row has had no sign-in activity in that same
-//      window (auth.users.last_sign_in_at < cutoff, or null/unlinked).
-//      Also deletes the backing storage object from the `resumes` bucket
-//      for any row we remove, so the file isn't orphaned.
-//   2. Delete match_scores rows where emailed_at < now() - 12 months.
-//   3. Log counts to console.log for observability.
+// Modes (selected by request body, both gated on x-prune-secret):
+//   - default (cron path): no body, or {"mode":"auto"}. Retention sweep —
+//       1. Delete resumes rows where updated_at < now() - 24 months AND the
+//          owning job_seekers row has had no sign-in activity in that same
+//          window (auth.users.last_sign_in_at < cutoff, or null/unlinked).
+//          Also deletes the backing storage object from the `resumes` bucket
+//          for any row we remove, so the file isn't orphaned.
+//       2. Delete match_scores rows where emailed_at < now() - 12 months.
+//       3. Log counts to console.log for observability.
+//   - {"mode":"delete_resumes_by_ids","resume_ids":[...]}: targeted cleanup.
+//       Looks up file_path for each id, removes the storage object via the
+//       admin storage API (storage.protect_delete() blocks raw SQL deletes
+//       of storage.objects, so this is the sanctioned path), then deletes
+//       the DB rows. Used for one-off founder-driven cleanups (stale
+//       pending uploads, test data).
 //
 // Authenticated server-to-server via the x-prune-secret header — same shape
 // as refresh-jobs and send-match-digest. PRUNE_SECRET is kept in vault.
@@ -45,8 +53,24 @@ Deno.serve(async (req) => {
   const provided = req.headers.get("x-prune-secret") || "";
   if (!PRUNE_SECRET || provided !== PRUNE_SECRET) return json({ error: "unauthorized" }, 401);
 
+  // Body is optional. The cron sends `{}`; admin invocations send
+  // `{"mode":"delete_resumes_by_ids","resume_ids":[...]}`. Anything else
+  // (or no body) falls through to the default retention sweep.
+  let body: any = {};
+  try {
+    const text = await req.text();
+    if (text && text.trim().length) body = JSON.parse(text);
+  } catch {
+    // Malformed JSON — treat as default mode rather than 400ing the cron.
+    body = {};
+  }
+
   try {
     const admin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+
+    if (body?.mode === "delete_resumes_by_ids") {
+      return await handleDeleteByIds(admin, body);
+    }
 
     // Calendar-month cutoffs so the code matches the documented "24 months" /
     // "12 months" commitments in privacy.html §6 — 30-day arithmetic drifts
@@ -135,6 +159,71 @@ Deno.serve(async (req) => {
     return json({ error: "Prune failed. Please try again." }, 500);
   }
 });
+
+// Phase 10 §D (2026-04-26): targeted resume cleanup. Same auth as the cron
+// path; the gate is the request body's `mode` field. Atomic in spirit —
+// storage delete first (best-effort), then DB rows. If the DB delete fails
+// after storage removal succeeded, the file is already gone but the row
+// remains; subsequent runs are safe because file_path lookup will return
+// null and storage.remove([null]) is a no-op.
+async function handleDeleteByIds(
+  admin: ReturnType<typeof createClient>,
+  body: any,
+): Promise<Response> {
+  const ids: string[] = Array.isArray(body?.resume_ids)
+    ? body.resume_ids.filter((x: unknown): x is string => typeof x === "string" && x.length > 0)
+    : [];
+  if (!ids.length) {
+    return json({ error: "resume_ids must be a non-empty array of strings" }, 400);
+  }
+
+  const { data: rows, error: selErr } = await admin
+    .from("resumes")
+    .select("id, file_path")
+    .in("id", ids);
+  if (selErr) {
+    console.error("delete_resumes_by_ids select error:", selErr);
+    return json({ error: "lookup failed" }, 500);
+  }
+
+  const paths = (rows || [])
+    .map((r: any) => r.file_path)
+    .filter((p: unknown): p is string => typeof p === "string" && p.length > 0);
+
+  let storageDeleted = 0;
+  let storageSkipped = 0;
+  if (paths.length) {
+    const { data: removed, error: sErr } = await admin.storage.from("resumes").remove(paths);
+    if (sErr) {
+      console.error("delete_resumes_by_ids storage.remove error (continuing):", sErr);
+      storageSkipped = paths.length;
+    } else {
+      storageDeleted = removed?.length || 0;
+      storageSkipped = paths.length - storageDeleted;
+    }
+  }
+
+  const { error: delErr, count } = await admin
+    .from("resumes")
+    .delete({ count: "exact" })
+    .in("id", ids);
+  if (delErr) {
+    console.error("delete_resumes_by_ids DB delete error:", delErr);
+    return json({ error: "db delete failed", storage_files_deleted: storageDeleted }, 500);
+  }
+
+  const result = {
+    ok: true,
+    mode: "delete_resumes_by_ids",
+    requested: ids.length,
+    found: rows?.length || 0,
+    resumes_deleted: count || 0,
+    storage_files_deleted: storageDeleted,
+    storage_files_skipped: storageSkipped,
+  };
+  console.log("prune-inactive-data result:", JSON.stringify(result));
+  return json(result);
+}
 
 function json(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), {
