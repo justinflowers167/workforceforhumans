@@ -162,10 +162,15 @@ Deno.serve(async (req) => {
     }
 
     const client = new Anthropic({ apiKey: ANTHROPIC_API_KEY });
+    // Prompt-cache the system block. No-op today: SYSTEM_PROMPT is below
+    // Anthropic's 1024-token minimum cacheable prefix, so the marker is
+    // ignored silently. Forward-compatible.
     const resp = await client.messages.create({
       model: MODEL,
       max_tokens: 4000,
-      system: SYSTEM_PROMPT,
+      system: [
+        { type: "text", text: SYSTEM_PROMPT, cache_control: { type: "ephemeral" } },
+      ],
       messages: [{ role: "user", content: userContent as any }],
     });
 

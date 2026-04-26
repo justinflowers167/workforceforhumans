@@ -8,10 +8,11 @@
 //   1. Fetch public roles across WFH-audience keyword buckets (federal
 //      job-series-aligned phrases like "management analyst", "contract
 //      specialist") from data.usajobs.gov. Dedup by MatchedObjectId.
-//   2. Run each candidate through claude-sonnet-4-6 as a WFH-relevance
-//      filter ({keep, reason}). Permissive on filter errors so the feed
-//      doesn't starve if Claude hiccups. If ANTHROPIC_API_KEY is not set,
-//      skip the filter entirely and take top-N by posted date.
+//   2. Run each candidate through claude-haiku-4-5 as a WFH-relevance
+//      filter ({keep, reason, experience_level}). Permissive on filter
+//      errors so the feed doesn't starve if Claude hiccups. If
+//      ANTHROPIC_API_KEY is not set, skip the filter entirely and take
+//      top-N by posted date.
 //   3. Top-N by posted date, bulk upsert via the public.upsert_usajobs RPC
 //      (security-definer; service-role only; resolves the partial unique
 //      index on (source, source_ref) where source_ref is not null).
@@ -55,7 +56,14 @@ const KEYWORD_BUCKETS = [
 const RESULTS_PER_BUCKET = 50;
 const MAX_KEEP = 50;
 const CLAUDE_BATCH = 10;
-const MODEL = "claude-sonnet-4-6";
+// Phase 10 §A3 (2026-04-26): Haiku 4.5 for the relevance filter. The decision
+// is binary keep/reject with a tightly-structured JSON output — well within
+// Haiku's range. ~5× cheaper than Sonnet 4.6 on input + output. Combined with
+// the PRE_FILTER_MAX cut from 200 → 100 (§A2), expected cron Anthropic spend
+// drops ~10× (~$3/mo → ~$0.30/mo). match-jobs and parse-resume stay on Sonnet
+// 4.6 — their output quality bar (member-facing prose, structured resume
+// parse) is too high to risk a model swap.
+const MODEL = "claude-haiku-4-5";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -65,13 +73,18 @@ const corsHeaders = {
 const RELEVANCE_PROMPT = `You are a relevance filter for Workforce for Humans — a platform serving displaced workers and career changers (people affected by layoffs, AI/automation displacement, or mid-career transitions).
 
 For each job, decide if it's a realistic fit for that audience:
-- Entry-to-mid-level (NOT requiring PhD, NOT requiring decade-plus specialized experience).
+- Entry-to-mid-level (NOT requiring PhD, NOT requiring decade-plus specialized experience). Senior roles ARE in scope when they're realistic next-step promotions for experienced career-changers — flag those as "senior" in experience_level so senior seekers see them.
 - Any work location — onsite, hybrid, or remote all qualify; the audience includes workers who will commute or relocate.
 - Skills-based hiring friendly (credential-gated roles like "must hold current TS/SCI clearance" are OK — the audience includes veterans and federal workers).
 - Real foothold — a genuine opening someone could apply to, not a placeholder posting.
 
+For each kept job, also tag experience_level:
+- "entry-level": no prior professional experience required, GS-1 through GS-7 equivalent, or titles like "intern", "trainee", "associate", "assistant".
+- "mid-level": 2-7 years experience, GS-9 through GS-12 equivalent, generalist titles like "specialist", "analyst", "coordinator" without supervisory language.
+- "senior": 7+ years, GS-13+, or titles containing "supervisory", "senior", "lead", "principal", "manager", "director", "chief", "head".
+
 Return ONLY valid JSON in this exact shape:
-{"decisions":[{"job_id":"<id>","keep":true|false,"reason":"<8-15 word reason>"}]}
+{"decisions":[{"job_id":"<id>","keep":true|false,"reason":"<8-15 word reason>","experience_level":"entry-level"|"mid-level"|"senior"}]}
 
 No prose before or after the JSON.`;
 
@@ -105,14 +118,29 @@ Deno.serve(async (req) => {
 
     // 2. Dedup by MatchedObjectId, normalize to jobs-row shape.
     const seen = new Set<string>();
-    const candidates: any[] = [];
+    const idDeduped: any[] = [];
     for (const item of raw) {
       const id = String(item?.MatchedObjectId || "");
       if (!id || seen.has(id)) continue;
       seen.add(id);
       const norm = normalizeUSAJobsItem(item);
-      if (norm) candidates.push(norm);
+      if (norm) idDeduped.push(norm);
     }
+
+    // 2a. Phase 10 §B2 (2026-04-26): secondary dedup on (title, city, state).
+    // USAJobs frequently publishes the same role under multiple
+    // MatchedObjectIds (multi-vacancy postings, regional re-listings). ID
+    // dedup misses these; the founder saw multiple "Management Analyst,
+    // Washington DC" duplicates on jobs.html during the 2026-04-25 review.
+    // Cheap pass; preserves the first occurrence (which by construction is
+    // from the earliest-listed bucket).
+    const seenKey = new Set<string>();
+    const candidates = idDeduped.filter((c) => {
+      const key = `${(c.title || "").toLowerCase().trim()}|${c.location_city || ""}|${c.location_state || ""}`;
+      if (seenKey.has(key)) return false;
+      seenKey.add(key);
+      return true;
+    });
 
     const considered = candidates.length;
     if (considered === 0) {
@@ -122,10 +150,10 @@ Deno.serve(async (req) => {
     // 2b. Trim candidate pool by posted_at desc before the Claude filter.
     // Sequential Claude on the full ~380-row pool blew past Supabase's
     // ~150s edge gateway limit (135s observed). We only keep top-50 by
-    // date downstream anyway, so the freshest 200 already overwhelmingly
-    // contains the survivors — trimming costs ~no quality, saves ~50% of
-    // Claude calls + token spend.
-    const PRE_FILTER_MAX = 200;
+    // date downstream anyway, so the freshest 100 already overwhelmingly
+    // contains the survivors. Phase 10 §A2 (2026-04-26): tightened from
+    // 200 → 100; halves Claude calls per cron run from ~20 batches → ~10.
+    const PRE_FILTER_MAX = 100;
     const candidatesForFilter = [...candidates]
       .sort((a, b) => String(b.posted_at || "").localeCompare(String(a.posted_at || "")))
       .slice(0, PRE_FILTER_MAX);
@@ -134,7 +162,13 @@ Deno.serve(async (req) => {
     // candidates through. Permissive fallback on Claude error (an empty
     // feed is worse than a degraded one). Track failure rate so the
     // response surfaces `degraded: true` when monitoring should alert.
-    const keeps = new Set<string>();
+    //
+    // Phase 10 §B1 (2026-04-26): filterBatch now returns id → experience_level
+    // alongside keep/reject. We apply the Claude-derived level over the
+    // title/grade-derived value before upsert, fixing the prior behaviour
+    // where USAJobs rows missing JobGrade defaulted to "entry-level" and
+    // mis-tagged supervisory/senior roles for senior seekers.
+    const keeps = new Map<string, string | null>();
     let totalBatches = 0;
     let failedBatches = 0;
     if (useClaudeFilter && anthropic) {
@@ -156,18 +190,20 @@ Deno.serve(async (req) => {
         );
         results.forEach((r, idx) => {
           if (r.status === "fulfilled") {
-            for (const id of r.value) keeps.add(id);
+            for (const [id, level] of r.value) keeps.set(id, level);
           } else {
             failedBatches += 1;
             console.error("Claude filter batch failed; keeping batch verbatim:", r.reason);
-            for (const j of chunk[idx]) keeps.add(j.source_ref);
+            // On batch failure, keep the rows but trust the title/grade-
+            // derived level rather than fabricating one.
+            for (const j of chunk[idx]) keeps.set(j.source_ref, null);
           }
         });
       }
     } else {
       // No Claude key — unfiltered pass-through. All candidates are kept;
       // the top-N-by-date cap below keeps the daily output bounded to 50.
-      for (const c of candidates) keeps.add(c.source_ref);
+      for (const c of candidates) keeps.set(c.source_ref, null);
       console.log("refresh-jobs: ANTHROPIC_API_KEY not set, skipping relevance filter");
     }
     const failureRate = totalBatches ? failedBatches / totalBatches : 0;
@@ -175,8 +211,17 @@ Deno.serve(async (req) => {
     console.log(`refresh-jobs filter: mode=${useClaudeFilter ? "claude" : "none"} batches=${totalBatches} failed=${failedBatches} rate=${failureRate.toFixed(2)} degraded=${degraded}`);
 
     // 4. Keep the filter decisions, sort by posted date desc, cap at MAX_KEEP.
+    // Override experience_level with Claude's per-row tag when available.
+    const VALID_LEVELS = new Set(["entry-level", "mid-level", "senior"]);
     const kept = candidates
       .filter((c) => keeps.has(c.source_ref))
+      .map((c) => {
+        const claudeLevel = keeps.get(c.source_ref);
+        if (claudeLevel && VALID_LEVELS.has(claudeLevel)) {
+          return { ...c, experience_level: claudeLevel };
+        }
+        return c;
+      })
       .sort((a, b) => String(b.posted_at || "").localeCompare(String(a.posted_at || "")))
       .slice(0, MAX_KEEP);
 
@@ -280,7 +325,7 @@ function normalizeUSAJobsItem(item: any): any | null {
     location_state: loc.CountrySubDivisionCode || null,
     is_remote: isRemote,
     employment_type: employmentType,
-    experience_level: inferExperienceLevel(d?.JobGrade),
+    experience_level: inferExperienceLevel(d?.JobGrade, title),
     pay_type: payType,
     pay_min: Number.isFinite(payMinRaw) ? payMinRaw : null,
     pay_max: Number.isFinite(payMaxRaw) ? payMaxRaw : null,
@@ -290,12 +335,11 @@ function normalizeUSAJobsItem(item: any): any | null {
   };
 }
 
-function inferExperienceLevel(grades: unknown): string {
+function inferExperienceLevel(grades: unknown, title: string): string {
   // USAJobs grades: GS (General Schedule) 1-15, FV (FAA), FG variants, etc.
   // Career-ladder postings list MULTIPLE grades like ["7","9","11"] — the
   // entry point (minimum) is the honest experience level to show a WFH
-  // audience member, not the ceiling. Fall back to entry-level when we
-  // can't parse (makes the filter generous).
+  // audience member, not the ceiling.
   const arr = Array.isArray(grades) ? grades : (grades ? [grades] : []);
   const nums = arr
     .map((g: any) => {
@@ -304,14 +348,33 @@ function inferExperienceLevel(grades: unknown): string {
       return m ? parseInt(m[1], 10) : NaN;
     })
     .filter((n: number) => Number.isFinite(n));
-  if (!nums.length) return "entry-level";
-  const n = Math.min(...nums);
-  if (n <= 7) return "entry-level";
-  if (n <= 12) return "mid-level";
-  return "senior";
+  if (nums.length) {
+    const n = Math.min(...nums);
+    if (n <= 7) return "entry-level";
+    if (n <= 12) return "mid-level";
+    return "senior";
+  }
+  // Phase 10 §B1 (2026-04-26): when JobGrade is missing or unparseable
+  // (USAJobs frequently omits it), fall back to title-keyword inference
+  // rather than always returning "entry-level". The prior default mis-
+  // tagged supervisory/senior roles ("Supervisory Contract Specialist")
+  // and hid them from senior seekers. The Claude relevance filter also
+  // returns experience_level per kept row and overrides this value
+  // downstream — this regex is the safety net for when Claude is
+  // unavailable (no key, or batch failure).
+  const t = String(title || "").toLowerCase();
+  if (/\b(supervisory|senior|sr\.?|lead|principal|manager|director|chief|head)\b/.test(t)) {
+    return "senior";
+  }
+  if (/\b(associate|assistant|entry|intern|trainee|junior|jr\.?)\b/.test(t)) {
+    return "entry-level";
+  }
+  // Honest default for federal generalist roles without a grade or
+  // title signal — most are 0301/0343/1102 mid-tier listings.
+  return "mid-level";
 }
 
-async function filterBatch(client: Anthropic, batch: any[]): Promise<Set<string>> {
+async function filterBatch(client: Anthropic, batch: any[]): Promise<Map<string, string | null>> {
   const payload = batch.map((j) => ({
     job_id: j.source_ref,
     title: j.title,
@@ -320,25 +383,35 @@ async function filterBatch(client: Anthropic, batch: any[]): Promise<Set<string>
     experience_level: j.experience_level,
     summary: String(j.description || "").slice(0, 500),
   }));
+  // Phase 10 §A1 (2026-04-26): mark RELEVANCE_PROMPT for prompt caching.
+  // This is the highest-volume call site (~10 batches per cron run, all
+  // within seconds). No-op today because the prompt is below Anthropic's
+  // 1024-token minimum cacheable prefix, but forward-compatible if the
+  // prompt grows.
   const resp = await client.messages.create({
     model: MODEL,
     max_tokens: 3000,
-    system: RELEVANCE_PROMPT,
+    system: [
+      { type: "text", text: RELEVANCE_PROMPT, cache_control: { type: "ephemeral" } },
+    ],
     messages: [{ role: "user", content: JSON.stringify({ jobs: payload }) }],
   });
   const raw = resp.content.map((b: any) => (b.type === "text" ? b.text : "")).join("");
   const s = raw.indexOf("{");
   const e = raw.lastIndexOf("}");
-  if (s < 0 || e < 0) return new Set();
+  if (s < 0 || e < 0) return new Map();
   let parsed: any;
   try {
     parsed = JSON.parse(raw.slice(s, e + 1));
   } catch {
-    return new Set();
+    return new Map();
   }
-  const keeps = new Set<string>();
+  const keeps = new Map<string, string | null>();
   for (const d of parsed?.decisions || []) {
-    if (d?.keep) keeps.add(String(d.job_id));
+    if (d?.keep) {
+      const level = typeof d.experience_level === "string" ? d.experience_level : null;
+      keeps.set(String(d.job_id), level);
+    }
   }
   return keeps;
 }

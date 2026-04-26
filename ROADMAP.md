@@ -425,10 +425,14 @@ Founder hit budget pressure on Anthropic mid-Phase-9 ("running over budget"). Si
 
 **Done when:** monthly Anthropic burn drops ≥ 30% with no measurable filter-quality regression on a 50-row sample review.
 
+**Shipped (2026-04-26):** Levers 1–3 closed in this PR. (1) `cache_control: { type: "ephemeral" }` markers added to the system block on all three Anthropic call sites (`match-jobs`, `parse-resume`, `refresh-jobs`). Honest caveat: current system prompts are below Anthropic's 1024-token minimum cacheable prefix (rough estimates: match-jobs ~475 tokens, parse-resume ~600, refresh-jobs ~225) — Anthropic silently ignores the marker today, so caching is a no-op. The change is forward-compatible: when match-jobs evolves toward the career-copilot direction and prompts cross 1024 tokens, caching activates without further code change. (2) `PRE_FILTER_MAX` 200 → 100 — halves Claude calls per cron run from ~20 batches → ~10. (3) `refresh-jobs` filter model Sonnet 4.6 → Haiku 4.5; ~5× cheaper input/output. Combined (2)+(3) deliver the bulk of the spend cut today (~10× on the cron). Levers 4–5 left as standby; not needed if Haiku quality holds. Quality verification gate (50-row sample eyeball post-deploy) still pending the founder's review of the next cron run.
+
 ### B. Matching quality fixes surfaced 2026-04-25
 
 - **`experience_level` defaulting bug** — USAJobs API often omits `JobGrade`; `inferExperienceLevel()` falls back to `entry-level`, mis-tagging mid/senior roles ("Supervisory Contract Specialist", "Senior Budget Analyst") and hiding them from senior-profile seekers. Founder's own profile (senior IT leader) saw 87 mis-tagged entry roles instead of the actual mid/senior pool. Fix: stricter inference + Claude post-tag check during the existing relevance-filter pass.
 - **Near-duplicate USAJobs postings** — same role published under two `MatchedObjectId`s slips through ID-based dedup. Fix: secondary dedup on `(title, location_city, location_state)` after the ID dedup.
+
+**Shipped (2026-04-26):** Both fixes landed in the same PR as §A. (B1) `inferExperienceLevel(grades, title)` now takes the title as a second arg; when grades are missing/unparseable it falls back to a regex match on supervisory/senior/lead/principal/manager/director/chief/head → `senior`, associate/assistant/entry/intern/trainee/junior → `entry-level`, otherwise `mid-level` (the honest default for federal generalist 0301/0343/1102 listings). On top of that, `RELEVANCE_PROMPT` now requires Claude to return `experience_level` per kept row, and the main loop overrides the title/grade-derived value with Claude's tag before the upsert. (B2) Secondary dedup on `(title.toLowerCase(), location_city, location_state)` runs immediately after the existing `MatchedObjectId` dedup. Cheap pass; preserves the first occurrence. Verification (founder eye on jobs.html after the next cron) still pending.
 
 ### C. Security / perf advisor closeout
 
@@ -439,6 +443,8 @@ Founder hit budget pressure on Anthropic mid-Phase-9 ("running over budget"). Si
 ### D. Storage cleanup pattern
 
 When manually deleting `resumes` rows (one-off cleanup like the Phase 9 close did with 3 stale `pending` rows), `storage.protect_delete()` blocks direct `storage.objects` deletion. Phase 10 work: extend `prune-inactive-data` with an admin-callable "delete by ids" mode that uses `admin.storage.from(...).remove(paths)` — gives any future cleanup a clean path that handles both DB row + storage object atomically.
+
+**Shipped (2026-04-26):** Body-driven mode dispatch in `prune-inactive-data`. The Sunday cron continues to fire with empty body and falls through to the existing retention sweep; admin invocations send `{"mode":"delete_resumes_by_ids","resume_ids":[...]}` and same-secret-gated. Implementation: lookup `file_path` per id, `admin.storage.from("resumes").remove(paths)` first (best-effort), then `delete from resumes where id in (ids)`. Returns `{ok, mode, requested, found, resumes_deleted, storage_files_deleted, storage_files_skipped}`. Smoke test (one throwaway resume_id) pending post-deploy.
 
 ### E. Soft-launch business gates (founder-owned)
 
