@@ -375,6 +375,18 @@ Skills with `mapped_count = 0` won't drive any training recommendation — fill 
 3. If Supabase shows the link sent but Resend has no row, the Resend integration in Supabase is broken — check Supabase Auth → Email Templates → Provider settings.
 4. If both show sent, ask the user to check spam + the "Promotions" Gmail tab.
 
+### 10.9 Rebind an account email (e.g. switchover to admin@workforceforhumans.com)
+
+The `auth.users.email` column is the magic-link recipient. Most app-side identifiers (`job_seekers.auth_user_id`, `employers.auth_user_id`, kb-admin allowlist via JWT email claim) hang off either the auth user UUID or the email address itself — so changing an email address has effects in two places:
+
+1. **Code/data-side** (covered by SQL — the 2026-04-27 admin-email switchover migration is the concrete example). Update any DB row that stores the email as a string, e.g. `employers.contact_email`, `kb_editor_emails.email`. The `auth_user_id` foreign key relationships do NOT need updating because they point to the UUID, not the email.
+2. **Auth-side** (dashboard-driven, this section). Pick one path:
+   - **Rename the existing auth user** (preserves the auth_user_id, magic-link history, RLS bindings). Supabase dashboard → Authentication → Users → click the row → "Edit email" → save. The UUID stays put; the next magic-link sign-in uses the new address.
+   - **Delete the old auth user, create a new one** (clean slate, but loses the auth_user_id links). Only do this if you're OK re-linking every `job_seekers` / `employers` row that pointed at the old UUID. After deletion: sign in once at the new address to provision the new auth.users row, grab the new UUID from the dashboard, then `UPDATE` the dependent rows: `update public.employers set auth_user_id = '<new-uuid>' where id = '<employer-id>'`.
+3. **Sanity-check the kb_editor_emails JWT path.** kb-admin.html and the RLS policy both compare `lower(auth.jwt() ->> 'email')` to `lower(email)` in the allowlist table. If you renamed an auth user (path 1) and the new email is in the allowlist, KB write access works on next sign-in. If you deleted + recreated (path 2), the new auth user only gets KB access if the new email is in `kb_editor_emails`.
+
+For the 2026-04-27 admin-email switchover specifically, founder ran the SQL migration (kb_editor_emails replace + employers.contact_email update) and chose path 1 (rename) for both `justinflowers2@gmail.com` and `justinflowers@hotmail.com` → `admin@workforceforhumans.com` in the Supabase Auth dashboard. *Caveat:* if both old auth users get renamed to the same admin@ address, Supabase rejects the second rename (auth.users.email is unique) — delete one of the duplicate auth users first, then rename the other.
+
 ---
 
 ## 11. When to revise this runbook
