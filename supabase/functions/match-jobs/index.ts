@@ -31,7 +31,7 @@ Match this voice: direct, empathetic without saccharine, action verbs over adjec
 Field specs:
 - score: integer 0-100.
 - rationale: 2-3 sentences. Name what about THIS candidate's profile fits THIS job. Second person ("you"). Concrete, not generic. No hedging ("might", "could possibly").
-- growth_note: 1-2 sentences. The NEXT EDGE — what the candidate would sharpen into this role. Start with verbs: "Sharpening...", "Adding...", "Naming...", "A small portfolio piece in...". Never "you lack", "missing", "weakness". If the fit is already tight, name the stretch inside the role itself, not a gap in the profile.
+- growth_note: 1-2 sentences. The NEXT EDGE — what the candidate would sharpen into this role. Start with verbs: "Sharpening...", "Adding...", "Naming...", "A small portfolio piece in...". Never "you lack", "missing", "weakness". If the fit is already tight, name the stretch inside the role itself, not a gap in the profile. WHEN the job specifies ai_skills_required and the candidate's skills_have lacks one or more, the growth_note MUST name the single most-leveraged AI skill to learn first (highest reuse across the role's daily work). Don't list multiple — pick one and be specific. The platform shows curated free training for that exact skill below the match card.
 - reasons: 2-4 short tags like "skills overlap", "remote ok", "pay match".
 
 Only include jobs scoring 40 or higher. Sort descending by score. Cap at 10. Return ONLY the JSON object — no prose before or after.`;
@@ -74,6 +74,25 @@ Deno.serve(async (req) => {
       .limit(MAX_JOBS_TO_SCORE);
     if (!jobs?.length) return json({ ok: true, matches: [] });
 
+    // Phase 12 §C3: pull AI-skill labels per job so the prompt can reason
+    // about training needs. Single grouped query keyed by job_id avoids
+    // N+1 round-trips at the cost of a small in-memory grouping pass.
+    const jobIds = jobs.map((j: any) => j.id);
+    const { data: jobAiSkillRows } = await admin
+      .from("job_skills")
+      .select("job_id, skills!inner(name, is_ai_skill)")
+      .in("job_id", jobIds)
+      .eq("skills.is_ai_skill", true);
+    const aiSkillsByJob = new Map<string, string[]>();
+    for (const row of jobAiSkillRows || []) {
+      // @ts-ignore joined-row shape
+      const name = row.skills?.name;
+      if (!name) continue;
+      const arr = aiSkillsByJob.get(row.job_id) || [];
+      arr.push(name);
+      aiSkillsByJob.set(row.job_id, arr);
+    }
+
     const profilePayload = {
       headline: seeker.headline,
       summary: seeker.summary,
@@ -96,6 +115,7 @@ Deno.serve(async (req) => {
       is_remote: j.is_remote,
       employment_type: j.employment_type,
       experience_level: j.experience_level,
+      ai_skills_required: aiSkillsByJob.get(j.id) || [],
       pay: { type: j.pay_type, min: j.pay_min, max: j.pay_max },
     }));
 

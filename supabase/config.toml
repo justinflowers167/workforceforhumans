@@ -4,7 +4,10 @@ project_id = "dbomfjqijyrkidptrrfi"
 [functions.stripe-webhook]
 verify_jwt = false
 
-# Public news aggregator; invoked by cron with no user context.
+# intelligence-feed: daily pg_cron pull of RSS news + layoffs.fyi data
+# (Phase 12 §A1 added the cron schedule). Authenticated by
+# x-intelligence-feed-secret header (INTELLIGENCE_FEED_SECRET env var),
+# not user JWT.
 [functions.intelligence-feed]
 verify_jwt = false
 
@@ -21,4 +24,10 @@ verify_jwt = false
 # match_scores. Authenticated by x-prune-secret header (PRUNE_SECRET env var),
 # not user JWT.
 [functions.prune-inactive-data]
+verify_jwt = false
+
+# submit-feedback: anon-callable from the floating feedback widget injected
+# into every page. Phase 12 §B2 — gated only by basic input validation, a
+# honeypot, and Claude-driven triage. No user JWT required.
+[functions.submit-feedback]
 verify_jwt = false
