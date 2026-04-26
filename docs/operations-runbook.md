@@ -16,7 +16,7 @@ Phase 9 closed all the *code-side* items. What remains is business + content wor
 - [ ] Lawyer review of `privacy.html` + `terms.html`; remove "v1 — under legal review" banners (Phase 9 §3 — was one of the original 6 contingencies)
 - [ ] Mobile QA video on a real iPhone, save to `docs/mobile-qa-2026-MM-DD.mp4` (Phase 9 §4 — runbook §5 lists the 5 golden paths, see also `docs/mobile-qa-checklist.md`)
 - [ ] 3 real testimonials OR 1 verified employer logo on `index.html` — populate `WFH_TESTIMONIALS` / `WFH_EMPLOYER_LOGOS` arrays (Phase 9 §2 — code scaffold already in place)
-- [ ] Real founder headshot replacing silhouette in `about.html` (drop file in `/assets/`, swap `<img>` src)
+- [x] ~~Real founder headshot replacing silhouette in `about.html`~~ — Shipped 2026-04-26. `/assets/founder-justin.jpg` (256×256, 13 KB JPG q88, downscaled from a 1254×1254 / 2 MB PNG drop).
 - [ ] (Bonus) Capture Lighthouse re-run on 5 indexable pages (target SEO + A11y ≥ 95) — see §5 quarterly. Spot-check before announcement.
 - [ ] (1-click, founder-owned) Enable Supabase Auth leaked-password protection: https://supabase.com/dashboard/project/dbomfjqijyrkidptrrfi/auth/providers — last open advisor finding from the 2026-04-25 sweep. Phase 10 §C migrations closed the other two on the same day (RLS perf rewrite + newsletter UPDATE narrowing).
 

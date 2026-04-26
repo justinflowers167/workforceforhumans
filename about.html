@@ -44,8 +44,6 @@ main{max-width:760px;margin:0 auto;padding:3rem 5vw 4rem;}
 .about-hero{display:flex;gap:1.5rem;align-items:center;margin-bottom:2.5rem;flex-wrap:wrap;}
 .about-photo{width:128px;height:128px;border-radius:50%;background:var(--cream);border:1px solid var(--stone);overflow:hidden;flex-shrink:0;position:relative;display:flex;align-items:center;justify-content:center;}
 .about-photo img{width:100%;height:100%;object-fit:cover;display:block;}
-.about-photo-placeholder{font-size:2.4rem;color:var(--mist);line-height:1;user-select:none;}
-.about-photo-caption{position:absolute;bottom:-20px;left:0;right:0;text-align:center;font-size:0.68rem;color:var(--slate);letter-spacing:0.04em;text-transform:uppercase;}
 .about-heading h1{font-family:var(--font-d);font-size:clamp(1.6rem,3.5vw,2.2rem);margin-bottom:0.3rem;line-height:1.15;}
 .about-heading .tag{color:var(--slate);font-size:0.95rem;line-height:1.4;}
 .about-body{font-size:1.02rem;line-height:1.7;color:var(--navy);}
@@ -82,9 +80,8 @@ main{max-width:760px;margin:0 auto;padding:3rem 5vw 4rem;}
 <main id="main">
 
 <div class="about-hero">
-  <div class="about-photo" aria-label="Photo of Justin Flowers — placeholder">
-    <span class="about-photo-placeholder" aria-hidden="true">JF</span>
-    <span class="about-photo-caption">Photo coming</span>
+  <div class="about-photo">
+    <img src="/assets/founder-justin.jpg" alt="Justin Flowers, founder of Workforce for Humans" width="128" height="128" loading="lazy" decoding="async"/>
   </div>
   <div class="about-heading">
     <h1>Justin Flowers</h1>
