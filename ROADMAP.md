@@ -559,15 +559,6 @@ The Anthropic-era is the platform's reason for existing, but the job → trainin
 - `member.html` match cards: under the existing Phase 7 disclosure ("Claude's read on this match"), a new "Recommended training to grow into this role" panel renders up to 3 `training_resources` rows whose skill IDs intersect the job's AI skills, sorted by `recommend_count` desc then `view_count` desc, with free/paid chips and a "Start →" link.
 - Founder follow-up: hand-curate `training_skills` rows mapping the existing 50+ training_resources to the seeded AI skills (~30 min of SQL). Documented in runbook §10.7.
 
-### D. Phase 11/12 reconciliation (2026-04-27, audit-driven)
-
-Running Phase 11 and Phase 12 as parallel tracks left two collisions that a launch-readiness audit caught before merge to master:
-
-1. **`intelligence-feed` was excluded from Phase 11 §A's CORS-drop / timing-safe-compare sweep** because at sweep time it was still a "user/webhook-callable" function. Phase 12 §A turned it into a cron-only function (added `INTELLIGENCE_FEED_SECRET` header auth) without re-running the §A hardening on it. Closed: `intelligence-feed/index.ts` now mirrors the post-Phase-11 shape — no `corsHeaders` const, no `OPTIONS` handler, no `Access-Control-Allow-Origin` on responses; secret check uses the same inlined `timingSafeEqual`.
-2. **`submit-feedback` shipped with no rate limit despite the migration comment claiming "rate limiting is handled at the Edge Function layer (per-IP throttle)".** Anonymous endpoint with a Claude Haiku call per submission was a real Anthropic-budget abuse vector. Closed: new migration `20260427_phase12_feedback_rate_limit.sql` adds the `feedback_rate_limits` table (SHA-256-hashed IP, service-role-only RLS); `submit-feedback` now extracts client IP from `cf-connecting-ip` (with `x-forwarded-for` fallback), hashes it, and rejects with 429 after 5 submissions per 60s. The check fires *before* the Claude call so the cap actually bounds Anthropic spend.
-
-Also: `CLAUDE.md` "Conventions to follow" extended with the cron-only-no-CORS rule so future agents do not silently regress this. The 6 user/webhook-callable functions (`parse-resume`, `match-jobs`, `link-employer`, `create-checkout`, `stripe-webhook`, `submit-feedback`) keep their CORS unchanged.
-
 ### Phase 12 — explicitly out of scope (Phase 13+)
 
 - WARN Act state-by-state real scrapers (real engineering — separate phase)

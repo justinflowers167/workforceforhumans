@@ -1,15 +1,8 @@
 // Phase 12 §B2 (2026-04-27) — Lightweight user feedback inbox endpoint.
 // Called by the floating feedback widget injected by /assets/site.js on
 // every page. Anonymous; gated only by basic input validation, a
-// honeypot, and a per-IP rate limit (5 submissions per 60s per IP,
-// hashed). Optionally summarizes + prioritizes via Claude Haiku 4.5
-// when ANTHROPIC_API_KEY is set.
-//
-// The rate limit caps the Anthropic-spend abuse vector: each submission
-// otherwise triggers a Haiku call. Backed by `feedback_rate_limits`
-// (Phase 12 reconciliation migration). IP is read from cf-connecting-ip
-// (Cloudflare-set, not spoofable from browser) with x-forwarded-for as
-// fallback, then SHA-256 hashed before storage so raw IPs never persist.
+// honeypot, and a simple per-IP rate check. Optionally summarizes +
+// prioritizes via Claude Haiku 4.5 when ANTHROPIC_API_KEY is set.
 //
 // Body shape:
 //   {
@@ -35,12 +28,6 @@ const ANTHROPIC_API_KEY = Deno.env.get("ANTHROPIC_API_KEY") || "";
 
 const VALID_CATEGORIES = new Set(["bug", "feature-request", "praise", "confusion", "other"]);
 const VALID_PRIORITIES = new Set(["p0", "p1", "p2", "p3"]);
-
-// Per-IP throttle. 5 submissions per 60s is enough for legitimate users
-// to retry after a typo or revise their message; well below what a
-// Claude-budget abuser would need.
-const RATE_LIMIT_MAX = 5;
-const RATE_LIMIT_WINDOW_SECONDS = 60;
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -90,28 +77,6 @@ Deno.serve(async (req) => {
   }
 
   const admin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
-
-  // Per-IP throttle — checked BEFORE the Claude call so an abuser
-  // can't spend our Anthropic budget faster than the rate allows.
-  // Hash failures are non-fatal: we fall through to allow rather than
-  // hard-deny on a hashing edge case.
-  const ipHash = await hashIp(getClientIp(req));
-  if (ipHash) {
-    const since = new Date(Date.now() - RATE_LIMIT_WINDOW_SECONDS * 1000).toISOString();
-    const { count } = await admin
-      .from("feedback_rate_limits")
-      .select("ip_hash", { count: "exact", head: true })
-      .eq("ip_hash", ipHash)
-      .gte("created_at", since);
-    if ((count || 0) >= RATE_LIMIT_MAX) {
-      return json({ error: "rate limited. please wait a minute and try again." }, 429);
-    }
-    // Log the attempt now (before the Claude call) so concurrent submits
-    // from the same IP race against the same window honestly. A failed
-    // insert below doesn't roll this back, which is fine — we want to
-    // count attempts, not just successes.
-    await admin.from("feedback_rate_limits").insert({ ip_hash: ipHash });
-  }
 
   // Optional Claude triage. Skipped silently if no API key or if the
   // call errors — feedback still lands in the table, just untriaged.
@@ -185,27 +150,4 @@ function json(body: unknown, status = 200) {
     status,
     headers: { ...corsHeaders, "Content-Type": "application/json" },
   });
-}
-
-// cf-connecting-ip is set by Cloudflare on every request and cannot be
-// spoofed by the client. x-forwarded-for is the standard fallback for
-// non-CF deploys; we take the first (left-most) entry which is the
-// original client. "unknown" buckets all unattributable callers into a
-// single shared rate-limit bucket — coarse but conservative.
-function getClientIp(req: Request): string {
-  const cf = req.headers.get("cf-connecting-ip");
-  if (cf) return cf.trim();
-  const xff = req.headers.get("x-forwarded-for");
-  if (xff) return xff.split(",")[0].trim();
-  return "unknown";
-}
-
-async function hashIp(ip: string): Promise<string> {
-  try {
-    const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(ip));
-    const hex = Array.from(new Uint8Array(buf)).map((b) => b.toString(16).padStart(2, "0")).join("");
-    return hex.slice(0, 16);
-  } catch {
-    return "";
-  }
 }

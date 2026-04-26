@@ -9,13 +9,6 @@
 //   - is_positive auto-tagging for hiring/training/opportunity items.
 //   - WARN Act stub deleted (was logging "Would check" with no action
 //     for ~3 weeks; real state-by-state scrapers are a separate task).
-//
-// Phase 12 reconciliation (2026-04-27): now that this is cron-only
-// (Phase 12 added the secret header), Phase 11 §A hardening applies —
-// CORS dropped entirely (pg_cron + pg_net don't preflight; any browser
-// caller now fails the CORS check, which is the goal) and the secret
-// check uses constant-time `timingSafeEqual`. Mirrors the post-Phase-11
-// shape of refresh-jobs / send-match-digest / prune-inactive-data.
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
@@ -26,8 +19,11 @@ const db = createClient(supabaseUrl, supabaseServiceKey);
 const OPENAI_API_KEY = Deno.env.get("OPENAI_API_KEY") || "";
 const INTELLIGENCE_FEED_SECRET = Deno.env.get("INTELLIGENCE_FEED_SECRET") || "";
 
-// No CORS — cron-only server-to-server endpoint. Browser callers must be rejected,
-// so we omit Access-Control-Allow-Origin entirely and let the browser's CORS check fail.
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-intelligence-feed-secret",
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
+};
 
 Deno.serve(async (req) => {
   // Cron-only auth. Constant-time compare against the pre-shared secret.
@@ -36,6 +32,16 @@ Deno.serve(async (req) => {
     return new Response(JSON.stringify({ error: "unauthorized" }), {
       status: 401,
       headers: { "Content-Type": "application/json" },
+    });
+  }
+
+  // Phase 12: server-to-server auth. Cron fires with the pre-shared
+  // secret; ad-hoc invocations must include the same header.
+  const provided = req.headers.get("x-intelligence-feed-secret") || "";
+  if (!INTELLIGENCE_FEED_SECRET || provided !== INTELLIGENCE_FEED_SECRET) {
+    return new Response(JSON.stringify({ error: "unauthorized" }), {
+      status: 401,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }
 
@@ -79,14 +85,6 @@ Deno.serve(async (req) => {
     });
   }
 });
-
-// Constant-time compare for shared-secret header auth — avoids timing side-channel.
-function timingSafeEqual(a: string, b: string): boolean {
-  if (a.length !== b.length) return false;
-  let diff = 0;
-  for (let i = 0; i < a.length; i++) diff |= a.charCodeAt(i) ^ b.charCodeAt(i);
-  return diff === 0;
-}
 
 // ─── RSS feeds ────────────────────────────────────────────────────────
 //
