@@ -559,6 +559,17 @@ The Anthropic-era is the platform's reason for existing, but the job → trainin
 - `member.html` match cards: under the existing Phase 7 disclosure ("Claude's read on this match"), a new "Recommended training to grow into this role" panel renders up to 3 `training_resources` rows whose skill IDs intersect the job's AI skills, sorted by `recommend_count` desc then `view_count` desc, with free/paid chips and a "Start →" link.
 - Founder follow-up: hand-curate `training_skills` rows mapping the existing 50+ training_resources to the seeded AI skills (~30 min of SQL). Documented in runbook §10.7.
 
+### D. Phase 11/12 reconciliation (audit-driven, 2026-04-27)
+
+Phases 11 and 12 ran as parallel tracks and a launch-readiness audit caught two collisions before final merge:
+
+1. **`intelligence-feed` was excluded from Phase 11 §A's CORS-drop / timing-safe-compare sweep** — at sweep time it was still considered "user/webhook-callable". Phase 12 §A turned it cron-only by adding `INTELLIGENCE_FEED_SECRET` header auth, but did not re-run the §A hardening. **Closed:** `intelligence-feed/index.ts` now mirrors the post-Phase-11 shape (no `corsHeaders`, no `OPTIONS`, no `Access-Control-Allow-Origin` on responses; secret check via inlined `timingSafeEqual`).
+2. **`submit-feedback` shipped without the rate limit its own migration comment claimed to back.** Anonymous public endpoint with a Claude Haiku call per submission is a real Anthropic-budget abuse vector. **Closed:** new migration `20260427_phase12_feedback_rate_limit.sql` adds the `feedback_rate_limits` table (SHA-256-hashed IP, service-role-only RLS); `submit-feedback` reads `cf-connecting-ip` (with `x-forwarded-for` fallback), hashes it, and rejects with 429 after 5 submissions per 60s. The check fires *before* the Claude call so the cap actually bounds spend.
+
+`CLAUDE.md` "Conventions to follow" extended with the cron-only-no-CORS rule so future agents do not silently regress this. The 6 user/webhook-callable functions (`parse-resume`, `match-jobs`, `link-employer`, `create-checkout`, `stripe-webhook`, `submit-feedback`) keep their CORS unchanged.
+
+**Hotfix follow-up (PR #38):** PR #37 merged with a conflict-resolution misstep that (a) dropped the `submit-feedback` rate-limit code while keeping the migration (table existed but was never read/written) and (b) left `intelligence-feed/index.ts` with a duplicate `const provided` declaration plus an undefined `timingSafeEqual` reference (the function would not compile/deploy). Re-applied both fixes in a follow-up commit.
+
 ### Phase 12 — explicitly out of scope (Phase 13+)
 
 - WARN Act state-by-state real scrapers (real engineering — separate phase)
