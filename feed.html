@@ -55,6 +55,31 @@
 .feed-card.severity-high{border-left:4px solid var(--terra)}
 .feed-card.severity-medium{border-left:4px solid var(--amber)}
 .feed-card.severity-low{border-left:4px solid var(--mist)}
+.feed-card.is-positive{border-left:4px solid var(--green)}
+/* Phase 12 — thumbnail-left layout when an image_url is present.
+   Falls back to single-column on mobile to keep card compact. */
+.feed-card.has-image{display:grid;grid-template-columns:120px 1fr;gap:1.1rem;align-items:flex-start}
+.feed-card.has-image .fc-thumb{width:120px;height:120px;border-radius:10px;object-fit:cover;background:var(--cream);grid-row:span 3}
+.feed-card.has-image .fc-body{display:contents}
+@media(max-width:640px){
+  .feed-card.has-image{grid-template-columns:1fr}
+  .feed-card.has-image .fc-thumb{display:none}
+}
+/* Severity legend — small chip row above the layoffs filter bar. */
+.feed-legend{display:flex;flex-wrap:wrap;gap:.55rem;margin-bottom:1rem;align-items:center;padding:.6rem .85rem;background:#fff;border:1px solid var(--stone);border-radius:10px}
+.feed-legend .lbl{font-size:.75rem;color:var(--slate);font-weight:500;margin-right:.3rem}
+.feed-legend .swatch{display:inline-flex;align-items:center;gap:.35rem;font-size:.72rem;color:var(--slate)}
+.feed-legend .dot{width:10px;height:10px;border-radius:50%;display:inline-block}
+.feed-legend .dot.critical{background:var(--red)}
+.feed-legend .dot.high{background:var(--terra)}
+.feed-legend .dot.medium{background:var(--amber)}
+.feed-legend .dot.low{background:var(--mist)}
+.feed-legend .dot.positive{background:var(--green)}
+/* "Positive news only" toggle chip in the filter bar. */
+.fc-toggle{display:inline-flex;align-items:center;gap:.4rem;padding:.5rem .85rem;border:1px solid var(--stone);border-radius:8px;background:#fff;font-family:var(--font-b);font-size:.85rem;color:var(--slate);cursor:pointer;transition:all .2s}
+.fc-toggle:hover{border-color:var(--green);color:var(--green)}
+.fc-toggle.active{background:var(--green);border-color:var(--green);color:#fff}
+.fc-toggle input{margin:0;cursor:pointer;accent-color:var(--green)}
 .fc-top{display:flex;align-items:flex-start;justify-content:space-between;gap:1rem;margin-bottom:.5rem}
 .fcard-title{font-family:var(--font-d);font-size:1.05rem;color:var(--navy);line-height:1.3;flex:1}
 .fc-severity{font-size:.65rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;padding:2px 8px;border-radius:10px;flex-shrink:0}
@@ -137,7 +162,7 @@
 <!-- HERO -->
 <div class="feed-hero">
   <h1>Career <em>Intelligence</em><br/>in Real Time</h1>
-  <p>Layoff alerts, workforce agencies, and free training — curated and updated daily so you can stay ahead.</p>
+  <p>What's shifting in your industry, who's hiring, and what to learn next — refreshed daily.</p>
 </div>
 
 <!-- STATS -->
@@ -252,6 +277,14 @@ function renderLayoffs() {
   }
 
   let html = `
+    <div class="feed-legend" aria-label="Severity color legend">
+      <span class="lbl">Severity:</span>
+      <span class="swatch"><span class="dot critical"></span>Critical</span>
+      <span class="swatch"><span class="dot high"></span>High</span>
+      <span class="swatch"><span class="dot medium"></span>Medium</span>
+      <span class="swatch"><span class="dot low"></span>Low</span>
+      <span class="swatch"><span class="dot positive"></span>Positive</span>
+    </div>
     <div class="filter-bar">
       <span class="filter-label">Filter:</span>
       <select id="filter-type" aria-label="Filter by layoff type" onchange="renderLayoffs()">
@@ -259,24 +292,37 @@ function renderLayoffs() {
         <option value="layoff">Layoffs</option>
         <option value="hiring-surge">Hiring Surges</option>
         <option value="industry-news">Industry News</option>
+        <option value="policy-change">Policy Changes</option>
+        <option value="opportunity">Opportunities</option>
       </select>
       <select id="filter-severity" aria-label="Filter by severity" onchange="renderLayoffs()">
         <option value="">All Severity</option>
         <option value="critical">Critical</option>
         <option value="high">High</option>
         <option value="medium">Medium</option>
+        <option value="low">Low</option>
       </select>
+      <label class="fc-toggle" id="filter-positive-toggle">
+        <input type="checkbox" id="filter-positive" onchange="renderLayoffs()"/>
+        <span>🟢 Positive only</span>
+      </label>
       <input type="text" id="filter-search" placeholder="Search company or keyword…" oninput="renderLayoffs()" style="flex:1;min-width:180px"/>
     </div>
     <div class="feed-list">`;
 
   const typeFilter = document.getElementById('filter-type')?.value || '';
   const sevFilter = document.getElementById('filter-severity')?.value || '';
+  const positiveOnly = !!document.getElementById('filter-positive')?.checked;
   const searchFilter = (document.getElementById('filter-search')?.value || '').toLowerCase();
+
+  // Reflect the toggle's checked state in its visual chip styling.
+  const toggleEl = document.getElementById('filter-positive-toggle');
+  if (toggleEl) toggleEl.classList.toggle('active', positiveOnly);
 
   const filtered = feedItems.filter(item => {
     if (typeFilter && item.item_type !== typeFilter) return false;
     if (sevFilter && item.severity !== sevFilter) return false;
+    if (positiveOnly && !item.is_positive) return false;
     if (searchFilter && !(item.title + ' ' + (item.company_name || '') + ' ' + (item.summary || '')).toLowerCase().includes(searchFilter)) return false;
     return true;
   });
@@ -291,20 +337,28 @@ function renderLayoffs() {
 
       const sev = ['low','medium','high','critical'].includes(item.severity) ? item.severity : 'medium';
       const srcUrl = safeUrl(item.source_url);
+      const imgUrl = safeUrl(item.image_url);
+      // Positive items override the severity border with green so the
+      // visual cue lines up with the legend swatch.
+      const sevClass = item.is_positive ? 'is-positive' : `severity-${sev}`;
+      const cardClass = `feed-card ${sevClass}${imgUrl ? ' has-image' : ''}`;
       html += `
-        <div class="feed-card severity-${sev}">
-          <div class="fc-top">
-            <div class="fcard-title">${typeEmoji} ${esc(item.title)}</div>
-            <span class="fc-severity ${sev}">${sev}</span>
-          </div>
-          ${item.summary ? `<div class="fc-summary">${esc(item.summary)}</div>` : ''}
-          <div class="fc-meta">
-            <span class="fc-chip source">${esc(formatSource(item.source))}</span>
-            ${item.company_name ? `<span class="fc-chip company">${esc(item.company_name)}</span>` : ''}
-            ${item.affected_count ? `<span class="fc-chip count">${(+item.affected_count).toLocaleString()} affected</span>` : ''}
-            ${item.location_state ? `<span class="fc-chip">📍 ${esc(US_STATES[item.location_state] || item.location_state)}</span>` : ''}
-            ${srcUrl ? `<a class="fc-link" href="${esc(srcUrl)}" target="_blank" rel="noopener noreferrer">Read more →</a>` : ''}
-            <span class="fc-date">${dateLabel}</span>
+        <div class="${cardClass}">
+          ${imgUrl ? `<img class="fc-thumb" src="${esc(imgUrl)}" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer" onerror="this.parentElement.classList.remove('has-image');this.remove();"/>` : ''}
+          <div class="fc-body">
+            <div class="fc-top">
+              <div class="fcard-title">${typeEmoji} ${esc(item.title)}</div>
+              <span class="fc-severity ${sev}">${sev}</span>
+            </div>
+            ${item.summary ? `<div class="fc-summary">${esc(item.summary)}</div>` : ''}
+            <div class="fc-meta">
+              <span class="fc-chip source">${esc(formatSource(item.source))}</span>
+              ${item.company_name ? `<span class="fc-chip company">${esc(item.company_name)}</span>` : ''}
+              ${item.affected_count ? `<span class="fc-chip count">${(+item.affected_count).toLocaleString()} affected</span>` : ''}
+              ${item.location_state ? `<span class="fc-chip">📍 ${esc(US_STATES[item.location_state] || item.location_state)}</span>` : ''}
+              ${srcUrl ? `<a class="fc-link" href="${esc(srcUrl)}" target="_blank" rel="noopener noreferrer">Read more →</a>` : ''}
+              <span class="fc-date">${dateLabel}</span>
+            </div>
           </div>
         </div>`;
     });
@@ -447,7 +501,20 @@ function renderTraining() {
 
 // ─── HELPERS ───────────────────────────────────────────
 function formatSource(s) {
-  const m = {'warn-act':'WARN Act','rss-techcrunch':'TechCrunch','rss-reuters':'Reuters','rss-bls':'Bureau of Labor Statistics','layoffs-fyi':'Layoffs.fyi','manual':'Staff'};
+  const m = {
+    'warn-act':'WARN Act',
+    'rss-techcrunch':'TechCrunch',
+    'rss-reuters':'Reuters',
+    'rss-bls':'Bureau of Labor Statistics',
+    'rss-dol-eta':'US DOL Workforce',
+    'rss-hiringlab':'Indeed Hiring Lab',
+    'rss-coursereport':'Course Report',
+    'rss-onet':'O*NET Updates',
+    'rss-khan':'Khan Academy',
+    'rss-govexec':'GovExec Workforce',
+    'layoffs-fyi':'Layoffs.fyi',
+    'manual':'Staff'
+  };
   return m[s] || s;
 }
 </script>

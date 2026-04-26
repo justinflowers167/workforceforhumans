@@ -46,6 +46,17 @@ button.ghost:hover{border-color:var(--amber);color:var(--amber-dk);}
 .match-fit{color:var(--navy);font-size:.9rem;margin-top:.55rem;line-height:1.5;}
 .match-edge{color:var(--slate);font-size:.88rem;margin-top:.5rem;line-height:1.5;}
 .match-edge strong{color:var(--terra);font-weight:600;}
+/* Phase 12 §C3: AI-skill training recommendations under each match. */
+.match-training{margin-top:.75rem;padding-top:.6rem;border-top:1px dashed var(--stone);}
+.match-training-lbl{font-size:.78rem;font-weight:600;color:var(--terra);text-transform:uppercase;letter-spacing:.06em;margin-bottom:.45rem;}
+.match-training-list{display:flex;flex-direction:column;gap:.4rem;}
+.match-training-item{display:flex;align-items:center;justify-content:space-between;gap:.5rem;padding:.45rem .65rem;background:var(--cream);border:1px solid var(--stone);border-radius:8px;font-size:.85rem;}
+.match-training-item .mt-title{color:var(--navy);font-weight:500;line-height:1.35;}
+.match-training-item .mt-meta{color:var(--slate);font-size:.76rem;font-weight:300;}
+.match-training-item .mt-free{display:inline-block;font-size:.7rem;padding:1px 7px;border-radius:8px;background:rgba(45,122,58,.08);color:var(--green);border:1px solid rgba(45,122,58,.2);font-weight:600;margin-left:.4rem;}
+.match-training-item .mt-paid{display:inline-block;font-size:.7rem;padding:1px 7px;border-radius:8px;background:rgba(200,95,62,.06);color:var(--terra);border:1px solid rgba(200,95,62,.15);margin-left:.4rem;}
+.match-training-item a.mt-link{color:var(--amber-dk);text-decoration:none;font-weight:600;font-size:.82rem;flex-shrink:0;white-space:nowrap;}
+.match-training-item a.mt-link:hover{text-decoration:underline;}
 .score{float:right;background:var(--navy);color:#fff;border-radius:20px;padding:2px 10px;font-size:.78rem;font-weight:600;}
 .hidden{display:none;}
 .muted{color:var(--slate);font-size:.88rem;}
@@ -258,13 +269,83 @@ button.ghost:hover{border-color:var(--amber);color:var(--amber-dk);}
     const ids = ms.map(m=>m.match_target_id);
     const { data: jobs } = await db.from('jobs').select('id,title,location_city,location_state,is_remote,pay_min,pay_max,pay_type,employers(name)').in('id', ids);
     const byId = Object.fromEntries((jobs||[]).map(j=>[j.id,j]));
+
+    // Phase 12 §C3: pull AI-skill links per matched job + the training
+    // resources mapped to those skills. Two queries total — one for
+    // job_skills (filtered to is_ai_skill=true via the join), one for
+    // training_skills with embedded training_resources rows.
+    const jobAiSkills = new Map(); // job_id -> [{id,name}]
+    const trainingsBySkill = new Map(); // skill_id -> [training row]
+    try {
+      const { data: links } = await db.from('job_skills')
+        .select('job_id, skill_id, skills!inner(id,name,is_ai_skill)')
+        .in('job_id', ids)
+        .eq('skills.is_ai_skill', true);
+      const skillIds = new Set();
+      for (const r of links || []) {
+        const sk = r.skills; if (!sk) continue;
+        const arr = jobAiSkills.get(r.job_id) || [];
+        arr.push({ id: sk.id, name: sk.name });
+        jobAiSkills.set(r.job_id, arr);
+        skillIds.add(sk.id);
+      }
+      if (skillIds.size) {
+        const { data: tlinks } = await db.from('training_skills')
+          .select('skill_id, training_resources!inner(id,title,provider,is_free,source_url,recommend_count,view_count)')
+          .in('skill_id', Array.from(skillIds));
+        for (const tl of tlinks || []) {
+          const tr = tl.training_resources; if (!tr) continue;
+          const arr = trainingsBySkill.get(tl.skill_id) || [];
+          arr.push(tr);
+          trainingsBySkill.set(tl.skill_id, arr);
+        }
+      }
+    } catch (e) {
+      // Non-fatal — match cards still render without the training panel.
+      console.error('training recs failed:', e);
+    }
+
     $('matches').innerHTML = ms.map(m=>{
       const j = byId[m.match_target_id]; if(!j) return '';
       const loc = j.is_remote ? 'Remote' : [j.location_city,j.location_state].filter(Boolean).join(', ');
       const pay = j.pay_min ? `$${j.pay_min}${j.pay_max?`–$${j.pay_max}`:''} ${j.pay_type==='hourly'?'/hr':'/yr'}` : '';
       const fit = m.rationale ? `<p class="match-fit">${esc(m.rationale)}</p>` : '';
       const edge = m.growth_note ? `<p class="match-edge"><strong>Next edge:</strong> ${esc(m.growth_note)}</p>` : '';
-      const why = (fit || edge) ? `<details class="match-why"><summary>Claude's read on this match</summary>${fit}${edge}</details>` : '';
+
+      // Build the training-recommendation panel: union of trainings tied
+      // to this job's AI skills, dedup by training id, sort by
+      // recommend_count desc then view_count desc, take top 3.
+      const aiSkillsForJob = jobAiSkills.get(j.id) || [];
+      const trainingMap = new Map();
+      for (const sk of aiSkillsForJob) {
+        const list = trainingsBySkill.get(sk.id) || [];
+        for (const t of list) if (!trainingMap.has(t.id)) trainingMap.set(t.id, t);
+      }
+      const topTrainings = Array.from(trainingMap.values())
+        .sort((a,b)=> (b.recommend_count||0) - (a.recommend_count||0) || (b.view_count||0) - (a.view_count||0))
+        .slice(0,3);
+      const trainingHtml = topTrainings.length
+        ? `<div class="match-training">
+            <div class="match-training-lbl">Recommended training to grow into this role</div>
+            <div class="match-training-list">
+              ${topTrainings.map(t=>{
+                const url = safeUrl(t.source_url);
+                const tag = t.is_free ? '<span class="mt-free">Free</span>' : '<span class="mt-paid">Paid</span>';
+                return `<div class="match-training-item">
+                  <div>
+                    <div class="mt-title">${esc(t.title)}${tag}</div>
+                    ${t.provider ? `<div class="mt-meta">${esc(t.provider)}</div>` : ''}
+                  </div>
+                  ${url ? `<a class="mt-link" href="${esc(url)}" target="_blank" rel="noopener noreferrer">Start →</a>` : ''}
+                </div>`;
+              }).join('')}
+            </div>
+          </div>`
+        : '';
+
+      const why = (fit || edge || trainingHtml)
+        ? `<details class="match-why"><summary>Claude's read on this match</summary>${fit}${edge}${trainingHtml}</details>`
+        : '';
       return `<div class="match">
         <span class="score">${m.score||Math.round((m.similarity||0)*100)}</span>
         <div class="t">${esc(j.title)}</div>
@@ -300,6 +381,9 @@ button.ghost:hover{border-color:var(--amber);color:var(--amber-dk);}
   };
 
   function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c]));}
+  // Phase 12 §C3: safe outbound URLs for training-resource links. Mirrors
+  // the helper used in feed.html — only http(s) protocols pass through.
+  function safeUrl(u){ try { const url = new URL(u, 'https://workforceforhumans.com'); return (url.protocol === 'http:' || url.protocol === 'https:') ? url.toString() : ''; } catch { return ''; } }
 
   boot();
 </script>

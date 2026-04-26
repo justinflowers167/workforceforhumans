@@ -268,6 +268,121 @@
       footHost.innerHTML = FOOTER_FULL;
     }
   }
+
+  // --- Phase 12 §B3: floating feedback widget ---
+  // Injected on every page by default. Pages can opt out with
+  // <body data-feedback="off"> — useful for high-friction surfaces (KB
+  // admin, employer dashboard) where the floating button would be noise.
+  if (body.dataset.feedback !== 'off') {
+    var FB_HOST = 'https://dbomfjqijyrkidptrrfi.supabase.co';
+    var fbWrap = document.createElement('div');
+    fbWrap.id = 'wfh-fb';
+    fbWrap.innerHTML =
+      '<button type="button" id="wfh-fb-pill" aria-haspopup="dialog" aria-controls="wfh-fb-modal">' +
+        '<span aria-hidden="true">💬</span> Feedback' +
+      '</button>' +
+      '<div id="wfh-fb-modal" role="dialog" aria-modal="true" aria-labelledby="wfh-fb-title" hidden>' +
+        '<div class="wfh-fb-scrim"></div>' +
+        '<div class="wfh-fb-card">' +
+          '<button type="button" class="wfh-fb-close" aria-label="Close feedback form">&times;</button>' +
+          '<h2 id="wfh-fb-title">Tell us what\'s on your mind</h2>' +
+          '<p class="wfh-fb-sub">We read every one. No support team in the middle.</p>' +
+          '<form id="wfh-fb-form" novalidate>' +
+            '<fieldset class="wfh-fb-cats">' +
+              '<legend class="sr-only">Category</legend>' +
+              '<label><input type="radio" name="category" value="bug"/> 🐛 Bug</label>' +
+              '<label><input type="radio" name="category" value="feature-request"/> 💡 Feature</label>' +
+              '<label><input type="radio" name="category" value="praise"/> ❤️ Praise</label>' +
+              '<label><input type="radio" name="category" value="confusion"/> 🤔 Confusing</label>' +
+              '<label><input type="radio" name="category" value="other" checked/> 📝 Other</label>' +
+            '</fieldset>' +
+            '<label class="wfh-fb-lbl" for="wfh-fb-msg">Your message <span class="wfh-fb-hint">(5–2000 characters)</span></label>' +
+            '<textarea id="wfh-fb-msg" name="message" rows="5" minlength="5" maxlength="2000" required placeholder="What\'s broken, missing, or great?"></textarea>' +
+            '<label class="wfh-fb-lbl" for="wfh-fb-email">Email <span class="wfh-fb-hint">(optional, only if you want a reply)</span></label>' +
+            '<input type="email" id="wfh-fb-email" name="user_email" autocomplete="email" maxlength="200"/>' +
+            // Honeypot — hidden from real users via CSS, bots fill it. Server drops silently when set.
+            '<input type="text" name="hp" tabindex="-1" autocomplete="off" class="wfh-fb-hp" aria-hidden="true"/>' +
+            '<div class="wfh-fb-actions">' +
+              '<button type="button" class="wfh-fb-cancel">Cancel</button>' +
+              '<button type="submit" class="wfh-fb-submit">Send feedback</button>' +
+            '</div>' +
+            '<div class="wfh-fb-status" role="status" aria-live="polite"></div>' +
+          '</form>' +
+        '</div>' +
+      '</div>';
+    body.appendChild(fbWrap);
+
+    var fbModal = fbWrap.querySelector('#wfh-fb-modal');
+    var fbForm = fbWrap.querySelector('#wfh-fb-form');
+    var fbStatus = fbWrap.querySelector('.wfh-fb-status');
+    var fbPill = fbWrap.querySelector('#wfh-fb-pill');
+    var fbScrim = fbWrap.querySelector('.wfh-fb-scrim');
+    var fbCloseBtn = fbWrap.querySelector('.wfh-fb-close');
+    var fbCancel = fbWrap.querySelector('.wfh-fb-cancel');
+    var fbSubmit = fbWrap.querySelector('.wfh-fb-submit');
+    var fbMsg = fbWrap.querySelector('#wfh-fb-msg');
+
+    var fbOpen = function () {
+      fbModal.hidden = false;
+      body.classList.add('wfh-fb-open');
+      // Focus the textarea after the modal renders (rAF guarantees layout).
+      requestAnimationFrame(function () { fbMsg.focus(); });
+    };
+    var fbClose = function () {
+      fbModal.hidden = true;
+      body.classList.remove('wfh-fb-open');
+      fbPill.focus({ preventScroll: true });
+    };
+    fbPill.addEventListener('click', fbOpen);
+    fbScrim.addEventListener('click', fbClose);
+    fbCloseBtn.addEventListener('click', fbClose);
+    fbCancel.addEventListener('click', fbClose);
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape' && !fbModal.hidden) fbClose();
+    });
+
+    fbForm.addEventListener('submit', function (e) {
+      e.preventDefault();
+      var fd = new FormData(fbForm);
+      var payload = {
+        page_path: location.pathname,
+        category: fd.get('category') || 'other',
+        message: (fd.get('message') || '').toString().trim(),
+        user_email: (fd.get('user_email') || '').toString().trim() || null,
+        hp: (fd.get('hp') || '').toString(),
+      };
+      if (payload.message.length < 5) {
+        fbStatus.textContent = 'Please write at least a few words.';
+        fbStatus.className = 'wfh-fb-status err';
+        return;
+      }
+      fbSubmit.disabled = true;
+      fbStatus.textContent = 'Sending…';
+      fbStatus.className = 'wfh-fb-status';
+      fetch(FB_HOST + '/functions/v1/submit-feedback', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      }).then(function (r) {
+        return r.json().then(function (j) { return { ok: r.ok, body: j }; });
+      }).then(function (res) {
+        if (res.ok) {
+          fbStatus.textContent = 'Thanks — heard you. We read every one.';
+          fbStatus.className = 'wfh-fb-status ok';
+          // Auto-close after a beat so the user sees the confirmation.
+          setTimeout(function () { fbClose(); fbForm.reset(); fbStatus.textContent = ''; fbSubmit.disabled = false; }, 1800);
+        } else {
+          fbStatus.textContent = (res.body && res.body.error) || 'Could not save. Please try again.';
+          fbStatus.className = 'wfh-fb-status err';
+          fbSubmit.disabled = false;
+        }
+      }).catch(function () {
+        fbStatus.textContent = 'Network hiccup. Please try again.';
+        fbStatus.className = 'wfh-fb-status err';
+        fbSubmit.disabled = false;
+      });
+    });
+  }
 })();
 
 /* ============================================================
