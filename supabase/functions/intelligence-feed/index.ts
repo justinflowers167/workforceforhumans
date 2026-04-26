@@ -26,7 +26,14 @@ const corsHeaders = {
 };
 
 Deno.serve(async (req) => {
-  if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
+  // Cron-only auth. Constant-time compare against the pre-shared secret.
+  const provided = req.headers.get("x-intelligence-feed-secret") || "";
+  if (!INTELLIGENCE_FEED_SECRET || !timingSafeEqual(provided, INTELLIGENCE_FEED_SECRET)) {
+    return new Response(JSON.stringify({ error: "unauthorized" }), {
+      status: 401,
+      headers: { "Content-Type": "application/json" },
+    });
+  }
 
   // Phase 12: server-to-server auth. Cron fires with the pre-shared
   // secret; ad-hoc invocations must include the same header.
@@ -68,13 +75,13 @@ Deno.serve(async (req) => {
 
     console.log("intelligence-feed result:", JSON.stringify(results));
     return new Response(JSON.stringify({ success: true, results }), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json" },
     });
   } catch (e) {
     console.error("intelligence-feed error:", e);
     return new Response(JSON.stringify({ success: false, error: "feed aggregation failed" }), {
       status: 500,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json" },
     });
   }
 });
