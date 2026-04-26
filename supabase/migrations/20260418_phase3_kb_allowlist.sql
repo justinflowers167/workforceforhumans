@@ -18,8 +18,13 @@ CREATE POLICY "kb_editor_emails read for authenticated"
 -- No insert/update/delete policies → service-role only. Adds happen via SQL.
 
 -- Bootstrap admin (idempotent).
+-- Note: this seed value was originally `justinflowers2@gmail.com`; updated
+-- 2026-04-27 to `admin@workforceforhumans.com` after Google Workspace setup.
+-- Live cutover handled in `20260427_admin_email_switchover.sql` — that
+-- migration is the source of truth for the live DB state. Editing this seed
+-- only matters for fresh-from-scratch deploys against a clean Postgres.
 INSERT INTO public.kb_editor_emails (email, added_by)
-VALUES ('justinflowers2@gmail.com', 'phase-3-bootstrap')
+VALUES ('admin@workforceforhumans.com', 'phase-3-bootstrap')
 ON CONFLICT (email) DO NOTHING;
 
 -- Drop the open authenticated-write policies (names confirmed against
