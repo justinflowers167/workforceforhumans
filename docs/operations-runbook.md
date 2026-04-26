@@ -397,3 +397,164 @@ Update when:
 - A new dashboard/vendor enters the stack (§9 index).
 - A recurring incident teaches a new procedure (§10 appendix).
 - A phase closes in ROADMAP.md (cross items in §1; bump the date).
+
+---
+
+## 12. Personal → business account migration (one-time, planned 2026-04-27 → through the week)
+
+WorkforceForHumans is graduating from "fun project" to a real business entity. Every SaaS account currently registered to a personal email (`justinflowers2@gmail.com` or `justinflowers@hotmail.com`) and a personal credit card needs to be re-anchored to the LLC and `admin@workforceforhumans.com`.
+
+**The structural separation is more than email.** Three things create the actual personal-liability shield: (a) the LLC entity itself, (b) a business bank account + card the LLC owns, (c) ownership records (admin email + billing entity) on every service. This section sequences all three.
+
+**Universal rule:** for every service, *invite the new admin first → verify access → only then remove the old user*. The "no other admins" failure mode locks you out of Stripe and Cloudflare hard.
+
+### Pre-flight (gating; do FIRST)
+
+- [ ] LLC formed — state filing complete, EIN issued, operating agreement drafted.
+- [ ] Business bank account opened (carries the EIN, not your SSN).
+- [ ] Business credit/debit card in hand and added as default payment method on file in Google Workspace.
+- [ ] LLC operating address confirmed (PO box, virtual address, or home — pick one and use it consistently).
+- [ ] Google Workspace primary `admin@workforceforhumans.com` active. Optional aliases worth setting up now while it's free:
+  - `billing@` — subscription receipts, financial alerts.
+  - `ops@` — incident notifications, monitoring alerts (Stripe radar, Supabase usage alerts).
+  - `support@` — user-facing replies. Future-proofs handing off support.
+  - All three forward to `admin@` today; can be split out later when you bring on help.
+
+### Day 1 — Structural anchors (~1 hr; blocks the rest)
+
+These two changes change the topology everything else hangs off. Do them in order.
+
+#### 12.1 GitHub Organization
+
+1. github.com/organizations/new → create `workforceforhumans` org owned by `admin@workforceforhumans.com`. Free tier is fine.
+2. github.com/justinflowers167/workforceforhumans/settings → bottom of page → "Transfer ownership" → into the new org.
+   - Branch protection rules and existing PRs travel with the transfer.
+   - Open PRs (e.g. `claude/admin-email-switchover`) keep their numbers and conversations intact.
+3. Update local remotes on every worktree:
+   ```bash
+   git remote set-url origin https://github.com/workforceforhumans/workforceforhumans.git
+   ```
+4. Re-add anything that doesn't transfer cleanly:
+   - Cloudflare Pages → repo binding (see 12.4 below).
+   - Any GitHub Actions secrets (none today; if added later, redo at the org level so they're inherited).
+5. **Verify:** push a no-op commit (or empty commit `git commit --allow-empty -m "verify org transfer"`) and confirm Cloudflare Pages deploys it.
+
+#### 12.2 Google Workspace billing identity
+
+1. admin.google.com → Billing → Payments → add business card; set as default.
+2. Subscriber details → update to LLC legal name + LLC operating address.
+3. Don't remove personal card yet; let one renewal cycle land on the business card cleanly first.
+
+### Day 2 — High-risk services (~1 hr; revenue + live ops)
+
+These have the biggest blast radius if the migration goes wrong. Stay disciplined: invite → verify → swap card → THEN consider removing old user (some you should leave for a week).
+
+#### 12.3 Supabase (project `dbomfjqijyrkidptrrfi`)
+
+1. Dashboard → Project Settings → Members → Invite `admin@workforceforhumans.com` as **Owner**.
+2. Sign in as admin@. Verify: project list shows `dbomfjqijyrkidptrrfi`, table editor reads `jobs`, edge functions list shows all 10.
+3. Settings → Billing → swap card to business card; update billing email + tax details (LLC legal name + EIN).
+4. **Verify:** deploy a no-op edge function change from admin@'s session to confirm deploy permissions work.
+5. After a week of cleanly-billed renewals, demote/remove the personal admin from Members.
+
+#### 12.4 Stripe
+
+1. Account → Team → Invite `admin@` as Administrator.
+2. Sign in as admin@. Verify: live + test mode visible, recent payouts visible, customer list visible.
+3. Account → Business settings → swap legal entity to the LLC. **This re-runs KYC** — Stripe will ask for EIN documentation, business address verification. Allow 1–3 business days; account stays operational during review.
+4. Account → Billing & invoices → swap payment method (this is the card Stripe charges *you* for fees, not where customers pay) to business card.
+5. **DO NOT remove the personal admin during KYC.** If KYC pauses the account mid-review with no other admin, recovery requires support tickets. Wait until the LLC is fully approved + the next payout lands cleanly.
+6. **Verify:** in test mode, trigger a checkout from index.html → confirm `stripe-webhook` processes it (the webhook signing secret is project-scoped, doesn't change with admin changes).
+
+#### 12.5 Cloudflare (Pages + Registrar + Web Analytics)
+
+1. Dashboard → Members → Invite `admin@` as **Super Administrator**.
+2. Sign in as admin@. Verify: Pages project visible, `workforceforhumans.com` domain visible, Web Analytics dashboard loads.
+3. Pages project → Settings → Builds & deployments → re-bind to the new GitHub repo URL (`workforceforhumans/workforceforhumans` instead of `justinflowers167/workforceforhumans`). The org transfer in 12.1 broke the old binding.
+4. Trigger a manual deploy to confirm the new bind works.
+5. If `workforceforhumans.com` is registered through Cloudflare Registrar, transfer it to the new account: Domain → Members → Move (free, instant). If registered elsewhere (Namecheap, GoDaddy), do that registrar's email/billing change separately.
+6. Account → Billing → swap card.
+7. **Verify:** production site loads at workforceforhumans.com; web analytics shows live traffic.
+
+### Day 3 — LLM + email services (~30 min)
+
+Lower blast radius (a broken key just means a feature degrades until redeploy), but every key rotation here means an edge-function redeploy.
+
+#### 12.6 Anthropic Console
+
+1. Settings → Workspace → Members → Invite `admin@` as Admin.
+2. Sign in as admin@; verify usage dashboard + can create API keys.
+3. Generate a fresh API key under admin@'s identity (label it `wfh-prod-2026-04`).
+4. Supabase → Edge Functions → Secrets → update `ANTHROPIC_API_KEY` to the new value.
+5. Manually fire each Anthropic-using function (per §10.4 invocation pattern):
+   - `match-jobs` (via member.html "Find new matches" button while signed in).
+   - `parse-resume` (via resume.html upload while signed in).
+   - `refresh-jobs` (via curl with `x-refresh-secret`).
+6. Confirm all three return ok and the Anthropic console shows usage under admin@'s identity.
+7. Settings → Billing → swap card.
+8. **Only after all three verifications:** revoke the old API key, then remove the personal user.
+
+#### 12.7 OpenAI Platform (used by `intelligence-feed` for embeddings)
+
+1. Same pattern as Anthropic: invite admin@ → sign in → generate fresh key.
+2. Supabase Secrets → update `OPENAI_API_KEY`.
+3. Manually fire `intelligence-feed` (curl with `x-intelligence-feed-secret`).
+4. Confirm a fresh row in `feed_items` has a populated `embedding` vector.
+5. Settings → Billing → swap card.
+6. Revoke old key, remove personal user.
+
+#### 12.8 Resend
+
+1. resend.com → Team → Invite admin@.
+2. Domain settings → confirm `workforceforhumans.com` SPF/DKIM records still resolve correctly (they should be DNS-side, unaffected by Resend account ownership).
+3. Generate new API key under admin@; update Supabase secret `RESEND_API_KEY`.
+4. Redeploy `send-match-digest` and `stripe-webhook` (both use Resend).
+5. Manually fire `send-match-digest` and confirm the test email shows in Resend's email log under admin@.
+6. Settings → Billing → swap card.
+7. Revoke old key, remove personal user.
+
+### Day 4 — Analytics + low-risk (~15 min)
+
+#### 12.9 PostHog (US Cloud)
+
+1. Project → Settings → Members → Invite admin@ as Admin.
+2. Settings → Project → Transfer ownership to admin@.
+3. Billing → swap card.
+4. The project token (`phc_uFTsr…`) is project-scoped and unchanged — no code update needed.
+
+#### 12.10 USAJobs.gov developer
+
+The USAJobs API doesn't have a member-invite model — you create a parallel account.
+
+1. developer.usajobs.gov → register a new account at admin@workforceforhumans.com.
+2. Get the new auth key.
+3. Supabase Secrets:
+   - Update `USAJOBS_AUTH_KEY` to new value.
+   - Update `USAJOBS_USER_AGENT` to `admin@workforceforhumans.com` (the user-agent must be a contactable email registered with USAJobs).
+4. Manually fire `refresh-jobs`; confirm the next cron run is green and `jobs_full` sees fresh `source='usajobs'` rows.
+5. Old developer account can sit dormant — no billing.
+
+#### 12.11 Domain registrar (if not Cloudflare)
+
+If `workforceforhumans.com` is somewhere other than Cloudflare:
+1. Update WHOIS contact email to admin@.
+2. Update billing card.
+3. Confirm auto-renew is on and DNS records (especially the SPF/DKIM/DMARC for Resend) are intact.
+
+### Day 5 — Verification + cleanup (~30 min)
+
+- [ ] Run §10.4 manual fire on every cron function: `refresh-jobs`, `send-match-digest`, `prune-inactive-data`, `intelligence-feed`. All return ok.
+- [ ] Visit each service's billing page; confirm next renewal will charge the business card.
+- [ ] Cancel any duplicate/dormant subscriptions surfaced during migration (Plausible if still active, old Anthropic/OpenAI orgs, etc.).
+- [ ] Update §9 Dashboards index: add a column "owner of record" with admin@ on every row.
+- [ ] Save a memory entry capturing the LLC formation date + the cutover-complete date.
+- [ ] One month from now: run §7 cost watch and confirm every charge hits the business card. If not, find the orphan and fix it.
+
+### Gotchas worth re-reading before each day
+
+- **API keys created under personal user die when that user is removed.** Always: generate new key under new admin → verify → THEN revoke old.
+- **Stripe entity change re-runs KYC.** Don't time it against a launch or a customer-facing demo; allow 1–3 business days.
+- **Subscription billing pro-rations are weird mid-cycle.** Day 1 of a month is the cleanest cutover for billing-side changes.
+- **Webhook signing secrets are project-scoped, not user-scoped.** Stripe webhook secret + Supabase service role key DO NOT rotate when account ownership changes; they only rotate if you manually rotate them.
+- **Cloudflare Pages re-bind is the only thing that breaks deploys** during the GitHub org transfer. Trigger a manual deploy after each anchor change to catch this.
+- **Magic-link sign-in to your own product** uses Supabase Auth, not these external services. Already handled in §10.9 — don't re-do that part here.
