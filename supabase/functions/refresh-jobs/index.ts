@@ -65,10 +65,8 @@ const CLAUDE_BATCH = 10;
 // parse) is too high to risk a model swap.
 const MODEL = "claude-haiku-4-5";
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-refresh-secret",
-};
+// No CORS — cron-only server-to-server endpoint. Browser callers must be rejected,
+// so we omit Access-Control-Allow-Origin entirely and let the browser's CORS check fail.
 
 const RELEVANCE_PROMPT = `You are a relevance filter for Workforce for Humans — a platform serving displaced workers and career changers (people affected by layoffs, AI/automation displacement, or mid-career transitions).
 
@@ -89,12 +87,10 @@ Return ONLY valid JSON in this exact shape:
 No prose before or after the JSON.`;
 
 Deno.serve(async (req) => {
-  if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
-
   try {
     // Server-to-server auth — cron fires with the pre-shared secret.
     const providedSecret = req.headers.get("x-refresh-secret") || "";
-    if (!REFRESH_SECRET || providedSecret !== REFRESH_SECRET) {
+    if (!REFRESH_SECRET || !timingSafeEqual(providedSecret, REFRESH_SECRET)) {
       return json({ error: "unauthorized" }, 401);
     }
 
@@ -428,6 +424,14 @@ async function filterBatch(client: Anthropic, batch: any[]): Promise<Map<string,
 function json(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), {
     status,
-    headers: { ...corsHeaders, "Content-Type": "application/json" },
+    headers: { "Content-Type": "application/json" },
   });
+}
+
+// Constant-time compare for shared-secret header auth — avoids timing side-channel.
+function timingSafeEqual(a: string, b: string): boolean {
+  if (a.length !== b.length) return false;
+  let diff = 0;
+  for (let i = 0; i < a.length; i++) diff |= a.charCodeAt(i) ^ b.charCodeAt(i);
+  return diff === 0;
 }

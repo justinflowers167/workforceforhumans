@@ -10,17 +10,13 @@ const DIGEST_SECRET = Deno.env.get("DIGEST_SECRET") || "";
 const FROM_EMAIL = Deno.env.get("DIGEST_FROM") || "Workforce for Humans <digest@workforceforhumans.com>";
 const SITE_URL = Deno.env.get("SITE_URL") || "https://workforceforhumans.com";
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-digest-secret",
-};
+// No CORS — cron-only server-to-server endpoint. Browser callers must be rejected,
+// so we omit Access-Control-Allow-Origin entirely and let the browser's CORS check fail.
 
 Deno.serve(async (req) => {
-  if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
-
   // Simple shared-secret auth — this function runs server-to-server, not from the browser.
   const provided = req.headers.get("x-digest-secret") || "";
-  if (!DIGEST_SECRET || provided !== DIGEST_SECRET) return json({ error: "unauthorized" }, 401);
+  if (!DIGEST_SECRET || !timingSafeEqual(provided, DIGEST_SECRET)) return json({ error: "unauthorized" }, 401);
 
   try {
     const admin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
@@ -139,6 +135,14 @@ function escapeHtml(s: unknown): string {
 function json(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), {
     status,
-    headers: { ...corsHeaders, "Content-Type": "application/json" },
+    headers: { "Content-Type": "application/json" },
   });
+}
+
+// Constant-time compare for shared-secret header auth — avoids timing side-channel.
+function timingSafeEqual(a: string, b: string): boolean {
+  if (a.length !== b.length) return false;
+  let diff = 0;
+  for (let i = 0; i < a.length; i++) diff |= a.charCodeAt(i) ^ b.charCodeAt(i);
+  return diff === 0;
 }
