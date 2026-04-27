@@ -89,6 +89,10 @@ Deno.serve(async (req) => {
           <h1 style="font-size:22px;margin-bottom:4px;">New matches for you${seeker.first_name ? `, ${escapeHtml(seeker.first_name)}` : ""}</h1>
           <p style="color:#4b5563;margin-top:0;">Roles we think fit your profile this week.</p>
           ${items}
+          <p style="text-align:center;margin:24px 0 8px;">
+            <a href="${SITE_URL}/member.html" style="display:inline-block;color:#c85f3e;font-weight:600;text-decoration:none;font-size:14px;">&rarr; See your full coach brief in your dashboard</a>
+          </p>
+          <p style="color:#6b7280;font-size:11px;text-align:center;margin:0 0 16px;">Resume tailoring, skill-gap path, and application strategy for each role above.</p>
           <p style="color:#6b7280;font-size:12px;margin-top:24px;">
             <a href="${SITE_URL}/member.html">Update preferences</a> · You are receiving this because you signed up at Workforce for Humans.
           </p>

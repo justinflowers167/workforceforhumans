@@ -101,6 +101,7 @@ Total: 60 min.
   4. ✅ ~~**Switch `refresh-jobs` filter model** from `claude-sonnet-4-6` → `claude-haiku-4-5`~~ — Shipped 2026-04-26. ~5× cheaper input + output. Filter is binary keep/reject; well within Haiku's range. Combined with item 2, expected cron Anthropic spend drops ~10× (~$3/mo → ~$0.30/mo).
   5. **Switch `parse-resume` first-pass to Haiku, escalate ambiguous to Sonnet** — Haiku for clean PDFs, Sonnet only when JSON parse fails. Bigger refactor; only if items 1–4 don't fit budget. **Standby.**
   6. **Temporarily unset `ANTHROPIC_API_KEY`** — `refresh-jobs` falls back to pass-through (free) with a quality drop. Last-resort kill switch. Match-jobs and parse-resume will start returning errors though, so this only buys time on the cron, not a sustainable cost reduction. **Standby.**
+- **PR merged that touches `supabase/migrations/` or `supabase/functions/`** → before declaring the PR shipped, run §8.8 (migration drift) and §8.9 (function deploy drift). The 2026-04-26 Sprint-0 audit caught 6 unapplied migrations + 6 stale-or-undeployed functions accumulated over 3 phases — schema and function changes had been merged to `master` without ever reaching live. The MCP `apply_migration` step and the `supabase functions deploy <name>` step are both manual; nothing in the merge flow enforces them. Build the habit of running both checks in the same session as the merge.
 - **Resume parse failures spike** → check `parse-resume` edge-function logs. Common cause: PDF format change at source.
 - **Magic link not arriving for a member** → check Supabase Auth logs (dashboard → Authentication → Logs) for the email; check Resend dashboard for delivery + bounce.
 - **PostHog crosses 500k events/mo** → consider sampling or move to Cloudflare Workers Analytics Engine ($5/mo, 10M events).
@@ -219,6 +220,37 @@ where id = '<uuid>';
 ```
 
 P0 (site broken / data loss / security concern) → drop everything, fix today. P1 (significant UX block, payment friction) → ticket this week. P2 (feature request, polish) → pile up for the next phase. P3 (praise, opinion) → acknowledge if it warrants a reply, then move on.
+
+### 8.8 Migration drift check — repo vs. live (run after every PR-merge that touches `supabase/migrations/`)
+
+The 2026-04-26 Sprint-0 audit caught 6 migrations that were committed to `supabase/migrations/` but never applied to the live DB (the `apply_migration` MCP step had been silently skipped during PR merges). This query lists migration versions Supabase has on file. Compare against `ls supabase/migrations/` in the repo — anything in the repo with no matching live row is drift.
+
+```sql
+select version, name
+from supabase_migrations.schema_migrations
+order by version desc
+limit 30;
+```
+
+If the live list is missing a `*_phaseN_*` file you can see in the repo, apply it via the Supabase MCP `apply_migration` tool (or `supabase db push` if you've linked the CLI). Phase 12 close-out documented the trigger-bypass pattern needed for `protect_employer_billing_columns()` — see git history of `20260427_admin_email_switchover.sql` for the `set local request.jwt.claims = '{"role":"service_role"}'` workaround.
+
+### 8.9 Edge Function deploy drift check — repo vs. live (run after every PR-merge that touches `supabase/functions/`)
+
+The same audit caught 6 Edge Functions whose live code lagged the repo by 1–2 phases — Phase 10 + Phase 11 + Phase 12 work was committed but never `supabase functions deploy`-ed. There's no SQL query for this (Edge Function source lives outside Postgres). Compare each function's last commit to its live deploy timestamp from your laptop:
+
+```bash
+for fn in match-jobs refresh-jobs intelligence-feed prune-inactive-data send-match-digest submit-feedback parse-resume create-checkout stripe-webhook link-employer; do
+  printf "%-22s last commit: %s\n" "$fn" "$(git log -1 --format='%ai %h %s' -- "supabase/functions/$fn/index.ts")"
+done
+```
+
+Cross-reference each printed line with the function's live `updated_at` from the Supabase dashboard (Edge Functions → click function → version history) or via the MCP `list_edge_functions` call. If the last commit timestamp is more recent than the live `updated_at`, redeploy:
+
+```bash
+supabase functions deploy <function-name>
+```
+
+**Trigger this check** (per §6): after merging any PR that touches `supabase/functions/`, verify each modified function's deployed version reflects the merge before declaring the PR shipped.
 
 ---
 

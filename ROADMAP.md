@@ -511,6 +511,8 @@ Only if a month of Claude-filtered USAJobs data shows the daily output is thin o
 
 Per Phase 5 framework decision (2026-04-19), revisit only when one of: page count > 20, second developer joins, Lighthouse CLS/TBT regression attributable to client-side nav injection, or a feature requires per-job/per-article real URLs. Phase 11 should re-check whether any trigger has fired; if not, defer again.
 
+**Re-checked 2026-04-26 (Sprint 0 close):** still defer. Page count 14 (threshold 20). Solo founder still (threshold ≥2). No Lighthouse regression observed since Phase 4 baseline ≥95. No new feature requires per-job/per-article real URLs (Phase 12 §A/B/C all worked within hash routing + modal patterns). Next re-check at end of Phase 13 or whenever a trigger genuinely fires.
+
 ### Phase 11 — explicitly out of scope (Phase 12+)
 
 - Per-job + per-KB-article real URLs (still framework-gated)
@@ -579,6 +581,31 @@ Phases 11 and 12 ran as parallel tracks and a launch-readiness audit caught two 
 - Real-time push notifications when a high-relevance item lands
 - Admin UI for feedback triage (founder reads SQL for now)
 - AI-skill taxonomy expansion beyond the seeded 10 — refine as real postings come in
+
+---
+
+## Phase 13 — Career copilot (shipped 2026-04-28)
+
+**Outcome:** A member opening a match card sees not just fit + next-edge prose (Phase 7) but a per-match coach brief: how to tailor the resume for *this* role, the structured skill-gap path, and the application strategy. The platform's "coach-that-places-you" wedge becomes visible per-match instead of generic.
+
+### What shipped
+
+- **Migration `20260428_phase13_career_copilot.sql`:** three new nullable text columns on `match_scores` (`resume_tailoring`, `skill_gap_plan`, `application_strategy`). Inherits the seeker-scoped RLS that Phase 7 set on the table; no policy changes needed. Applied to live via MCP.
+- **`match-jobs/index.ts` v14:** SYSTEM_PROMPT extended with three new field specs in the same coach voice (resume_tailoring quotes real bullets from `resume_raw_text`; skill_gap_plan stays "next edge" framing, never "you lack"; application_strategy gives federal-vs-private-sector guidance and JD-keyword-mirror advice for `source = usajobs`). Profile payload now pulls the seeker's current resume (`raw_text` capped 4000 chars + `parsed_json`) so briefs reference real history. `max_tokens` 6000 → 8000. Prompt-cache marker now active (system prompt crossed 1024-token threshold).
+- **`member.html` match card:** existing `<details class="match-why">` ("Claude's read on this match") extended with three new sub-sections — *Tailor your resume*, *Your skill-gap path*, *Apply with this angle*. Each hides if its field is null, so pre-Phase-13 rows render cleanly. New CSS classes (`.match-section`, `.match-tailor`, `.match-gap`, `.match-strategy`) share the existing typography rhythm and use distinct accent colors per section. `growth_note` collapses into `skill_gap_plan` when both present (they cover the same ground at different granularity; the prompt explicitly ties them).
+- **`send-match-digest/index.ts` v14:** weekly email template kept minimal — only `rationale` + `growth_note` still render per match (per-match coach brief stays product-side to drive members to `member.html`). Added a single "→ See your full coach brief in your dashboard" CTA after the matches list with a one-line subtitle naming what's there.
+
+### Verification (2026-04-28)
+
+End-to-end test on the founder's account: 6 of 6 fresh matches populated all five prose fields (rationale, growth_note, resume_tailoring, skill_gap_plan, application_strategy). Sample brief quality on a federal Program Analyst match: tailoring referenced the candidate's actual Jacobs Engineering bullet block ("CMMC readiness work — that's the exact signal a DoD cyber advisory office screens for"), gap named USAF-specific manpower standards as the next edge, strategy applied the JD-keyword-mirror advice with concrete phrases. No prompt tuning required on first deploy.
+
+### Cost note
+
+Per-match output token bump (~80 tokens × 3 new fields × 10 matches ≈ +2400 output tokens) is offset by prompt caching activating now that SYSTEM_PROMPT crosses 1024 tokens — second invocation in any 5-min window reads system block at 10% of standard input rate. Net spend per "Find new matches" click expected roughly flat to ~20% higher; monitor and tighten field length specs in the prompt if first-week burn spikes.
+
+### Slipped
+
+Real-device QA of the new match-card sub-sections at 375px not yet captured (carries into Phase 11 §C polish work — typography pass naturally covers the new sections).
 
 ---
 
