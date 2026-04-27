@@ -29,9 +29,11 @@
 import Anthropic from "https://esm.sh/@anthropic-ai/sdk@0.32.1?target=deno";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2?target=deno";
 
-const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
-const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-const ANTHROPIC_API_KEY = Deno.env.get("ANTHROPIC_API_KEY") || "";
+// Phase 11 §B (2026-04-28): env reads moved inside handle() so unit tests
+// can override values per-case via Deno.env.set / mockEnv (module-level
+// reads happen once at import time and can't be re-stubbed). Edge runtime
+// cost is negligible — env access is a hash lookup, called once per
+// request after this change.
 
 const VALID_CATEGORIES = new Set(["bug", "feature-request", "praise", "confusion", "other"]);
 const VALID_PRIORITIES = new Set(["p0", "p1", "p2", "p3"]);
@@ -61,7 +63,12 @@ Priority guide:
 
 Output JSON only. No prose.`;
 
-Deno.serve(async (req) => {
+// Phase 11 §B (2026-04-28): handler exported so tests can call it without
+// spinning up a Deno.serve listener. Production behavior unchanged — the
+// `if (import.meta.main)` guard at the bottom of the file invokes
+// Deno.serve(handle) when the module is the entrypoint (Supabase Edge
+// Functions run the file as main).
+export async function handle(req: Request): Promise<Response> {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
   if (req.method !== "POST") return json({ error: "method not allowed" }, 405);
 
@@ -89,7 +96,11 @@ Deno.serve(async (req) => {
     return json({ error: "message must be 5-2000 characters" }, 400);
   }
 
-  const admin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+  const admin = createClient(
+    Deno.env.get("SUPABASE_URL")!,
+    Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
+  );
+  const anthropicKey = Deno.env.get("ANTHROPIC_API_KEY") || "";
 
   // Per-IP throttle — checked BEFORE the Claude call so an abuser
   // can't spend our Anthropic budget faster than the rate allows.
@@ -117,9 +128,9 @@ Deno.serve(async (req) => {
   // call errors — feedback still lands in the table, just untriaged.
   let claude_summary: string | null = null;
   let claude_priority: string | null = null;
-  if (ANTHROPIC_API_KEY) {
+  if (anthropicKey) {
     try {
-      const triage = await triageWithClaude(message, category);
+      const triage = await triageWithClaude(message, category, anthropicKey);
       if (triage) {
         claude_summary = triage.summary;
         claude_priority = triage.priority;
@@ -144,13 +155,18 @@ Deno.serve(async (req) => {
   }
 
   return json({ ok: true });
-});
+}
+
+if (import.meta.main) {
+  Deno.serve(handle);
+}
 
 async function triageWithClaude(
   message: string,
   category: string,
+  apiKey: string,
 ): Promise<{ summary: string; priority: string } | null> {
-  const client = new Anthropic({ apiKey: ANTHROPIC_API_KEY });
+  const client = new Anthropic({ apiKey });
   const resp = await client.messages.create({
     model: "claude-haiku-4-5",
     max_tokens: 200,

@@ -1,0 +1,47 @@
+# Phase 11 §B (2026-04-28) — runs Deno unit tests on every push and PR.
+# Currently scopes to supabase/functions/ — the only TypeScript surface
+# in the repo. Coverage is collected but not yet enforced; once a few
+# more functions get tests we'll add a coverage gate.
+#
+# Tests use mocked fetch + env (see supabase/functions/_test/mocks.ts);
+# no live API calls, no Supabase project access from CI.
+name: test
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+    branches: [master]
+
+jobs:
+  deno-test:
+    name: Deno tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Deno
+        uses: denoland/setup-deno@v1
+        with:
+          deno-version: v1.x
+
+      - name: Cache Deno dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/deno
+          key: deno-${{ runner.os }}-${{ hashFiles('deno.json') }}
+          restore-keys: |
+            deno-${{ runner.os }}-
+
+      - name: Run tests
+        run: deno task test
+
+      - name: Run coverage report
+        if: success()
+        run: |
+          deno test --allow-net --allow-env --allow-read --coverage=cov supabase/functions/
+          deno coverage cov --lcov > cov.lcov
+          echo "Coverage report generated. Lines covered:"
+          grep -c "^DA:.*,[1-9]" cov.lcov || true

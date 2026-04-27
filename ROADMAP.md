@@ -492,6 +492,15 @@ The single biggest lever to push Eng hygiene to 9. Scope: Deno test files for th
 
 **Done when:** `deno test supabase/functions/` passes locally with > 70% line coverage on the four functions, and a GitHub Actions workflow blocks PRs whose tests fail.
 
+**Shipped 2026-04-28 (scaffolding + first function):**
+- `deno.json` at repo root with `test` + `test:cov` tasks and an imports map pinning `std/assert`, `@supabase/supabase-js`, `@anthropic-ai/sdk`.
+- `supabase/functions/_test/mocks.ts` shared helpers: `mockFetch` (URL-substring-routed Response interceptor that captures call history), `mockEnv` (per-test `Deno.env.get` override), `setupTest` convenience pairing the two with auto-restore, plus shaped responders for PostgREST (`pgRows`), Supabase auth (`authUser`), and the Anthropic messages API (`anthropicMessage`). All HTTP-level mocking — no dep-injection plumbing inside the functions.
+- Refactor pattern established (Phase 11 §B): each function exports an `async function handle(req): Promise<Response>` and gates the existing `Deno.serve(handle)` behind `if (import.meta.main)` so tests can import the module and call `handle()` directly without spinning up a listener. Env reads also moved inside `handle()` so `mockEnv` overrides apply per-test (module-level `const X = Deno.env.get(...)` reads happen once at import and can't be re-stubbed). Production behavior verified unchanged: `submit-feedback` v4 deployed and smoke-tested against the live URL (honeypot 200, length-validation 400).
+- `submit-feedback/index.test.ts` — 9 test cases: OPTIONS preflight, GET 405, honeypot silent 200 with no DB writes, invalid-JSON 400, missing-page_path 400, message under 5 chars 400, message over 2000 chars 400, happy path without Anthropic key (no triage, insert succeeds), happy path with Anthropic key (Claude triage stamps `claude_summary` + `claude_priority`), rate-limit 429 (Claude not called when limit hit).
+- `.github/workflows/test.yml` — runs `deno task test` + coverage report on every push and PR. First-run cache warm, subsequent runs use the GitHub Actions cache for `~/.cache/deno`.
+
+**Slipped (Phase 14 §B follow-up — next focused sprint):** five more functions need the same refactor + test treatment to hit the > 70% coverage bar across `match-jobs`, `parse-resume`, `refresh-jobs`, `prune-inactive-data`, `intelligence-feed`, `send-match-digest`. Each follows the same pattern (export handler, move env reads inside, write `index.test.ts` with happy + 2 failure modes against `mockFetch`). Reasonable cost: ~30-60 min per function once the pattern is internalized. Coverage gate (deno coverage --fail-under=70) gets added when at least 4 of the 7 callable functions have tests.
+
 ### C. Typography + spacing polish pass (Design 8 → 9)
 
 Member + employer surfaces feel functional but un-polished compared to marketing pages. Specific targets:
