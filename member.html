@@ -48,19 +48,19 @@ button.ghost:hover{border-color:var(--amber);color:var(--amber-dk);}
 .match-edge strong{color:var(--terra);font-weight:600;}
 /* Phase 13 (2026-04-28): per-match coach brief — three new sub-sections
    under "Claude's read on this match". Share match-fit typography so
-   they read as continuation, not a separate card. Labels match the
-   match-training-lbl uppercase micro-label pattern; accent color varies
-   per section so the eye can scan: navy=tailor, terra=gap (matches
-   existing "Next edge" terra), slate=strategy. */
+   they read as continuation, not a separate card. Section labels use
+   the shared .eye-lbl utility from /assets/site.css; per-section parent
+   classes override the color so the eye can scan: navy=tailor,
+   terra=gap (matches existing "Next edge" terra), slate=strategy.
+   Phase 11 §C (2026-04-28) collapsed match-section-lbl + match-training-lbl
+   into the same .eye-lbl pattern. */
 .match-section{margin-top:.7rem;}
-.match-section-lbl{font-size:.78rem;font-weight:600;text-transform:uppercase;letter-spacing:.06em;margin-bottom:.3rem;}
 .match-section p{margin:0;font-size:.88rem;line-height:1.5;color:var(--navy);}
-.match-tailor .match-section-lbl{color:var(--navy);}
-.match-gap .match-section-lbl{color:var(--terra);}
-.match-strategy .match-section-lbl{color:var(--slate);}
+.match-tailor .eye-lbl{color:var(--navy);}
+.match-gap .eye-lbl{color:var(--terra);}
+.match-strategy .eye-lbl{color:var(--slate);}
 /* Phase 12 §C3: AI-skill training recommendations under each match. */
 .match-training{margin-top:.75rem;padding-top:.6rem;border-top:1px dashed var(--stone);}
-.match-training-lbl{font-size:.78rem;font-weight:600;color:var(--terra);text-transform:uppercase;letter-spacing:.06em;margin-bottom:.45rem;}
 .match-training-list{display:flex;flex-direction:column;gap:.4rem;}
 .match-training-item{display:flex;align-items:center;justify-content:space-between;gap:.5rem;padding:.45rem .65rem;background:var(--cream);border:1px solid var(--stone);border-radius:8px;font-size:.85rem;}
 .match-training-item .mt-title{color:var(--navy);font-weight:500;line-height:1.35;}
@@ -130,7 +130,7 @@ button.ghost:hover{border-color:var(--amber);color:var(--amber-dk);}
       </div>
       <div class="row-3">
         <div><label>City</label><input type="text" id="city"/></div>
-        <div><label>State</label><input type="text" id="state" maxlength="2" placeholder="NY"/></div>
+        <div><label>State</label><input type="text" id="state" maxlength="2" placeholder="NY"/><span id="state_helper" class="field-helper" hidden></span></div>
         <div><label>Minimum pay</label><input type="number" id="pay_min" placeholder="20"/></div>
       </div>
       <div class="row">
@@ -228,16 +228,40 @@ button.ghost:hover{border-color:var(--amber);color:var(--amber-dk);}
     $('newsletter').checked       = js.newsletter_opt_in !== false;
   }
 
+  // Inline-error helpers (Phase 11 §C). Pair an input with a sibling
+  // <span class="field-helper">; setFieldError toggles both. Generic so
+  // the next field that needs validation just adds a helper span and a
+  // setFieldError call inside save-profile.
+  function setFieldError(inputId, message) {
+    const input = $(inputId);
+    const helper = $(inputId + '_helper');
+    if (!input) return;
+    if (message) {
+      input.classList.add('field-error');
+      if (helper) { helper.textContent = message; helper.classList.add('error'); helper.hidden = false; }
+    } else {
+      input.classList.remove('field-error');
+      if (helper) { helper.hidden = true; helper.classList.remove('error'); helper.textContent = ''; }
+    }
+  }
+
   $('save-profile').onclick = async () => {
     const { data: { user } } = await db.auth.getUser();
     if (!user) return;
+    const stateVal = $('state').value.trim();
+    if (stateVal && !/^[A-Za-z]{2}$/.test(stateVal)) {
+      setFieldError('state', 'Use the 2-letter state code (e.g. CO, NY, CA).');
+      $('state').focus();
+      return;
+    }
+    setFieldError('state', null);
     const patch = {
       first_name: $('first_name').value || null,
       last_name:  $('last_name').value || null,
       phone: $('phone').value || null,
       headline: $('headline').value || null,
       location_city:  $('city').value || null,
-      location_state: $('state').value || null,
+      location_state: stateVal ? stateVal.toUpperCase() : null,
       desired_pay_min:  $('pay_min').value ? Number($('pay_min').value) : null,
       desired_pay_type: $('pay_type').value || null,
       career_stage: $('career_stage').value || null,
@@ -329,10 +353,10 @@ button.ghost:hover{border-color:var(--amber);color:var(--amber-dk);}
       // same ground at different granularity, and the prompt explicitly
       // ties them together (skill_gap_plan's first step matches
       // growth_note when ai_skills are required).
-      const tailor = m.resume_tailoring ? `<div class="match-section match-tailor"><div class="match-section-lbl">Tailor your resume</div><p>${esc(m.resume_tailoring)}</p></div>` : '';
-      const gap = m.skill_gap_plan ? `<div class="match-section match-gap"><div class="match-section-lbl">Your skill-gap path</div><p>${esc(m.skill_gap_plan)}</p></div>` : '';
+      const tailor = m.resume_tailoring ? `<div class="match-section match-tailor"><div class="eye-lbl">Tailor your resume</div><p>${esc(m.resume_tailoring)}</p></div>` : '';
+      const gap = m.skill_gap_plan ? `<div class="match-section match-gap"><div class="eye-lbl">Your skill-gap path</div><p>${esc(m.skill_gap_plan)}</p></div>` : '';
       const edge = (m.growth_note && !m.skill_gap_plan) ? `<p class="match-edge"><strong>Next edge:</strong> ${esc(m.growth_note)}</p>` : '';
-      const strategy = m.application_strategy ? `<div class="match-section match-strategy"><div class="match-section-lbl">Apply with this angle</div><p>${esc(m.application_strategy)}</p></div>` : '';
+      const strategy = m.application_strategy ? `<div class="match-section match-strategy"><div class="eye-lbl">Apply with this angle</div><p>${esc(m.application_strategy)}</p></div>` : '';
 
       // Build the training-recommendation panel: union of trainings tied
       // to this job's AI skills, dedup by training id, sort by
@@ -348,7 +372,7 @@ button.ghost:hover{border-color:var(--amber);color:var(--amber-dk);}
         .slice(0,3);
       const trainingHtml = topTrainings.length
         ? `<div class="match-training">
-            <div class="match-training-lbl">Recommended training to grow into this role</div>
+            <div class="eye-lbl">Recommended training to grow into this role</div>
             <div class="match-training-list">
               ${topTrainings.map(t=>{
                 const url = safeUrl(t.source_url);

@@ -89,6 +89,25 @@ body{font-family:var(--font-b);background:var(--cream);color:var(--navy);line-he
   color:var(--terra);margin-bottom:1rem;display:flex;align-items:center;gap:0.5rem;}
 .eye::before{content:'';width:24px;height:2px;background:var(--terra);}
 
+/* In-card section micro-label. Same family as .eye (uppercase tracker)
+   without the leading bar — for section dividers inside cards / modals
+   where the bar is too heavy. Color defaults to terra; pages can override
+   per-section via a parent class (member.html match-tailor/gap/strategy
+   set distinct accent colors). Phase 11 §C (2026-04-28) consolidates
+   four duplicate inline patterns: match-training-lbl, match-section-lbl,
+   and four <h3 style="..."> in employer.html. */
+.eye-lbl{font-size:.78rem;font-weight:600;text-transform:uppercase;letter-spacing:.06em;
+  color:var(--terra);margin-bottom:.4rem;display:block;}
+
+/* Inline form-validation pattern. Used on member.html profile editor +
+   any form where per-field error feedback beats the page-level .status
+   block. Apply .field-error to the <input>/<select>/<textarea>; pair
+   with a sibling .field-helper for the explanatory line. */
+.field-error{border-color:var(--red) !important;}
+.field-error:focus{box-shadow:0 0 0 3px rgba(192,57,43,0.18);}
+.field-helper{font-size:.78rem;color:var(--slate);margin-top:.3rem;line-height:1.45;display:block;}
+.field-helper.error{color:var(--red);}
+
 /* ─── NAV ─── */
 #site-nav{position:sticky;top:0;left:0;right:0;z-index:1000;}
 #site-nav nav{

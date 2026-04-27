@@ -52,8 +52,12 @@ button.danger:hover{background:rgba(200,95,62,0.06);}
 .posting-row .meta{font-size:.82rem;color:var(--slate);}
 
 .listings-table{width:100%;border-collapse:collapse;font-size:0.92rem;}
-.listings-table th{text-align:left;padding:.65rem 0.8rem;font-size:.74rem;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--terra);border-bottom:1px solid var(--stone);}
-.listings-table td{padding:.7rem 0.8rem;border-bottom:1px solid var(--stone);vertical-align:middle;}
+.listings-table th{text-align:left;padding:.7rem 0.85rem;font-size:.74rem;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--terra);border-bottom:1px solid var(--stone);}
+.listings-table th.num,.listings-table td.num{text-align:right;font-variant-numeric:tabular-nums;}
+.listings-table td{padding:.85rem 0.85rem;border-bottom:1px solid var(--stone);vertical-align:middle;line-height:1.5;}
+.listings-table tbody tr{transition:background .12s;}
+.listings-table tbody tr:nth-child(even){background:rgba(15,24,41,0.018);}
+.listings-table tbody tr:hover{background:rgba(245,166,35,0.04);}
 .listings-table tr:last-child td{border-bottom:none;}
 .status-pill{font-size:.72rem;font-weight:600;padding:2px 9px;border-radius:20px;text-transform:uppercase;letter-spacing:.05em;}
 .status-pill.active{background:rgba(45,122,58,0.1);color:var(--green);}
@@ -173,11 +177,11 @@ button.danger:hover{background:rgba(200,95,62,0.06);}
       </div>
       <div style="margin-bottom:.75rem;"><label>Nice to have (one per line)</label><textarea id="f-nice"></textarea></div>
 
-      <h3 style="font-size:.78rem;font-weight:600;color:var(--terra);text-transform:uppercase;letter-spacing:.08em;margin:1rem 0 .5rem;">AI skills you're looking for</h3>
+      <h3 class="eye-lbl" style="margin-top:1rem;">AI skills you're looking for</h3>
       <div class="ai-skills-picker" id="f-ai-skills" aria-label="Select the AI skills this role needs"></div>
       <p class="ai-skills-note">Why we ask: matched seekers see these skills under your listing along with curated free training, so they know exactly how to grow into the role. Optional, but the more accurate the better.</p>
 
-      <h3 style="font-size:.78rem;font-weight:600;color:var(--terra);text-transform:uppercase;letter-spacing:.08em;margin:1rem 0 .5rem;">Location</h3>
+      <h3 class="eye-lbl" style="margin-top:1rem;">Location</h3>
       <div class="row-3">
         <div><label>City</label><input type="text" id="f-city"/></div>
         <div><label>State</label><input type="text" id="f-state" maxlength="2" placeholder="CO"/></div>
@@ -197,7 +201,7 @@ button.danger:hover{background:rgba(200,95,62,0.06);}
         <label class="toggle"><input type="checkbox" id="f-onsite" checked/> On-site</label>
       </div>
 
-      <h3 style="font-size:.78rem;font-weight:600;color:var(--terra);text-transform:uppercase;letter-spacing:.08em;margin:1rem 0 .5rem;">Pay</h3>
+      <h3 class="eye-lbl" style="margin-top:1rem;">Pay</h3>
       <div class="row-3">
         <div><label>Pay type</label>
           <select id="f-pay-type"><option value="hourly">Hourly</option><option value="salary">Salary</option></select>
@@ -206,7 +210,7 @@ button.danger:hover{background:rgba(200,95,62,0.06);}
         <div><label>Max</label><input type="number" id="f-pay-max" placeholder="e.g. 28"/></div>
       </div>
 
-      <h3 style="font-size:.78rem;font-weight:600;color:var(--terra);text-transform:uppercase;letter-spacing:.08em;margin:1rem 0 .5rem;">How to apply</h3>
+      <h3 class="eye-lbl" style="margin-top:1rem;">How to apply</h3>
       <div class="row">
         <div><label>Apply URL</label><input type="url" id="f-apply-url" placeholder="https://…"/></div>
         <div><label>or apply email</label><input type="email" id="f-apply-email" placeholder="careers@…"/></div>
@@ -413,7 +417,7 @@ async function loadListings() {
   }
   wrap.innerHTML =
     '<table class="listings-table"><thead><tr>' +
-      '<th>Title</th><th>Status</th><th>Views</th><th>Posted</th><th>Actions</th>' +
+      '<th>Title</th><th>Status</th><th class="num">Views</th><th>Posted</th><th>Actions</th>' +
     '</tr></thead><tbody>' +
     data.map(j => {
       const posted = j.posted_at ? new Date(j.posted_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '—';
@@ -424,7 +428,7 @@ async function loadListings() {
       return '<tr>' +
         '<td><strong>' + escapeHtml(j.title) + '</strong>' + featured + '</td>' +
         '<td><span class="status-pill ' + j.status + '">' + j.status + '</span></td>' +
-        '<td>' + (j.view_count || 0) + '</td>' +
+        '<td class="num">' + (j.view_count || 0) + '</td>' +
         '<td>' + posted + '</td>' +
         '<td><button class="ghost" onclick="editListing(\'' + j.id + '\')">Edit</button> ' +
           (canToggle ? '<button class="ghost" onclick="' + toggleAction + '">' + toggleLabel + '</button>' : '') + '</td>' +
