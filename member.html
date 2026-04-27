@@ -46,6 +46,18 @@ button.ghost:hover{border-color:var(--amber);color:var(--amber-dk);}
 .match-fit{color:var(--navy);font-size:.9rem;margin-top:.55rem;line-height:1.5;}
 .match-edge{color:var(--slate);font-size:.88rem;margin-top:.5rem;line-height:1.5;}
 .match-edge strong{color:var(--terra);font-weight:600;}
+/* Phase 13 (2026-04-28): per-match coach brief — three new sub-sections
+   under "Claude's read on this match". Share match-fit typography so
+   they read as continuation, not a separate card. Labels match the
+   match-training-lbl uppercase micro-label pattern; accent color varies
+   per section so the eye can scan: navy=tailor, terra=gap (matches
+   existing "Next edge" terra), slate=strategy. */
+.match-section{margin-top:.7rem;}
+.match-section-lbl{font-size:.78rem;font-weight:600;text-transform:uppercase;letter-spacing:.06em;margin-bottom:.3rem;}
+.match-section p{margin:0;font-size:.88rem;line-height:1.5;color:var(--navy);}
+.match-tailor .match-section-lbl{color:var(--navy);}
+.match-gap .match-section-lbl{color:var(--terra);}
+.match-strategy .match-section-lbl{color:var(--slate);}
 /* Phase 12 §C3: AI-skill training recommendations under each match. */
 .match-training{margin-top:.75rem;padding-top:.6rem;border-top:1px dashed var(--stone);}
 .match-training-lbl{font-size:.78rem;font-weight:600;color:var(--terra);text-transform:uppercase;letter-spacing:.06em;margin-bottom:.45rem;}
@@ -310,7 +322,17 @@ button.ghost:hover{border-color:var(--amber);color:var(--amber-dk);}
       const loc = j.is_remote ? 'Remote' : [j.location_city,j.location_state].filter(Boolean).join(', ');
       const pay = j.pay_min ? `$${j.pay_min}${j.pay_max?`–$${j.pay_max}`:''} ${j.pay_type==='hourly'?'/hr':'/yr'}` : '';
       const fit = m.rationale ? `<p class="match-fit">${esc(m.rationale)}</p>` : '';
-      const edge = m.growth_note ? `<p class="match-edge"><strong>Next edge:</strong> ${esc(m.growth_note)}</p>` : '';
+      // Phase 13 (2026-04-28): per-match coach brief. Each sub-section
+      // hides when its field is null, so pre-Phase-13 rows still render
+      // cleanly with just fit + edge. When skill_gap_plan is present it
+      // supersedes the standalone "Next edge:" line — they cover the
+      // same ground at different granularity, and the prompt explicitly
+      // ties them together (skill_gap_plan's first step matches
+      // growth_note when ai_skills are required).
+      const tailor = m.resume_tailoring ? `<div class="match-section match-tailor"><div class="match-section-lbl">Tailor your resume</div><p>${esc(m.resume_tailoring)}</p></div>` : '';
+      const gap = m.skill_gap_plan ? `<div class="match-section match-gap"><div class="match-section-lbl">Your skill-gap path</div><p>${esc(m.skill_gap_plan)}</p></div>` : '';
+      const edge = (m.growth_note && !m.skill_gap_plan) ? `<p class="match-edge"><strong>Next edge:</strong> ${esc(m.growth_note)}</p>` : '';
+      const strategy = m.application_strategy ? `<div class="match-section match-strategy"><div class="match-section-lbl">Apply with this angle</div><p>${esc(m.application_strategy)}</p></div>` : '';
 
       // Build the training-recommendation panel: union of trainings tied
       // to this job's AI skills, dedup by training id, sort by
@@ -343,8 +365,8 @@ button.ghost:hover{border-color:var(--amber);color:var(--amber-dk);}
           </div>`
         : '';
 
-      const why = (fit || edge || trainingHtml)
-        ? `<details class="match-why"><summary>Claude's read on this match</summary>${fit}${edge}${trainingHtml}</details>`
+      const why = (fit || tailor || gap || edge || strategy || trainingHtml)
+        ? `<details class="match-why"><summary>Claude's read on this match</summary>${fit}${tailor}${gap}${edge}${strategy}${trainingHtml}</details>`
         : '';
       return `<div class="match">
         <span class="score">${m.score||Math.round((m.similarity||0)*100)}</span>

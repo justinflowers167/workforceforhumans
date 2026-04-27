@@ -17,13 +17,15 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-const SYSTEM_PROMPT = `You are a job-matching analyst for Workforce for Humans — a platform that helps people displaced by AI, layoffs, and automation find real work and real training. You and the member make the dreamwork a reality: they drive, you support with honest reads on fit and growth.
+const SYSTEM_PROMPT = `You are a career coach and job-matching analyst for Workforce for Humans — a platform that helps people displaced by AI, layoffs, and automation find real work and real training. You and the member make the dreamwork a reality: they drive, you support with honest reads on fit and growth, plus a per-match coach brief they can act on today.
 
-Score each job (0-100) for this candidate based on fit: skills overlap, desired roles, pay expectations, location/remote, seniority, and realistic growth path (career-changers get credit for transferable skills). Return ONLY valid JSON:
+Score each job (0-100) for this candidate based on fit: skills overlap, desired roles, pay expectations, location/remote, seniority, and realistic growth path (career-changers get credit for transferable skills). For each kept match, ALSO produce a coach brief — the resume tailoring, skill-gap path, and application strategy this seeker would use to actually land THIS role.
 
-{"matches":[{"job_id":string,"score":integer,"rationale":string,"reasons":string[],"growth_note":string}]}
+Return ONLY valid JSON:
 
-Match this voice: direct, empathetic without saccharine, action verbs over adjectives, validates struggle without dwelling. Examples of the Workforce for Humans voice:
+{"matches":[{"job_id":string,"score":integer,"rationale":string,"reasons":string[],"growth_note":string,"resume_tailoring":string,"skill_gap_plan":string,"application_strategy":string}]}
+
+Match this voice: direct, empathetic without saccharine, action verbs over adjectives, validates struggle without dwelling. Practitioner-coach, not motivational poster. Examples of the Workforce for Humans voice:
 - "Whether you've been laid off, need a career change, or are starting from zero — we connect real people with employers who are actively hiring. No degree gatekeeping. No runaround."
 - "Free guides and resources to help you find work, build skills, and navigate your career — no matter where you're starting from."
 - "Pick one agentic framework, build something small, and document it. That portfolio is your leverage."
@@ -31,8 +33,11 @@ Match this voice: direct, empathetic without saccharine, action verbs over adjec
 Field specs:
 - score: integer 0-100.
 - rationale: 2-3 sentences. Name what about THIS candidate's profile fits THIS job. Second person ("you"). Concrete, not generic. No hedging ("might", "could possibly").
-- growth_note: 1-2 sentences. The NEXT EDGE — what the candidate would sharpen into this role. Start with verbs: "Sharpening...", "Adding...", "Naming...", "A small portfolio piece in...". Never "you lack", "missing", "weakness". If the fit is already tight, name the stretch inside the role itself, not a gap in the profile. WHEN the job specifies ai_skills_required and the candidate's skills_have lacks one or more, the growth_note MUST name the single most-leveraged AI skill to learn first (highest reuse across the role's daily work). Don't list multiple — pick one and be specific. The platform shows curated free training for that exact skill below the match card.
 - reasons: 2-4 short tags like "skills overlap", "remote ok", "pay match".
+- growth_note: 1-2 sentences. The NEXT EDGE — what the candidate would sharpen into this role. Start with verbs: "Sharpening...", "Adding...", "Naming...", "A small portfolio piece in...". Never "you lack", "missing", "weakness". If the fit is already tight, name the stretch inside the role itself, not a gap in the profile. WHEN the job specifies ai_skills_required and the candidate's skills_have lacks one or more, the growth_note MUST name the single most-leveraged AI skill to learn first (highest reuse across the role's daily work). Don't list multiple — pick one and be specific. The platform shows curated free training for that exact skill below the match card.
+- resume_tailoring: 2-3 sentences. CONCRETE edits to the resume bullets the seeker already has, not generic advice. Reference real lines from resume_raw_text or resume_parsed when possible (e.g. "Lead your summary with the Acme migration outcome — that's the systems-integration signal this role's screening for"). If the resume is thin or absent, say what to ADD to the top of the resume that this role would screen for. Never "make your resume better"; always "do X with bullet Y because role wants Z".
+- skill_gap_plan: 2-4 sentences as a short ordered path. Format: name 1-2 things the seeker already brings (from skills_have or resume_parsed), then the 1-2 things the role wants that they don't yet have, then the FIRST step to close it (a free course, a portfolio piece, a side project — be specific). Same coach voice as growth_note: never "you lack" / "missing"; frame as "the next edge" / "to grow into this you'd add". When ai_skills_required has items and skills_have is missing them, the FIRST step MUST be the same single AI skill named in growth_note (consistency: training panel shows one skill).
+- application_strategy: 2-3 sentences. The angle to lead with — cover letter opener, what to over-index on in the application, what NOT to over-emphasize. For federal roles (source = usajobs), include the "mirror the JD keywords into the resume + questionnaire" advice — federal HR systems screen on exact phrase matches. For private-sector roles, focus on the warm-intro / hiring-manager-LinkedIn angle when relevant. Always actionable today.
 
 Only include jobs scoring 40 or higher. Sort descending by score. Cap at 10. Return ONLY the JSON object — no prose before or after.`;
 
@@ -60,11 +65,24 @@ Deno.serve(async (req) => {
       .single();
     if (!seeker) return json({ error: "no profile" }, 404);
 
+    // Phase 13 (2026-04-28): pull the seeker's current resume so the
+    // career-copilot fields can reference real bullets, not generic advice.
+    // raw_text gives the literal resume text the model can quote back at
+    // the seeker; parsed_json gives the structured shape (experience,
+    // skills, education) for cross-reference. Both are nullable: an
+    // un-parsed resume just degrades the brief to less-specific advice.
     const { data: haveRows } = await admin
       .from("job_seeker_skills")
       .select("skills(name)")
       .eq("job_seeker_id", seeker.id);
     const skillsHave = (haveRows || []).map((r: any) => r.skills?.name).filter(Boolean);
+
+    const { data: resumeRow } = await admin
+      .from("resumes")
+      .select("raw_text, parsed_json")
+      .eq("job_seeker_id", seeker.id)
+      .eq("is_current", true)
+      .maybeSingle();
 
     const { data: jobs } = await admin
       .from("jobs")
@@ -104,6 +122,13 @@ Deno.serve(async (req) => {
       desired_pay_type: seeker.desired_pay_type,
       open_to_remote: seeker.open_to_remote,
       location: [seeker.location_city, seeker.location_state].filter(Boolean).join(", "),
+      // Phase 13 (2026-04-28): resume context for the career-copilot fields.
+      // raw_text capped at 4000 chars (~1000 tokens) to bound input cost;
+      // parsed_json passed as-is (typically 500-800 tokens). Both null when
+      // the seeker hasn't uploaded/parsed a resume yet — coach brief still
+      // produced but less-specific without bullets to quote back.
+      resume_raw_text: typeof resumeRow?.raw_text === "string" ? resumeRow.raw_text.slice(0, 4000) : null,
+      resume_parsed: resumeRow?.parsed_json ?? null,
     };
     const jobsPayload = jobs.map((j: any) => ({
       job_id: j.id,
@@ -120,14 +145,18 @@ Deno.serve(async (req) => {
     }));
 
     const client = new Anthropic({ apiKey: ANTHROPIC_API_KEY });
-    // Prompt-cache the system block. No-op today: SYSTEM_PROMPT is below
-    // Anthropic's 1024-token minimum cacheable prefix, so the marker is
-    // ignored silently. Forward-compatible: when the prompt grows past
-    // 1024 tokens (e.g. when match-jobs evolves into the career-copilot
-    // direction), caching activates with no further code change.
+    // Prompt-cache the system block. Phase 13 (2026-04-28) extended the
+    // system prompt with three new field specs (resume_tailoring,
+    // skill_gap_plan, application_strategy); the prompt is now well past
+    // Anthropic's 1024-token minimum cacheable prefix so this marker is
+    // no longer a no-op — the second invocation in any 5-minute window
+    // reads from cache at 10% of standard input rate.
     const resp = await client.messages.create({
       model: MODEL,
-      max_tokens: 6000,
+      // 8000 (Phase 13) up from 6000 — three new prose fields × 10 matches
+      // adds roughly 2400 output tokens; headroom for longer rationales
+      // when the resume context produces richer briefs.
+      max_tokens: 8000,
       system: [
         { type: "text", text: SYSTEM_PROMPT, cache_control: { type: "ephemeral" } },
       ],
@@ -138,7 +167,16 @@ Deno.serve(async (req) => {
     const e = raw.lastIndexOf("}");
     if (s < 0 || e < 0) throw new Error("no JSON in model output");
     const parsed = JSON.parse(raw.slice(s, e + 1));
-    const matches: Array<{ job_id: string; score: number; rationale: string; reasons: string[]; growth_note?: string }> = parsed.matches || [];
+    const matches: Array<{
+      job_id: string;
+      score: number;
+      rationale: string;
+      reasons: string[];
+      growth_note?: string;
+      resume_tailoring?: string;
+      skill_gap_plan?: string;
+      application_strategy?: string;
+    }> = parsed.matches || [];
     const top = matches.slice(0, TOP_N);
 
     await admin
@@ -158,6 +196,12 @@ Deno.serve(async (req) => {
         rationale: m.rationale,
         match_reasons: m.reasons || [],
         growth_note: m.growth_note ?? null,
+        // Phase 13 (2026-04-28): per-match coach brief. All nullable so
+        // pre-Phase-13 rows render cleanly under the same disclosure;
+        // member.html hides any sub-section whose field is null.
+        resume_tailoring: m.resume_tailoring ?? null,
+        skill_gap_plan: m.skill_gap_plan ?? null,
+        application_strategy: m.application_strategy ?? null,
       }));
       await admin.from("match_scores").insert(rows);
     }
