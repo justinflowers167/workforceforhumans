@@ -503,6 +503,10 @@ Member + employer surfaces feel functional but un-polished compared to marketing
 
 **Done when:** a side-by-side review of marketing pages vs. product pages no longer shows a visible polish gap, and the rubric Design score lands at 9.
 
+**Shipped 2026-04-28 (partial):** Consolidated the duplicated uppercase micro-label pattern into a single `.eye-lbl` utility in `/assets/site.css`. Replaced 4 inline `<h3 style="...">` instances in `employer.html` (listing modal section headers) and the page-local `.match-section-lbl` + `.match-training-lbl` declarations in `member.html` (Phase 13 coach-brief sub-sections + Phase 12 training panel). Per-section accent colors moved to `.eye-lbl` rules scoped under the parent class — same visual result, one less indirection. Added `.field-error` + `.field-helper` shared utilities for inline form validation; demo wired in the profile editor's state field (validates 2-letter format and shows the error inline instead of silently accepting bad data). Employer dashboard listings table got modest polish: alternating row tint (`rgba(15,24,41,0.018)`), right-aligned Views column with tabular-nums, amber hover state, cell padding `.7rem → .85rem` for breathing room.
+
+**Slipped:** the broader "no visible polish gap vs. marketing pages" gate is not met. Member profile editor still uses page-local input styling (no shared focus-ring shadow); resume-review section hasn't been touched; no side-by-side eyeball review against marketing pages was done. Honest read: this pass closed the duplication-hygiene fraction of §C and gave the remaining work a richer shared vocabulary, but the rubric Design 8 → 9 lift needs a real visual-design pass with founder eyes (or designer help). Recommend treating the leftover work as Phase 14 §A — book it after Phase 11 §B (test suite) lands so the polish doesn't compete with hygiene.
+
 ### D. Greenhouse / Lever second aggregator (conditional)
 
 Only if a month of Claude-filtered USAJobs data shows the daily output is thin or off-audience. If the founder review at end-of-Phase-10 says "feed quality is fine, just needs more volume," this becomes a real Phase 11 item; otherwise defer.
