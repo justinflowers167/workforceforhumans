@@ -492,6 +492,15 @@ The single biggest lever to push Eng hygiene to 9. Scope: Deno test files for th
 
 **Done when:** `deno test supabase/functions/` passes locally with > 70% line coverage on the four functions, and a GitHub Actions workflow blocks PRs whose tests fail.
 
+**Shipped 2026-04-28 (scaffolding + first function):**
+- `deno.json` at repo root with `test` + `test:cov` tasks and an imports map pinning `std/assert`, `@supabase/supabase-js`, `@anthropic-ai/sdk`.
+- `supabase/functions/_test/mocks.ts` shared helpers: `mockFetch` (URL-substring-routed Response interceptor that captures call history), `mockEnv` (per-test `Deno.env.get` override), `setupTest` convenience pairing the two with auto-restore, plus shaped responders for PostgREST (`pgRows`), Supabase auth (`authUser`), and the Anthropic messages API (`anthropicMessage`). All HTTP-level mocking — no dep-injection plumbing inside the functions.
+- Refactor pattern established (Phase 11 §B): each function exports an `async function handle(req): Promise<Response>` and gates the existing `Deno.serve(handle)` behind `if (import.meta.main)` so tests can import the module and call `handle()` directly without spinning up a listener. Env reads also moved inside `handle()` so `mockEnv` overrides apply per-test (module-level `const X = Deno.env.get(...)` reads happen once at import and can't be re-stubbed). Production behavior verified unchanged: `submit-feedback` v4 deployed and smoke-tested against the live URL (honeypot 200, length-validation 400).
+- `submit-feedback/index.test.ts` — 9 test cases: OPTIONS preflight, GET 405, honeypot silent 200 with no DB writes, invalid-JSON 400, missing-page_path 400, message under 5 chars 400, message over 2000 chars 400, happy path without Anthropic key (no triage, insert succeeds), happy path with Anthropic key (Claude triage stamps `claude_summary` + `claude_priority`), rate-limit 429 (Claude not called when limit hit).
+- `.github/workflows/test.yml` — runs `deno task test` + coverage report on every push and PR. First-run cache warm, subsequent runs use the GitHub Actions cache for `~/.cache/deno`.
+
+**Slipped (Phase 14 §B follow-up — next focused sprint):** five more functions need the same refactor + test treatment to hit the > 70% coverage bar across `match-jobs`, `parse-resume`, `refresh-jobs`, `prune-inactive-data`, `intelligence-feed`, `send-match-digest`. Each follows the same pattern (export handler, move env reads inside, write `index.test.ts` with happy + 2 failure modes against `mockFetch`). Reasonable cost: ~30-60 min per function once the pattern is internalized. Coverage gate (deno coverage --fail-under=70) gets added when at least 4 of the 7 callable functions have tests.
+
 ### C. Typography + spacing polish pass (Design 8 → 9)
 
 Member + employer surfaces feel functional but un-polished compared to marketing pages. Specific targets:
@@ -502,6 +511,10 @@ Member + employer surfaces feel functional but un-polished compared to marketing
 - Match-card disclosure ("Claude's read on this match") — reduce visual weight of the open state, make the "Next edge:" label feel more like a coach's annotation.
 
 **Done when:** a side-by-side review of marketing pages vs. product pages no longer shows a visible polish gap, and the rubric Design score lands at 9.
+
+**Shipped 2026-04-28 (partial):** Consolidated the duplicated uppercase micro-label pattern into a single `.eye-lbl` utility in `/assets/site.css`. Replaced 4 inline `<h3 style="...">` instances in `employer.html` (listing modal section headers) and the page-local `.match-section-lbl` + `.match-training-lbl` declarations in `member.html` (Phase 13 coach-brief sub-sections + Phase 12 training panel). Per-section accent colors moved to `.eye-lbl` rules scoped under the parent class — same visual result, one less indirection. Added `.field-error` + `.field-helper` shared utilities for inline form validation; demo wired in the profile editor's state field (validates 2-letter format and shows the error inline instead of silently accepting bad data). Employer dashboard listings table got modest polish: alternating row tint (`rgba(15,24,41,0.018)`), right-aligned Views column with tabular-nums, amber hover state, cell padding `.7rem → .85rem` for breathing room.
+
+**Slipped:** the broader "no visible polish gap vs. marketing pages" gate is not met. Member profile editor still uses page-local input styling (no shared focus-ring shadow); resume-review section hasn't been touched; no side-by-side eyeball review against marketing pages was done. Honest read: this pass closed the duplication-hygiene fraction of §C and gave the remaining work a richer shared vocabulary, but the rubric Design 8 → 9 lift needs a real visual-design pass with founder eyes (or designer help). Recommend treating the leftover work as Phase 14 §A — book it after Phase 11 §B (test suite) lands so the polish doesn't compete with hygiene.
 
 ### D. Greenhouse / Lever second aggregator (conditional)
 
