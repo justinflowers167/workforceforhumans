@@ -3,10 +3,9 @@
 import Anthropic from "https://esm.sh/@anthropic-ai/sdk@0.32.1?target=deno";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2?target=deno";
 
-const ANTHROPIC_API_KEY = Deno.env.get("ANTHROPIC_API_KEY")!;
-const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
-const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY")!;
+// Phase 14 §B (2026-05-09): env reads moved inside handle() so unit tests
+// can override values per-case (module-level reads happen once at import
+// time and can't be re-stubbed). Edge runtime cost is negligible.
 
 const MODEL = "claude-sonnet-4-6";
 const MAX_JOBS_TO_SCORE = 50;
@@ -41,7 +40,12 @@ Field specs:
 
 Only include jobs scoring 40 or higher. Sort descending by score. Cap at 10. Return ONLY the JSON object — no prose before or after.`;
 
-Deno.serve(async (req) => {
+// Phase 14 §B (2026-05-09): handler exported so tests can call it without
+// spinning up a Deno.serve listener. Production behavior unchanged — the
+// `if (import.meta.main)` guard at the bottom invokes Deno.serve(handle)
+// when the module is the entrypoint (Supabase Edge Functions run the
+// file as main).
+export async function handle(req: Request): Promise<Response> {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
 
   try {
@@ -49,14 +53,27 @@ Deno.serve(async (req) => {
     const token = auth.replace(/^Bearer\s+/i, "");
     if (!token) return json({ error: "missing auth" }, 401);
 
-    const userClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
-      global: { headers: { Authorization: `Bearer ${token}` } },
+    // Phase 14 §B (2026-05-09): pass globalThis.fetch + disable auto-refresh
+    // on both clients. fetch-injection lets test mockFetch intercept the
+    // HTTP calls; autoRefreshToken:false stops the setInterval that would
+    // otherwise leak past test end and trip Deno's leak sanitizer. Both
+    // are no-ops in production behavior.
+    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+    const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
+    const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+
+    const userClient = createClient(supabaseUrl, supabaseAnonKey, {
+      global: { headers: { Authorization: `Bearer ${token}` }, fetch: globalThis.fetch },
+      auth: { persistSession: false, autoRefreshToken: false },
     });
     const { data: userData, error: userErr } = await userClient.auth.getUser();
     if (userErr || !userData?.user) return json({ error: "unauthenticated" }, 401);
     const authUserId = userData.user.id;
 
-    const admin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+    const admin = createClient(supabaseUrl, supabaseServiceKey, {
+      global: { fetch: globalThis.fetch },
+      auth: { persistSession: false, autoRefreshToken: false },
+    });
 
     const { data: seeker } = await admin
       .from("job_seekers")
@@ -144,7 +161,10 @@ Deno.serve(async (req) => {
       pay: { type: j.pay_type, min: j.pay_min, max: j.pay_max },
     }));
 
-    const client = new Anthropic({ apiKey: ANTHROPIC_API_KEY });
+    const anthropicKey = Deno.env.get("ANTHROPIC_API_KEY")!;
+    // Phase 14 §B (2026-05-09): pass globalThis.fetch so tests can
+    // intercept the Anthropic SDK's HTTP call. Production unchanged.
+    const client = new Anthropic({ apiKey: anthropicKey, fetch: globalThis.fetch });
     // Prompt-cache the system block. Phase 13 (2026-04-28) extended the
     // system prompt with three new field specs (resume_tailoring,
     // skill_gap_plan, application_strategy); the prompt is now well past
@@ -211,7 +231,11 @@ Deno.serve(async (req) => {
     console.error("match-jobs error:", err);
     return json({ error: "Matching failed. Please try again." }, 500);
   }
-});
+}
+
+if (import.meta.main) {
+  Deno.serve(handle);
+}
 
 function json(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), {
