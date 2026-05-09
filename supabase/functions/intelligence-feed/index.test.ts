@@ -88,7 +88,7 @@ Deno.test("happy path: 8 RSS feeds + layoffs.fyi return content, no OpenAI key",
       // the upsert path).
       {
         match: "/rest/v1/feed_items",
-        handler: () => { upsertCount++; return jsonResponse([{ id: "fake-feed-item" }], 201); },
+        handler: () => { upsertCount++; return new Response(null, { status: 201 }); },
       },
     ],
   });
@@ -120,7 +120,7 @@ Deno.test("all RSS feeds 500: function continues, layoffs.fyi still runs", async
       { match: "layoffs.fyi", handler: () => csvResponse() },
       {
         match: "/rest/v1/feed_items",
-        handler: () => { upsertCount++; return jsonResponse([{ id: "fake-feed-item" }], 201); },
+        handler: () => { upsertCount++; return new Response(null, { status: 201 }); },
       },
     ],
   });
@@ -147,7 +147,7 @@ Deno.test("empty RSS XML yields 0 inserts", async () => {
       { match: "layoffs.fyi", handler: () => new Response("not found", { status: 404 }) },
       {
         match: "/rest/v1/feed_items",
-        handler: () => { upsertCount++; return jsonResponse([{ id: "fake-feed-item" }], 201); },
+        handler: () => { upsertCount++; return new Response(null, { status: 201 }); },
       },
     ],
   });
