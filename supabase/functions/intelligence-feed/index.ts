@@ -182,6 +182,7 @@ async function fetchRssFeeds(db: ReturnType<typeof createClient>): Promise<numbe
           },
           { onConflict: "source,source_id" },
         );
+        if (error) console.error(`[RSS-upsert-debug] ${feed.source} error:`, JSON.stringify(error));
         if (!error) inserted++;
       }
     } catch (e) {
