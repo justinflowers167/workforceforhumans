@@ -622,6 +622,123 @@ Real-device QA of the new match-card sub-sections at 375px not yet captured (car
 
 ---
 
+## Phase 14 — Hygiene close-out (in progress, 2026-05-09 →)
+
+Two parallel tracks picking up exactly where Phase 11 §B and §C stopped. Phase 11 left both areas at "partial — pattern established, follow-up booked here." This is that follow-up.
+
+### A. Visual design polish (Design 8 → 9 — finishes Phase 11 §C)
+
+Phase 11 §C closed the duplication-hygiene fraction (shared `.eye-lbl`, `.field-error`/`.field-helper` utilities, employer table polish) but the broader "no visible polish gap vs. marketing pages" gate was not met. The remaining work is taste-driven and benefits from a deliberate visual-design pass.
+
+**Targets (deferred from Phase 11 §C):**
+
+- Type hierarchy on `member.html` profile editor — establish a clear scale, tighten line-heights on dense forms, add a shared focus-ring shadow on inputs (currently only border-color changes on focus)
+- Resume review section (strengths / gaps / rewrites cards) — hasn't been touched since Phase 7
+- Match-card disclosure visual weight — reduce border weight of the open `<details>` so it reads as annotation, not a separate card
+- Side-by-side eyeball review of marketing pages vs. product pages — confirm the polish gap is closed
+- Founder headshot quality + about.html micro-bio polish (low-priority but visible)
+
+**Done when:** rubric Design score lands at 9. Subjective gate — needs founder eyes (or a designer's hour) to call.
+
+**Recommended approach:** book a focused 2-3 hour design block (founder-driven; I'm a poor judge of taste). I can implement specific changes (typography tokens, spacing tightenings, focus rings) once the founder names targets. Without that direction, this stays partial.
+
+### B. Test suite backfill (Eng hygiene 8 → 9 — finishes Phase 11 §B)
+
+Phase 11 §B established the test pattern on `submit-feedback`; the Phase 14 §B sprint (2026-05-09) extended it to `match-jobs`, `parse-resume`, and `refresh-jobs` via PRs #44 and #45. **4 of 7 callable Edge Functions now have tests; 31 cases passing in CI.**
+
+| Function | Tested | Cases | Deployed | Pattern applied |
+|---|---|---|---|---|
+| submit-feedback | ✅ | 10 | v6 | reference impl |
+| match-jobs | ✅ | 7 | v15 | (#44) |
+| parse-resume | ✅ | 8 | v14 | (#45, raw_text path; PDF/DOCX storage paths deferred) |
+| refresh-jobs | ✅ | 6 | v16 | (#45, USAJobs + Claude filter + RPC) |
+| prune-inactive-data | ⏳ | — | — | next |
+| intelligence-feed | ⏳ | — | — | next |
+| send-match-digest | ⏳ | — | — | next |
+
+**What's left:**
+
+1. **Three more function tests** (~30-45 min each, mechanical at this point):
+   - `prune-inactive-data` — cron mode (24-month retention sweep with auth.users.last_sign_in_at lookup) + admin mode (`delete_resumes_by_ids` with 100-id cap)
+   - `intelligence-feed` — RSS feed parsing (8 sources, regex-tagged item_type / is_positive / image_url) + layoffs.fyi CSV + OpenAI embeddings (when key set)
+   - `send-match-digest` — pending match_scores grouping by seeker, Resend email shape, emailed_at stamping
+2. **Coverage gate** — once 4+ functions have tests (already there as of #45), add `deno coverage --fail-under=70` to `.github/workflows/test.yml` so PRs that drop coverage fail CI
+3. **Storage-path tests for parse-resume** (deferred) — PDF + DOCX paths currently uncovered. Need supabase storage API mocks (different endpoint surface from REST). ~1 hour of mock work; do this only if a real bug surfaces in those paths first
+
+**Done when:** all 7 functions have tests, coverage gate enforces ≥ 70%, and rubric Eng hygiene lands at 9.
+
+### Phase 14 — out of scope (Phase 15+)
+
+- Greenhouse/Lever second aggregator — USAJobs feed is healthy at ~30 rows/day (407 rows in last 14 days). Defer until founder review says feed quality is thin
+- Framework migration — still no trigger fired (page count 14, solo dev, no Lighthouse regression, no real-URL feature need). Defer
+- New features — move to Phase 15 menu
+
+---
+
+## Phase 15 — Strategic horizon (planned, post-Phase-14, 2026-05+)
+
+A menu of candidate directions, NOT a fixed sequence. Pick based on signals (acquisition data, founder priorities, real-user feedback when traffic grows). Each is roughly the size of one Phase 13 — a focused 1-2 week sprint.
+
+### A. Acquisition / growth (currently the named bottleneck)
+
+Health check on 2026-05-09 showed 0 new `job_seekers` rows in the last 14 days despite all pipes flowing (cron green, 65 fresh feed_items, 407 fresh jobs). The platform is operationally ready; **acquisition is the constraint**, not code quality.
+
+Code work that supports growth:
+
+- **Real per-job URLs** — `/jobs/<slug>.html` instead of `?id=<uuid>` query params. Currently framework-gated per the Phase 5 decision; revisit as a focused sprint without the full Astro migration (could be done with a small static-build step for the jobs index page only). Big SEO unlock — Google indexes per-URL, not per-query-param
+- **PostHog funnel instrumentation** — extend the existing `CTA: employer-checkout-start`, `Event: resume-upload`, `Event: find-matches` events with downstream funnel events (job-card-click, apply-click, match-disclosure-open). Surfaces where seekers drop off
+- **Content cadence** — more KB articles (currently 12), weekly market-pulse on schedule (currently ad-hoc), founder-driven thought-leadership on LinkedIn pointing back to KB
+- **Sitemap freshness** — dynamic sitemap that includes per-job URLs once they exist; daily regen on `refresh-jobs` cron
+
+### B. Product depth — career-copilot extensions
+
+The Phase 13 coach brief is the platform's wedge. Building deeper on that:
+
+- **Application tracker** — members can mark matches as "applied" / "interviewing" / "offer" / "rejected"; new `match_applications` table; lightweight personal CRM. Big retention play
+- **Cover letter generator** — same coach voice + job-specific context; uses resume_text + the existing match's coach brief; Claude Sonnet 4.6
+- **Interview prep** — Claude generates likely interview questions for a specific match (drawn from the JD + the seeker's experience gaps). Per-match flow
+- **Structured learning paths** — combine current AI-skills training panel + Phase 7 growth_note into a multi-step "to grow into this role over 90 days" plan. Possibly pulls from training_resources + KB articles
+
+### C. Trust + revenue
+
+- **Real testimonials section** — infrastructure exists in `index.html` (Phase 9 §2 scaffold ships `WFH_TESTIMONIALS` array, hidden until populated). Drop in 3 real quotes when founder lands them
+- **Verified employer logo wall** — same scaffold, `WFH_EMPLOYER_LOGOS` array
+- **Stripe customer portal** — deferred from Phase 3. Lets paying employers self-serve subscription management (cancel, payment method update, invoice history). One Stripe billing portal session URL per click
+- **Better employer onboarding** — first-time employer flow currently goes Stripe → success.html → employer.html → "create listing" modal. Could add a guided checklist (logo upload, AI-skills selection, first listing draft) on first login
+
+### D. Operational depth — intelligence-feed v2
+
+The Phase 12 §A intelligence feed is daily-refreshed from 8 RSS sources but has limited member-facing surface. Candidates:
+
+- **Per-region personalized feed** — uses seeker's `location_state` to filter feed_items. Currently global
+- **Trend detection + weekly auto-digest** — Claude-summarized weekly recap of feed_items (mirroring the Friday match digest cadence)
+- **User saved/dismissed feed items** — light personalization
+- **Real WARN Act state-by-state scrapers** — Phase 12 deleted the stub; real state-by-state scrapers were marked "real engineering, separate phase." Still applies
+
+### E. Founder-owned soft-launch gates (still pending, no code from me)
+
+Tracking here so they're not lost — these block public-launch announcement, not phase progression:
+
+- 3 testimonials OR 1 verified employer logo for the homepage (Phase 9 §2)
+- Lawyer sign-off on `privacy.html` + `terms.html`; banner removal (Phase 9 §3)
+- Mobile QA video on real iPhone (Phase 9 §4 / docs/mobile-qa-checklist.md)
+- Supabase Auth leaked-password protection toggle (Phase 9 §8 / one dashboard click)
+- Real founder headshot v2 (current is fine but could be sharper)
+- Hand-curate `training_skills` mappings (Phase 12 §C / runbook §10.7, ~30 min SQL)
+
+### Phase 15 — sequencing principle
+
+Do NOT pre-commit to A or B or C — pick based on what the next month's signals say:
+
+- If acquisition stays flat → **15A** (growth) is the obvious move; product depth without users is wasted code
+- If acquisition starts working but retention is weak → **15B** (career-copilot extensions) deepen the value seekers stay for
+- If a real revenue pipeline forms (5+ paying employers) → **15C** (trust + revenue) tightens the funnel
+- If founder gets distracted by some other signal → revisit and pick fresh
+
+The roadmap's job here is to keep options visible. Founder picks the door when the signal is clear.
+
+---
+
 ## Out of scope for reaching 9 (the original phase 1-5 list, kept for reference)
 
 - Per-job real URLs (replacing `jobs.html?id=<uuid>` with `jobs/<slug>.html`). Blocked on framework decision.
