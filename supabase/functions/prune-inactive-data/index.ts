@@ -35,9 +35,9 @@
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2?target=deno";
 
-const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
-const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-const PRUNE_SECRET = Deno.env.get("PRUNE_SECRET") || "";
+// Phase 14 §B (2026-05-09): env reads moved inside handle() so unit tests
+// can override values per-case (module-level reads happen once at import
+// time and can't be re-stubbed). Edge runtime cost is negligible.
 
 const RESUME_RETENTION_MONTHS = 24;
 const MATCH_SCORE_RETENTION_MONTHS = 12;
@@ -45,9 +45,16 @@ const MATCH_SCORE_RETENTION_MONTHS = 12;
 // No CORS — cron-only server-to-server endpoint. Browser callers must be rejected,
 // so we omit Access-Control-Allow-Origin entirely and let the browser's CORS check fail.
 
-Deno.serve(async (req) => {
+// Phase 14 §B (2026-05-09): handler exported so tests can call it without
+// spinning up a Deno.serve listener. Production behavior unchanged — the
+// `if (import.meta.main)` guard at the bottom invokes Deno.serve(handle).
+export async function handle(req: Request): Promise<Response> {
+  const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+  const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+  const pruneSecret = Deno.env.get("PRUNE_SECRET") || "";
+
   const provided = req.headers.get("x-prune-secret") || "";
-  if (!PRUNE_SECRET || !timingSafeEqual(provided, PRUNE_SECRET)) return json({ error: "unauthorized" }, 401);
+  if (!pruneSecret || !timingSafeEqual(provided, pruneSecret)) return json({ error: "unauthorized" }, 401);
 
   // Body is optional. The cron sends `{}`; admin invocations send
   // `{"mode":"delete_resumes_by_ids","resume_ids":[...]}`. Anything else
@@ -62,7 +69,15 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const admin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+    // Phase 14 §B (2026-05-09): pass globalThis.fetch + disable auto-refresh
+    // on the supabase-js client. fetch-injection lets test mockFetch
+    // intercept HTTP calls; autoRefreshToken:false stops the setInterval
+    // that would otherwise leak past test end and trip Deno's leak
+    // sanitizer. Both are no-ops in production behavior.
+    const admin = createClient(supabaseUrl, supabaseServiceKey, {
+      global: { fetch: globalThis.fetch },
+      auth: { persistSession: false, autoRefreshToken: false },
+    });
 
     if (body?.mode === "delete_resumes_by_ids") {
       return await handleDeleteByIds(admin, body);
@@ -154,7 +169,11 @@ Deno.serve(async (req) => {
     console.error("prune-inactive-data error:", err);
     return json({ error: "Prune failed. Please try again." }, 500);
   }
-});
+}
+
+if (import.meta.main) {
+  Deno.serve(handle);
+}
 
 // Phase 10 §D (2026-04-26): targeted resume cleanup. Same auth as the cron
 // path; the gate is the request body's `mode` field. Atomic in spirit —

@@ -3,23 +3,39 @@
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2?target=deno";
 
-const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
-const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY")!;
-const DIGEST_SECRET = Deno.env.get("DIGEST_SECRET") || "";
-const FROM_EMAIL = Deno.env.get("DIGEST_FROM") || "Workforce for Humans <digest@workforceforhumans.com>";
-const SITE_URL = Deno.env.get("SITE_URL") || "https://workforceforhumans.com";
+// Phase 14 §B (2026-05-09): env reads moved inside handle() so unit tests
+// can override values per-case (module-level reads happen once at import
+// time and can't be re-stubbed). Edge runtime cost is negligible.
 
 // No CORS — cron-only server-to-server endpoint. Browser callers must be rejected,
 // so we omit Access-Control-Allow-Origin entirely and let the browser's CORS check fail.
 
-Deno.serve(async (req) => {
+// Phase 14 §B (2026-05-09): handler exported so tests can call it without
+// spinning up a Deno.serve listener. Production behavior unchanged — the
+// `if (import.meta.main)` guard at the bottom invokes Deno.serve(handle)
+// when the module is the entrypoint.
+export async function handle(req: Request): Promise<Response> {
+  const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+  const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+  const resendApiKey = Deno.env.get("RESEND_API_KEY")!;
+  const digestSecret = Deno.env.get("DIGEST_SECRET") || "";
+  const fromEmail = Deno.env.get("DIGEST_FROM") || "Workforce for Humans <digest@workforceforhumans.com>";
+  const siteUrl = Deno.env.get("SITE_URL") || "https://workforceforhumans.com";
+
   // Simple shared-secret auth — this function runs server-to-server, not from the browser.
   const provided = req.headers.get("x-digest-secret") || "";
-  if (!DIGEST_SECRET || !timingSafeEqual(provided, DIGEST_SECRET)) return json({ error: "unauthorized" }, 401);
+  if (!digestSecret || !timingSafeEqual(provided, digestSecret)) return json({ error: "unauthorized" }, 401);
 
   try {
-    const admin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+    // Phase 14 §B (2026-05-09): pass globalThis.fetch + disable auto-refresh
+    // on the supabase-js client. fetch-injection lets test mockFetch
+    // intercept HTTP calls; autoRefreshToken:false stops the setInterval
+    // that would otherwise leak past test end and trip Deno's leak
+    // sanitizer. Both are no-ops in production behavior.
+    const admin = createClient(supabaseUrl, supabaseServiceKey, {
+      global: { fetch: globalThis.fetch },
+      auth: { persistSession: false, autoRefreshToken: false },
+    });
 
     const { data: pending, error: qErr } = await admin
       .from("match_scores")
@@ -80,7 +96,7 @@ Deno.serve(async (req) => {
             ${fitHtml}
             ${edgeHtml}
             <div style="font-size:13px;color:#6b7280;">Match score: <b>${r.score}</b></div>
-            <a href="${SITE_URL}/jobs.html?id=${escapeHtml(j.id)}" style="display:inline-block;margin-top:8px;background:#111827;color:#fff;padding:8px 14px;border-radius:6px;text-decoration:none;font-size:14px;">View role</a>
+            <a href="${siteUrl}/jobs.html?id=${escapeHtml(j.id)}" style="display:inline-block;margin-top:8px;background:#111827;color:#fff;padding:8px 14px;border-radius:6px;text-decoration:none;font-size:14px;">View role</a>
           </div>`;
       }).join("");
 
@@ -90,22 +106,22 @@ Deno.serve(async (req) => {
           <p style="color:#4b5563;margin-top:0;">Roles we think fit your profile this week.</p>
           ${items}
           <p style="text-align:center;margin:24px 0 8px;">
-            <a href="${SITE_URL}/member.html" style="display:inline-block;color:#c85f3e;font-weight:600;text-decoration:none;font-size:14px;">&rarr; See your full coach brief in your dashboard</a>
+            <a href="${siteUrl}/member.html" style="display:inline-block;color:#c85f3e;font-weight:600;text-decoration:none;font-size:14px;">&rarr; See your full coach brief in your dashboard</a>
           </p>
           <p style="color:#6b7280;font-size:11px;text-align:center;margin:0 0 16px;">Resume tailoring, skill-gap path, and application strategy for each role above.</p>
           <p style="color:#6b7280;font-size:12px;margin-top:24px;">
-            <a href="${SITE_URL}/member.html">Update preferences</a> · You are receiving this because you signed up at Workforce for Humans.
+            <a href="${siteUrl}/member.html">Update preferences</a> · You are receiving this because you signed up at Workforce for Humans.
           </p>
         </div>`;
 
       const r = await fetch("https://api.resend.com/emails", {
         method: "POST",
         headers: {
-          Authorization: `Bearer ${RESEND_API_KEY}`,
+          Authorization: `Bearer ${resendApiKey}`,
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          from: FROM_EMAIL,
+          from: fromEmail,
           to: [seeker.email],
           subject: `${rows.length} new job match${rows.length === 1 ? "" : "es"} for you`,
           html,
@@ -128,7 +144,11 @@ Deno.serve(async (req) => {
     console.error("send-match-digest error:", err);
     return json({ error: "internal error" }, 500);
   }
-});
+}
+
+if (import.meta.main) {
+  Deno.serve(handle);
+}
 
 function escapeHtml(s: unknown): string {
   return String(s ?? "").replace(/[&<>"']/g, (c) => (
