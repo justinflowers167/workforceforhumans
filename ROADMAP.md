@@ -675,47 +675,90 @@ Phase 11 §B established the test pattern on `submit-feedback`; the Phase 14 §B
 
 ---
 
-## Phase 15 — Strategic horizon (planned, post-Phase-14, 2026-05+)
+## Phase 15 — Pre-launch validation + soft launch (planned, post-Phase-14)
 
-A menu of candidate directions, NOT a fixed sequence. Pick based on signals (acquisition data, founder priorities, real-user feedback when traffic grows). Each is roughly the size of one Phase 13 — a focused 1-2 week sprint.
+Founder commitment 2026-05-09: a linear sequence rather than a menu. Each sub-phase produces a concrete artifact (instrumentation → tester signal → cleanup deltas → employer pipeline) that feeds the next. The earlier draft framed Phase 15 as five parallel options (acquisition / product depth / trust / ops / founder gates); founder reviewed and committed to a specific path through the menu.
 
-### A. Acquisition / growth (currently the named bottleneck)
+**Why this sequence:** acquisition is the named bottleneck (0 new seekers in 14 days as of 2026-05-09 health check). But adding employer traffic before validating seeker UX with friendly testers is worse than a quiet site. Plan: instrument first → measure tester behavior → fix highest-leverage friction → only then drive employer-side acquisition.
 
-Health check on 2026-05-09 showed 0 new `job_seekers` rows in the last 14 days despite all pipes flowing (cron green, 65 fresh feed_items, 407 fresh jobs). The platform is operationally ready; **acquisition is the constraint**, not code quality.
+### §A — PostHog funnel instrumentation (1-2 hours, code)
 
-Code work that supports growth:
+Pre-requisite to the tester campaign so feedback is measurable, not just anecdotal. The existing PostHog snippet in `assets/site.js` (autocapture: false, person_profiles: 'identified_only') captures 3 events today (`CTA: employer-checkout-start`, `Event: resume-upload`, `Event: find-matches`). Phase 15 §A extends with 5-7 funnel events covering the seeker journey:
 
-- **Real per-job URLs** — `/jobs/<slug>.html` instead of `?id=<uuid>` query params. Currently framework-gated per the Phase 5 decision; revisit as a focused sprint without the full Astro migration (could be done with a small static-build step for the jobs index page only). Big SEO unlock — Google indexes per-URL, not per-query-param
-- **PostHog funnel instrumentation** — extend the existing `CTA: employer-checkout-start`, `Event: resume-upload`, `Event: find-matches` events with downstream funnel events (job-card-click, apply-click, match-disclosure-open). Surfaces where seekers drop off
-- **Content cadence** — more KB articles (currently 12), weekly market-pulse on schedule (currently ad-hoc), founder-driven thought-leadership on LinkedIn pointing back to KB
-- **Sitemap freshness** — dynamic sitemap that includes per-job URLs once they exist; daily regen on `refresh-jobs` cron
+- `funnel:signup-start`, `funnel:signup-complete` (magic-link sent / verified)
+- `funnel:resume-parse-start`, `funnel:resume-parse-complete` (already partially covered by `Event: resume-upload`)
+- `funnel:match-card-click` (member clicks a match)
+- `funnel:match-disclosure-open` (member opens the "Claude's read" disclosure — proxy for engagement with coach brief)
+- `funnel:match-apply-click` (member clicks the apply CTA)
 
-### B. Product depth — career-copilot extensions
+**Done when:** PostHog dashboard shows a funnel chart for the seeker path; one day of test data confirms events fire correctly.
+
+### §B — Tester feedback campaign (founder-driven outreach)
+
+Closed-beta-style: founder reaches out to 10-25 warm contacts (laid-off PMs, career-changers, recruiters trusted), invites them to use the platform, asks for 1 honest line of feedback each. Code support is light:
+
+- Confirmation that the floating feedback widget (Phase 12 §B) is reachable on every page (already true)
+- Optional "thanks for testing — your feedback is gold" banner on member.html for first-session tester accounts
+
+**Done when:** 10+ testers complete at least the sign-up + resume-parse path; 5+ qualitative responses captured; PostHog funnel shows quantitative drop-off pattern at each step.
+
+### §C — Feedback-driven cleanup (scope TBD post-feedback)
+
+React to what testers + funnel data surface. Could be UX bugs, copy clarity, broken flows, mobile issues, onboarding friction. Scope is intentionally undefined here — the testers tell us what to fix.
+
+**Done when:** highest-leverage 3-5 friction points (named by combined qualitative + quantitative signal) are closed. Re-run testers if the cleanup is invasive.
+
+### §D — Client (employer) campaign (founder-driven outbound)
+
+Once seeker UX is validated by testers, drive employer-side traffic. Targets: small businesses with hiring needs (5-50 employees), specific industries the founder has warm intros into. Code support:
+
+- **Stripe customer portal** wired into `employer.html` (deferred from Phase 3 — one Stripe billing portal session URL per click; lets paying employers self-serve subscription management)
+- **Employer onboarding checklist** on first login (logo upload, AI-skills selection, first listing draft)
+- **Real testimonials** from successful tester placements dropped into the existing `WFH_TESTIMONIALS` scaffold on `index.html`
+- **Verified employer logo wall** populated from new partners (`WFH_EMPLOYER_LOGOS` scaffold)
+
+**Done when:** 5+ paying employers active; 3+ tester→placement testimonials live on homepage; Stripe customer portal usable.
+
+### Phase 15 — explicitly out of scope (Phase 16+)
+
+- Career-copilot extensions (application tracker, cover letter generator, interview prep) — Phase 16 candidates
+- Intelligence-feed v2 (per-region, trend detection, real WARN Act scrapers) — Phase 16 candidates
+- Real per-job URLs / SEO unlock — Phase 16 candidate (still framework-gated for the cleanest implementation)
+- Founder-owned non-code gates (lawyer review, mobile QA video, password toggle, training_skills curation) — preserved as a checklist below in Phase 16 §D
+
+---
+
+## Phase 16 — Strategic horizon (planned, post-Phase-15)
+
+A menu of candidate directions to pick AFTER Phase 15 closes. By then we'll have real signal (acquisition data, retention pattern, employer pipeline shape) to inform the choice. Each is roughly the size of one Phase 13 — a focused 1-2 week sprint. The roadmap's job here is to keep options visible; founder picks the door when the post-Phase-15 signal is clear.
+
+### A. Career-copilot extensions
 
 The Phase 13 coach brief is the platform's wedge. Building deeper on that:
 
-- **Application tracker** — members can mark matches as "applied" / "interviewing" / "offer" / "rejected"; new `match_applications` table; lightweight personal CRM. Big retention play
-- **Cover letter generator** — same coach voice + job-specific context; uses resume_text + the existing match's coach brief; Claude Sonnet 4.6
-- **Interview prep** — Claude generates likely interview questions for a specific match (drawn from the JD + the seeker's experience gaps). Per-match flow
-- **Structured learning paths** — combine current AI-skills training panel + Phase 7 growth_note into a multi-step "to grow into this role over 90 days" plan. Possibly pulls from training_resources + KB articles
+- **Application tracker** — members mark matches as "applied" / "interviewing" / "offer" / "rejected"; new `match_applications` table; lightweight personal CRM. Big retention play.
+- **Cover letter generator** — same coach voice + job-specific context; uses resume_text + the existing match's coach brief; Claude Sonnet 4.6.
+- **Interview prep** — Claude generates likely interview questions for a specific match (drawn from the JD + the seeker's experience gaps). Per-match flow.
+- **Structured learning paths** — combine current AI-skills training panel + Phase 7 growth_note into a multi-step "to grow into this role over 90 days" plan. Possibly pulls from `training_resources` + KB articles.
 
-### C. Trust + revenue
-
-- **Real testimonials section** — infrastructure exists in `index.html` (Phase 9 §2 scaffold ships `WFH_TESTIMONIALS` array, hidden until populated). Drop in 3 real quotes when founder lands them
-- **Verified employer logo wall** — same scaffold, `WFH_EMPLOYER_LOGOS` array
-- **Stripe customer portal** — deferred from Phase 3. Lets paying employers self-serve subscription management (cancel, payment method update, invoice history). One Stripe billing portal session URL per click
-- **Better employer onboarding** — first-time employer flow currently goes Stripe → success.html → employer.html → "create listing" modal. Could add a guided checklist (logo upload, AI-skills selection, first listing draft) on first login
-
-### D. Operational depth — intelligence-feed v2
+### B. Operational depth — intelligence-feed v2
 
 The Phase 12 §A intelligence feed is daily-refreshed from 8 RSS sources but has limited member-facing surface. Candidates:
 
-- **Per-region personalized feed** — uses seeker's `location_state` to filter feed_items. Currently global
-- **Trend detection + weekly auto-digest** — Claude-summarized weekly recap of feed_items (mirroring the Friday match digest cadence)
-- **User saved/dismissed feed items** — light personalization
-- **Real WARN Act state-by-state scrapers** — Phase 12 deleted the stub; real state-by-state scrapers were marked "real engineering, separate phase." Still applies
+- **Per-region personalized feed** — uses seeker's `location_state` to filter feed_items.
+- **Trend detection + weekly auto-digest** — Claude-summarized weekly recap of feed_items.
+- **User saved/dismissed feed items** — light personalization.
+- **Real WARN Act state-by-state scrapers** — Phase 12 deleted the stub; real scrapers marked "real engineering, separate phase." Still applies.
 
-### E. Founder-owned soft-launch gates (still pending, no code from me)
+### C. Real per-job and per-article URLs (SEO unlock)
+
+Currently `jobs.html?id=<uuid>` and `kb.html#article/<slug>` block per-page Google indexing. Sub-options:
+- Light static-build step for index pages (no full framework migration)
+- Or revisit framework decision with this as the trigger
+
+Tradeoff: pick based on whether other framework-gated work (type safety on Supabase RPCs, fast nav transitions) has accumulated by then. Big SEO unlock either way.
+
+### D. Founder-owned soft-launch gates (still pending, no code from me)
 
 Tracking here so they're not lost — these block public-launch announcement, not phase progression:
 
@@ -726,16 +769,14 @@ Tracking here so they're not lost — these block public-launch announcement, no
 - Real founder headshot v2 (current is fine but could be sharper)
 - Hand-curate `training_skills` mappings (Phase 12 §C / runbook §10.7, ~30 min SQL)
 
-### Phase 15 — sequencing principle
+### Phase 16 — sequencing principle
 
-Do NOT pre-commit to A or B or C — pick based on what the next month's signals say:
+Do NOT pre-commit to A or B or C — pick based on what the post-Phase-15 signal says:
 
-- If acquisition stays flat → **15A** (growth) is the obvious move; product depth without users is wasted code
-- If acquisition starts working but retention is weak → **15B** (career-copilot extensions) deepen the value seekers stay for
-- If a real revenue pipeline forms (5+ paying employers) → **15C** (trust + revenue) tightens the funnel
-- If founder gets distracted by some other signal → revisit and pick fresh
-
-The roadmap's job here is to keep options visible. Founder picks the door when the signal is clear.
+- If acquisition is healthy and retention is weak → **A** (career-copilot extensions) deepens the value seekers stay for
+- If a real revenue pipeline forms (5+ paying employers from Phase 15 §D) → **C** (real URLs / SEO) extends the acquisition flywheel
+- If the intelligence feed becomes a member-facing differentiator (testers love it) → **B** (intelligence-feed v2)
+- Founder-owned **D** items can land any time without phase progression dependencies
 
 ---
 
