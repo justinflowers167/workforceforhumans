@@ -96,9 +96,26 @@ export async function handle(req: Request): Promise<Response> {
     return json({ error: "message must be 5-2000 characters" }, 400);
   }
 
+  // Phase 11 §B (2026-04-28):
+  //   - `global.fetch`: pass globalThis.fetch explicitly so unit tests
+  //     that stub fetch via _test/mocks.ts mockFetch can intercept the
+  //     supabase-js HTTP calls. Production behavior is unchanged —
+  //     globalThis.fetch in prod is the real Deno fetch.
+  //   - `auth.persistSession: false`: no localStorage in Deno anyway, but
+  //     setting explicitly is defensive.
+  //   - `auth.autoRefreshToken: false`: we use the service-role key, which
+  //     never refreshes. The default `true` starts a setInterval that
+  //     never fires meaningfully but keeps the test event loop alive,
+  //     causing Deno's leak detection to fail every supabase-js-using
+  //     test. Disabling it is a strict prod improvement (skips a wasted
+  //     timer per request) AND fixes the leak.
   const admin = createClient(
     Deno.env.get("SUPABASE_URL")!,
     Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
+    {
+      global: { fetch: globalThis.fetch },
+      auth: { persistSession: false, autoRefreshToken: false },
+    },
   );
   const anthropicKey = Deno.env.get("ANTHROPIC_API_KEY") || "";
 
@@ -166,7 +183,9 @@ async function triageWithClaude(
   category: string,
   apiKey: string,
 ): Promise<{ summary: string; priority: string } | null> {
-  const client = new Anthropic({ apiKey });
+  // Same fetch-injection rationale as in handle() above — let unit-test
+  // mockFetch intercept the Anthropic SDK's HTTP call.
+  const client = new Anthropic({ apiKey, fetch: globalThis.fetch });
   const resp = await client.messages.create({
     model: "claude-haiku-4-5",
     max_tokens: 200,
