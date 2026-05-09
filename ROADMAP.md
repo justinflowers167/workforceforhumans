@@ -642,30 +642,42 @@ Phase 11 §C closed the duplication-hygiene fraction (shared `.eye-lbl`, `.field
 
 **Recommended approach:** book a focused 2-3 hour design block (founder-driven; I'm a poor judge of taste). I can implement specific changes (typography tokens, spacing tightenings, focus rings) once the founder names targets. Without that direction, this stays partial.
 
-### B. Test suite backfill (Eng hygiene 8 → 9 — finishes Phase 11 §B)
+### B. Test suite backfill (Eng hygiene 8 → 9 — finishes Phase 11 §B) — ✅ SHIPPED 2026-05-09
 
-Phase 11 §B established the test pattern on `submit-feedback`; the Phase 14 §B sprint (2026-05-09) extended it to `match-jobs`, `parse-resume`, and `refresh-jobs` via PRs #44 and #45. **4 of 7 callable Edge Functions now have tests; 31 cases passing in CI.**
+Phase 11 §B established the test pattern on `submit-feedback`; the Phase 14 §B sprint (2026-05-09) extended it to all 6 remaining functions via PRs #44, #45, and #47. **All 7 callable Edge Functions now have tests; 49 cases passing in CI; coverage gate enforces ≥ 70% (current: 79.2%).**
 
-| Function | Tested | Cases | Deployed | Pattern applied |
-|---|---|---|---|---|
-| submit-feedback | ✅ | 10 | v6 | reference impl |
-| match-jobs | ✅ | 7 | v15 | (#44) |
-| parse-resume | ✅ | 8 | v14 | (#45, raw_text path; PDF/DOCX storage paths deferred) |
-| refresh-jobs | ✅ | 6 | v16 | (#45, USAJobs + Claude filter + RPC) |
-| prune-inactive-data | ⏳ | — | — | next |
-| intelligence-feed | ⏳ | — | — | next |
-| send-match-digest | ⏳ | — | — | next |
+| Function | Cases | Deployed | PR |
+|---|---|---|---|
+| submit-feedback | 10 | v6 | #43 (reference impl) |
+| match-jobs | 7 | v15 | #44 |
+| parse-resume | 8 | v14 | #45 (raw_text path; PDF/DOCX deferred) |
+| refresh-jobs | 6 | v16 | #45 |
+| send-match-digest | 5 | v15 | #47 |
+| prune-inactive-data | 7 | v5 | #47 |
+| intelligence-feed | 5 | v15 | #47 |
+| **TOTAL** | **49** | **7/7** | — |
 
-**What's left:**
+**Refactor pattern (applied uniformly across all 7 functions):**
 
-1. **Three more function tests** (~30-45 min each, mechanical at this point):
-   - `prune-inactive-data` — cron mode (24-month retention sweep with auth.users.last_sign_in_at lookup) + admin mode (`delete_resumes_by_ids` with 100-id cap)
-   - `intelligence-feed` — RSS feed parsing (8 sources, regex-tagged item_type / is_positive / image_url) + layoffs.fyi CSV + OpenAI embeddings (when key set)
-   - `send-match-digest` — pending match_scores grouping by seeker, Resend email shape, emailed_at stamping
-2. **Coverage gate** — once 4+ functions have tests (already there as of #45), add `deno coverage --fail-under=70` to `.github/workflows/test.yml` so PRs that drop coverage fail CI
-3. **Storage-path tests for parse-resume** (deferred) — PDF + DOCX paths currently uncovered. Need supabase storage API mocks (different endpoint surface from REST). ~1 hour of mock work; do this only if a real bug surfaces in those paths first
+- Export `handle(req)`; gate `Deno.serve(handle)` on `import.meta.main` so tests import without spinning up a listener
+- Move env reads inside `handle()` so per-test `mockEnv` overrides apply (module-level reads happen once at import and can't be re-stubbed)
+- Pass `auth: { persistSession: false, autoRefreshToken: false }` + `global.fetch: globalThis.fetch` to every `createClient` call — fixes the supabase-js setInterval leak that trips Deno's test sanitizer; strict prod improvement (service-role tokens never refresh)
+- Pass `fetch: globalThis.fetch` to `new Anthropic(...)` so test `mockFetch` can intercept Claude SDK calls
 
-**Done when:** all 7 functions have tests, coverage gate enforces ≥ 70%, and rubric Eng hygiene lands at 9.
+**Coverage gate active in CI** (`.github/workflows/test.yml`): aggregate line coverage across all `.ts` files reported by `deno coverage --lcov` must stay ≥ 70%. PRs that drop below the threshold fail the workflow.
+
+**Diagnosis lessons captured for future test backfill:**
+
+- supabase-js validates `auth.admin.getUserById(id)` parameters as UUIDs client-side BEFORE making the HTTP call. Test fixtures need real UUIDs.
+- mockFetch URL substring matching needs word boundaries when the substring is a prefix of another URL (e.g. `/feed` vs `/feed_items`). Use regex with `\b` for ambiguous cases.
+- `.upsert()` without `.select()` sends `Prefer: return=representation` by default — empty-array bodies in mocks can confuse supabase-js's response parser. Return either a representation-shaped row or use `Prefer: return=minimal`.
+
+**Out of scope (future polish, not blocking §B closure):**
+
+- Storage-path tests for `parse-resume` — PDF + DOCX paths currently uncovered. Need supabase storage API mocks (different endpoint surface from REST). ~1 hour of mock work; do this only if a real bug surfaces in those paths first.
+- Embedding-path tests for `intelligence-feed` — OpenAI embedding generation currently uncovered. Same triage rule.
+
+**Done when:** ✅ all 7 functions tested, ✅ coverage gate enforces ≥ 70%, ✅ rubric Eng hygiene lands at 9.
 
 ### Phase 14 — out of scope (Phase 15+)
 

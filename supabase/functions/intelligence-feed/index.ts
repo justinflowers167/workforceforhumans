@@ -19,25 +19,38 @@
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
-const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-const db = createClient(supabaseUrl, supabaseServiceKey);
-
-const OPENAI_API_KEY = Deno.env.get("OPENAI_API_KEY") || "";
-const INTELLIGENCE_FEED_SECRET = Deno.env.get("INTELLIGENCE_FEED_SECRET") || "";
+// Phase 14 §B (2026-05-09): env reads moved inside handle() so unit tests
+// can override values per-case (module-level reads happen once at import
+// time and can't be re-stubbed). The supabase-js client is also created
+// inside handle() now (was at module top) so the auth + fetch options
+// (autoRefreshToken: false; global.fetch: globalThis.fetch) take effect
+// per-test. `db` is threaded as a parameter into the helpers.
 
 // No CORS — cron-only server-to-server endpoint. Browser callers must be rejected,
 // so we omit Access-Control-Allow-Origin entirely and let the browser's CORS check fail.
 
-Deno.serve(async (req) => {
+// Phase 14 §B (2026-05-09): handler exported so tests can call it without
+// spinning up a Deno.serve listener. Production behavior unchanged — the
+// `if (import.meta.main)` guard at the bottom invokes Deno.serve(handle).
+export async function handle(req: Request): Promise<Response> {
+  const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+  const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+  const openaiKey = Deno.env.get("OPENAI_API_KEY") || "";
+  const intelligenceFeedSecret = Deno.env.get("INTELLIGENCE_FEED_SECRET") || "";
+
   // Cron-only auth. Constant-time compare against the pre-shared secret.
   const provided = req.headers.get("x-intelligence-feed-secret") || "";
-  if (!INTELLIGENCE_FEED_SECRET || !timingSafeEqual(provided, INTELLIGENCE_FEED_SECRET)) {
+  if (!intelligenceFeedSecret || !timingSafeEqual(provided, intelligenceFeedSecret)) {
     return new Response(JSON.stringify({ error: "unauthorized" }), {
       status: 401,
       headers: { "Content-Type": "application/json" },
     });
   }
+
+  const db = createClient(supabaseUrl, supabaseServiceKey, {
+    global: { fetch: globalThis.fetch },
+    auth: { persistSession: false, autoRefreshToken: false },
+  });
 
   try {
     const results = {
@@ -48,20 +61,20 @@ Deno.serve(async (req) => {
     };
 
     try {
-      results.rss_feeds = await fetchRssFeeds();
+      results.rss_feeds = await fetchRssFeeds(db);
     } catch (e) {
       results.errors.push(`RSS: ${(e as Error).message}`);
     }
 
     try {
-      results.layoffs_fyi = await fetchLayoffsFyi();
+      results.layoffs_fyi = await fetchLayoffsFyi(db);
     } catch (e) {
       results.errors.push(`Layoffs.fyi: ${(e as Error).message}`);
     }
 
-    if (OPENAI_API_KEY) {
+    if (openaiKey) {
       try {
-        results.embeddings_generated = await generateEmbeddings();
+        results.embeddings_generated = await generateEmbeddings(db, openaiKey);
       } catch (e) {
         results.errors.push(`Embeddings: ${(e as Error).message}`);
       }
@@ -78,7 +91,11 @@ Deno.serve(async (req) => {
       headers: { "Content-Type": "application/json" },
     });
   }
-});
+}
+
+if (import.meta.main) {
+  Deno.serve(handle);
+}
 
 // Constant-time compare for shared-secret header auth — avoids timing side-channel.
 function timingSafeEqual(a: string, b: string): boolean {
@@ -101,7 +118,7 @@ function timingSafeEqual(a: string, b: string): boolean {
 //
 // Each source has a permissive default; isLayoff/isHiring/isPositive
 // regex on title+description can reclassify per-item.
-async function fetchRssFeeds(): Promise<number> {
+async function fetchRssFeeds(db: ReturnType<typeof createClient>): Promise<number> {
   let inserted = 0;
   const feeds: Array<{ url: string; source: string; defaultType: "layoff" | "industry-news" | "policy-change" | "opportunity"; defaultSeverity: "low" | "medium" | "high" | "critical"; defaultPositive: boolean }> = [
     { url: "https://techcrunch.com/tag/layoffs/feed/", source: "rss-techcrunch", defaultType: "layoff", defaultSeverity: "high", defaultPositive: false },
@@ -234,7 +251,7 @@ function stripHtml(str: string): string {
     .trim();
 }
 
-async function fetchLayoffsFyi(): Promise<number> {
+async function fetchLayoffsFyi(db: ReturnType<typeof createClient>): Promise<number> {
   let inserted = 0;
   try {
     const csvUrl = "https://layoffs.fyi/data/layoffs.csv";
@@ -285,7 +302,10 @@ async function fetchLayoffsFyi(): Promise<number> {
   return inserted;
 }
 
-async function generateEmbeddings(): Promise<number> {
+async function generateEmbeddings(
+  db: ReturnType<typeof createClient>,
+  openaiKey: string,
+): Promise<number> {
   let generated = 0;
   const { data: items } = await db
     .from("feed_items")
@@ -295,7 +315,7 @@ async function generateEmbeddings(): Promise<number> {
   if (items && items.length) {
     for (const item of items) {
       const text = [item.title, item.summary, item.company_name, item.industry].filter(Boolean).join(". ");
-      const embedding = await getEmbedding(text);
+      const embedding = await getEmbedding(text, openaiKey);
       if (embedding) {
         await db.from("feed_items").update({ embedding }).eq("id", item.id);
         generated++;
@@ -310,7 +330,7 @@ async function generateEmbeddings(): Promise<number> {
   if (training) {
     for (const t of training) {
       const text = [t.title, t.description, ...(t.tags || [])].filter(Boolean).join(". ");
-      const embedding = await getEmbedding(text);
+      const embedding = await getEmbedding(text, openaiKey);
       if (embedding) {
         await db.from("training_resources").update({ embedding }).eq("id", t.id);
         generated++;
@@ -320,11 +340,11 @@ async function generateEmbeddings(): Promise<number> {
   return generated;
 }
 
-async function getEmbedding(text: string): Promise<number[] | null> {
+async function getEmbedding(text: string, openaiKey: string): Promise<number[] | null> {
   try {
     const res = await fetch("https://api.openai.com/v1/embeddings", {
       method: "POST",
-      headers: { Authorization: `Bearer ${OPENAI_API_KEY}`, "Content-Type": "application/json" },
+      headers: { Authorization: `Bearer ${openaiKey}`, "Content-Type": "application/json" },
       body: JSON.stringify({ input: text.slice(0, 8000), model: "text-embedding-3-small" }),
     });
     const data = await res.json();
