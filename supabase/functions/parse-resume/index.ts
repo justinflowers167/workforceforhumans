@@ -19,10 +19,9 @@ import { encodeBase64 } from "https://deno.land/std@0.224.0/encoding/base64.ts";
 // pdf-parse did, the DOCX path will return a clean 500 instead of
 // taking down the function.
 
-const ANTHROPIC_API_KEY = Deno.env.get("ANTHROPIC_API_KEY")!;
-const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
-const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY")!;
+// Phase 14 §B (2026-05-09): env reads moved inside handle() so unit tests
+// can override values per-case (module-level reads happen once at import
+// time and can't be re-stubbed). Edge runtime cost is negligible.
 
 const MODEL = "claude-sonnet-4-6";
 
@@ -123,7 +122,12 @@ async function getResumeUserMessage(
   return `Resume:\n\n${text.slice(0, 20000)}`;
 }
 
-Deno.serve(async (req) => {
+// Phase 14 §B (2026-05-09): handler exported so tests can call it without
+// spinning up a Deno.serve listener. Production behavior unchanged — the
+// `if (import.meta.main)` guard at the bottom invokes Deno.serve(handle)
+// when the module is the entrypoint (Supabase Edge Functions run the
+// file as main).
+export async function handle(req: Request): Promise<Response> {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
 
   try {
@@ -131,14 +135,27 @@ Deno.serve(async (req) => {
     const token = auth.replace(/^Bearer\s+/i, "");
     if (!token) return json({ error: "missing auth" }, 401);
 
-    const userClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
-      global: { headers: { Authorization: `Bearer ${token}` } },
+    // Phase 14 §B (2026-05-09): pass globalThis.fetch + disable auto-refresh
+    // on both clients. fetch-injection lets test mockFetch intercept the
+    // HTTP calls; autoRefreshToken:false stops the setInterval that would
+    // otherwise leak past test end and trip Deno's leak sanitizer. Both
+    // are no-ops in production behavior.
+    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+    const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
+    const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+
+    const userClient = createClient(supabaseUrl, supabaseAnonKey, {
+      global: { headers: { Authorization: `Bearer ${token}` }, fetch: globalThis.fetch },
+      auth: { persistSession: false, autoRefreshToken: false },
     });
     const { data: userData, error: userErr } = await userClient.auth.getUser();
     if (userErr || !userData?.user) return json({ error: "unauthenticated" }, 401);
     const authUserId = userData.user.id;
 
-    const admin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+    const admin = createClient(supabaseUrl, supabaseServiceKey, {
+      global: { fetch: globalThis.fetch },
+      auth: { persistSession: false, autoRefreshToken: false },
+    });
 
     const { resume_id } = await req.json();
     if (!resume_id) return json({ error: "missing resume_id" }, 400);
@@ -161,7 +178,10 @@ Deno.serve(async (req) => {
       return json({ error: msg.includes("too short") ? "Resume text is empty or too short." : "Could not read the resume file. Try re-uploading or pasting the text." }, 400);
     }
 
-    const client = new Anthropic({ apiKey: ANTHROPIC_API_KEY });
+    const anthropicKey = Deno.env.get("ANTHROPIC_API_KEY")!;
+    // Phase 14 §B (2026-05-09): pass globalThis.fetch so tests can
+    // intercept the Anthropic SDK's HTTP call. Production unchanged.
+    const client = new Anthropic({ apiKey: anthropicKey, fetch: globalThis.fetch });
     // Prompt-cache the system block. No-op today: SYSTEM_PROMPT is below
     // Anthropic's 1024-token minimum cacheable prefix, so the marker is
     // ignored silently. Forward-compatible.
@@ -241,7 +261,11 @@ Deno.serve(async (req) => {
     console.error("parse-resume error:", err);
     return json({ error: "Resume could not be parsed. Please try again." }, 500);
   }
-});
+}
+
+if (import.meta.main) {
+  Deno.serve(handle);
+}
 
 function json(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), {
