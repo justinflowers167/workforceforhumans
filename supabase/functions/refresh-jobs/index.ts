@@ -24,12 +24,9 @@
 import Anthropic from "https://esm.sh/@anthropic-ai/sdk@0.32.1?target=deno";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2?target=deno";
 
-const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
-const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-const ANTHROPIC_API_KEY = Deno.env.get("ANTHROPIC_API_KEY") || "";
-const USAJOBS_AUTH_KEY = Deno.env.get("USAJOBS_AUTH_KEY") || "";
-const USAJOBS_USER_AGENT = Deno.env.get("USAJOBS_USER_AGENT") || "";
-const REFRESH_SECRET = Deno.env.get("REFRESH_SECRET") || "";
+// Phase 14 §B (2026-05-09): env reads moved inside handle() so unit tests
+// can override values per-case (module-level reads happen once at import
+// time and can't be re-stubbed). Edge runtime cost is negligible.
 
 // Phase 9 tuning (2026-04-23): two problems with the original fetch —
 //   (a) single-word buckets ("specialist", "technician") pulled physician-
@@ -86,30 +83,53 @@ Return ONLY valid JSON in this exact shape:
 
 No prose before or after the JSON.`;
 
-Deno.serve(async (req) => {
+// Phase 14 §B (2026-05-09): handler exported so tests can call it without
+// spinning up a Deno.serve listener. Production behavior unchanged — the
+// `if (import.meta.main)` guard at the bottom invokes Deno.serve(handle)
+// when the module is the entrypoint (Supabase Edge Functions run the
+// file as main).
+export async function handle(req: Request): Promise<Response> {
   try {
+    // Phase 14 §B (2026-05-09): env reads inside handle so per-test
+    // mockEnv overrides apply. supabase-js client gets fetch-injection
+    // + autoRefreshToken:false (matches the pattern across all
+    // Anthropic-using Edge Functions).
+    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+    const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const anthropicKey = Deno.env.get("ANTHROPIC_API_KEY") || "";
+    const usajobsAuthKey = Deno.env.get("USAJOBS_AUTH_KEY") || "";
+    const usajobsUserAgent = Deno.env.get("USAJOBS_USER_AGENT") || "";
+    const refreshSecret = Deno.env.get("REFRESH_SECRET") || "";
+
     // Server-to-server auth — cron fires with the pre-shared secret.
     const providedSecret = req.headers.get("x-refresh-secret") || "";
-    if (!REFRESH_SECRET || !timingSafeEqual(providedSecret, REFRESH_SECRET)) {
+    if (!refreshSecret || !timingSafeEqual(providedSecret, refreshSecret)) {
       return json({ error: "unauthorized" }, 401);
     }
 
-    if (!USAJOBS_AUTH_KEY || !USAJOBS_USER_AGENT) {
+    if (!usajobsAuthKey || !usajobsUserAgent) {
       return json({ error: "USAJobs credentials not configured" }, 500);
     }
 
     // ANTHROPIC_API_KEY is OPTIONAL. When absent, we skip the relevance
     // filter and just take top-N by posted_at — infrastructure works
     // end-to-end without Claude, quality improves when the key is added.
-    const useClaudeFilter = !!ANTHROPIC_API_KEY;
+    const useClaudeFilter = !!anthropicKey;
 
-    const admin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
-    const anthropic = useClaudeFilter ? new Anthropic({ apiKey: ANTHROPIC_API_KEY }) : null;
+    const admin = createClient(supabaseUrl, supabaseServiceKey, {
+      global: { fetch: globalThis.fetch },
+      auth: { persistSession: false, autoRefreshToken: false },
+    });
+    const anthropic = useClaudeFilter
+      ? new Anthropic({ apiKey: anthropicKey, fetch: globalThis.fetch })
+      : null;
 
     // 1. Fetch across keyword buckets in parallel — independent USAJobs
     // requests, so serializing them just adds latency. Cuts ~8s on the
     // critical path with 8 buckets.
-    const bucketResults = await Promise.all(KEYWORD_BUCKETS.map((kw) => fetchBucket(kw)));
+    const bucketResults = await Promise.all(
+      KEYWORD_BUCKETS.map((kw) => fetchBucket(kw, usajobsAuthKey, usajobsUserAgent)),
+    );
     const raw: any[] = bucketResults.flat();
 
     // 2. Dedup by MatchedObjectId, normalize to jobs-row shape.
@@ -246,17 +266,21 @@ Deno.serve(async (req) => {
     console.error("refresh-jobs error:", err);
     return json({ error: "Refresh failed. Please try again." }, 500);
   }
-});
+}
 
-async function fetchBucket(keyword: string): Promise<any[]> {
+if (import.meta.main) {
+  Deno.serve(handle);
+}
+
+async function fetchBucket(keyword: string, authKey: string, userAgent: string): Promise<any[]> {
   // NOTE: RemoteIndicator is intentionally omitted — onsite/hybrid roles are
   // in scope for the WFH (Workforce for Humans) audience. is_remote is
   // derived per-row downstream from the location text for display chips.
   const url = `https://data.usajobs.gov/api/search?Keyword=${encodeURIComponent(keyword)}&ResultsPerPage=${RESULTS_PER_BUCKET}&WhoMayApply=public`;
   const resp = await fetch(url, {
     headers: {
-      "Authorization-Key": USAJOBS_AUTH_KEY,
-      "User-Agent": USAJOBS_USER_AGENT,
+      "Authorization-Key": authKey,
+      "User-Agent": userAgent,
       "Host": "data.usajobs.gov",
     },
   });
