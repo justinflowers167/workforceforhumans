@@ -96,16 +96,26 @@ export async function handle(req: Request): Promise<Response> {
     return json({ error: "message must be 5-2000 characters" }, 400);
   }
 
-  // Phase 11 §B (2026-04-28): pass globalThis.fetch explicitly so unit
-  // tests that stub fetch via _test/mocks.ts mockFetch can intercept the
-  // supabase-js HTTP calls. Without this, supabase-js may capture an
-  // original fetch reference at module-load time (esm.sh bundling can
-  // inline references), bypassing the stub. Production behavior is
-  // unchanged — globalThis.fetch in prod is the real Deno fetch.
+  // Phase 11 §B (2026-04-28):
+  //   - `global.fetch`: pass globalThis.fetch explicitly so unit tests
+  //     that stub fetch via _test/mocks.ts mockFetch can intercept the
+  //     supabase-js HTTP calls. Production behavior is unchanged —
+  //     globalThis.fetch in prod is the real Deno fetch.
+  //   - `auth.persistSession: false`: no localStorage in Deno anyway, but
+  //     setting explicitly is defensive.
+  //   - `auth.autoRefreshToken: false`: we use the service-role key, which
+  //     never refreshes. The default `true` starts a setInterval that
+  //     never fires meaningfully but keeps the test event loop alive,
+  //     causing Deno's leak detection to fail every supabase-js-using
+  //     test. Disabling it is a strict prod improvement (skips a wasted
+  //     timer per request) AND fixes the leak.
   const admin = createClient(
     Deno.env.get("SUPABASE_URL")!,
     Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
-    { global: { fetch: globalThis.fetch } },
+    {
+      global: { fetch: globalThis.fetch },
+      auth: { persistSession: false, autoRefreshToken: false },
+    },
   );
   const anthropicKey = Deno.env.get("ANTHROPIC_API_KEY") || "";
 
