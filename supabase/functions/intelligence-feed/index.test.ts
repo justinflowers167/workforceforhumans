@@ -83,10 +83,12 @@ Deno.test("happy path: 8 RSS feeds + layoffs.fyi return content, no OpenAI key",
       { match: "layoffs.fyi", handler: () => csvResponse() },
       // OpenAI — should NOT be called (no key)
       { match: "openai.com", handler: () => { openaiCalled = true; return jsonResponse({}, 200); } },
-      // feed_items upsert
+      // feed_items upsert — return a representation-shaped row so
+      // supabase-js's response parsing succeeds (empty array can confuse
+      // the upsert path).
       {
         match: "/rest/v1/feed_items",
-        handler: () => { upsertCount++; return jsonResponse([], 201); },
+        handler: () => { upsertCount++; return jsonResponse([{ id: "fake-feed-item" }], 201); },
       },
     ],
   });
@@ -118,7 +120,7 @@ Deno.test("all RSS feeds 500: function continues, layoffs.fyi still runs", async
       { match: "layoffs.fyi", handler: () => csvResponse() },
       {
         match: "/rest/v1/feed_items",
-        handler: () => { upsertCount++; return jsonResponse([], 201); },
+        handler: () => { upsertCount++; return jsonResponse([{ id: "fake-feed-item" }], 201); },
       },
     ],
   });
@@ -145,7 +147,7 @@ Deno.test("empty RSS XML yields 0 inserts", async () => {
       { match: "layoffs.fyi", handler: () => new Response("not found", { status: 404 }) },
       {
         match: "/rest/v1/feed_items",
-        handler: () => { upsertCount++; return jsonResponse([], 201); },
+        handler: () => { upsertCount++; return jsonResponse([{ id: "fake-feed-item" }], 201); },
       },
     ],
   });
