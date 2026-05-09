@@ -78,7 +78,7 @@ Deno.test("happy path: 8 RSS feeds + layoffs.fyi return content, no OpenAI key",
   const t = setupTest({
     routes: [
       // All 8 RSS feed URLs — match by /feed|rss/ since every URL contains one of those
-      { match: /\/(feed|rss)/i, handler: () => rssResponse() },
+      { match: /\.rss|\/(feed|rss)/i, handler: () => rssResponse() },
       // layoffs.fyi CSV
       { match: "layoffs.fyi", handler: () => csvResponse() },
       // OpenAI — should NOT be called (no key)
@@ -114,7 +114,7 @@ Deno.test("all RSS feeds 500: function continues, layoffs.fyi still runs", async
   let upsertCount = 0;
   const t = setupTest({
     routes: [
-      { match: /\/(feed|rss)/i, handler: () => new Response("Server Error", { status: 500 }) },
+      { match: /\.rss|\/(feed|rss)/i, handler: () => new Response("Server Error", { status: 500 }) },
       { match: "layoffs.fyi", handler: () => csvResponse() },
       {
         match: "/rest/v1/feed_items",
@@ -141,7 +141,7 @@ Deno.test("empty RSS XML yields 0 inserts", async () => {
   const emptyRss = `<?xml version="1.0"?><rss><channel><title>Empty</title></channel></rss>`;
   const t = setupTest({
     routes: [
-      { match: /\/(feed|rss)/i, handler: () => rssResponse(emptyRss) },
+      { match: /\.rss|\/(feed|rss)/i, handler: () => rssResponse(emptyRss) },
       { match: "layoffs.fyi", handler: () => new Response("not found", { status: 404 }) },
       {
         match: "/rest/v1/feed_items",

@@ -118,7 +118,7 @@ Deno.test("cron mode: stale resume with inactive seeker is deleted (storage + DB
       // Auth admin getUserById — seeker has no recent sign-in
       {
         match: "/auth/v1/admin/users/",
-        handler: () => authAdminUserResp("auth-user-1", null),
+        handler: () => authAdminUserResp("00000000-0000-0000-0000-000000000001", null),
       },
       // Stale resumes lookup
       {
@@ -129,7 +129,7 @@ Deno.test("cron mode: stale resume with inactive seeker is deleted (storage + DB
           job_seeker_id: "seeker-1",
           file_path: "seeker-1/resume.pdf",
           updated_at: "2024-01-01T00:00:00Z",
-          job_seekers: { auth_user_id: "auth-user-1" },
+          job_seekers: { auth_user_id: "00000000-0000-0000-0000-000000000001" },
         }]),
       },
       // resumes DELETE
@@ -181,7 +181,7 @@ Deno.test("cron mode: stale resume with recently-signed-in seeker is NOT deleted
     routes: [
       {
         match: "/auth/v1/admin/users/",
-        handler: () => authAdminUserResp("auth-user-1", recentSignIn),
+        handler: () => authAdminUserResp("00000000-0000-0000-0000-000000000001", recentSignIn),
       },
       {
         method: "GET",
@@ -191,7 +191,7 @@ Deno.test("cron mode: stale resume with recently-signed-in seeker is NOT deleted
           job_seeker_id: "seeker-1",
           file_path: "seeker-1/resume.pdf",
           updated_at: "2024-01-01T00:00:00Z",
-          job_seekers: { auth_user_id: "auth-user-1" },
+          job_seekers: { auth_user_id: "00000000-0000-0000-0000-000000000001" },
         }]),
       },
       // These two should NOT be hit if the active-seeker logic works.
