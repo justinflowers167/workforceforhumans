@@ -42,7 +42,7 @@ button.add{background:transparent;color:var(--terra);border:1px dashed var(--sto
 
 <main>
   <h1>Resume builder & AI review</h1>
-  <p class="sub">Paste your resume, upload a PDF/DOCX, or build from scratch. Claude will extract your skills, flag gaps, and rewrite weak bullets.</p>
+  <p class="sub">Paste your resume, upload a PDF/DOCX, or build from scratch. Our coach reads your resume to extract skills, flag gaps, and recommend bullet rewrites.</p>
 
   <div id="signed-out" class="card hidden">
     <p>Please <a href="/member.html">sign in</a> first to save your resume.</p>
@@ -177,7 +177,7 @@ button.add{background:transparent;color:var(--terra);border:1px dashed var(--sto
     try {
       setStatus('Saving resume…');
       const resume = await createResume(resumePayload);
-      setStatus('Asking Claude to review — this takes ~10 seconds…');
+      setStatus('Our coach is reviewing — this takes ~10 seconds…');
       const out = await callParse(resume.id);
       setStatus('Done. Review below and on your dashboard.', 'ok');
       renderReview(out);
