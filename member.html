@@ -47,7 +47,7 @@ button.ghost:hover{border-color:var(--amber);color:var(--amber-dk);}
 .match-edge{color:var(--slate);font-size:.88rem;margin-top:.5rem;line-height:1.5;}
 .match-edge strong{color:var(--terra);font-weight:600;}
 /* Phase 13 (2026-04-28): per-match coach brief — three new sub-sections
-   under "Claude's read on this match". Share match-fit typography so
+   under "Workforce's read on this match". Share match-fit typography so
    they read as continuation, not a separate card. Section labels use
    the shared .eye-lbl utility from /assets/site.css; per-section parent
    classes override the color so the eye can scan: navy=tailor,
@@ -390,7 +390,7 @@ button.ghost:hover{border-color:var(--amber);color:var(--amber-dk);}
         : '';
 
       const why = (fit || tailor || gap || edge || strategy || trainingHtml)
-        ? `<details class="match-why"><summary>Claude's read on this match</summary>${fit}${tailor}${gap}${edge}${strategy}${trainingHtml}</details>`
+        ? `<details class="match-why"><summary>Workforce's read on this match</summary>${fit}${tailor}${gap}${edge}${strategy}${trainingHtml}</details>`
         : '';
       return `<div class="match">
         <span class="score">${m.score||Math.round((m.similarity||0)*100)}</span>
