@@ -295,6 +295,8 @@ section{padding:6rem 0;}
   .ai-box{padding:2rem 1.25rem;border-radius:16px;}
   .ai-wrap{padding:0 4vw;}
 }
+.how-icon svg{width:28px;height:28px;display:block;color:var(--navy);}
+.af-icon svg{width:22px;height:22px;display:block;color:var(--amber);}
 </style>
 </head>
 <body data-nav="marketing">
@@ -370,19 +372,19 @@ const db=createClient(SUPABASE_URL,SUPABASE_ANON);
     <div class="how-grid">
       <div class="how-card rv d1" data-n="01">
         <div class="how-step">Step 01</div>
-        <div class="how-icon hi-a">🔍</div>
+        <div class="how-icon hi-a"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m21 21-4.34-4.34"/><circle cx="11" cy="11" r="8"/></svg></div>
         <h3 class="how-h3">Browse Real Jobs</h3>
         <p class="how-p">Search thousands of listings filtered by location, skills, and situation. Entry-level, career change, or leadership — every employer is verified, every listing is real.</p>
       </div>
       <div class="how-card rv d2" data-n="02">
         <div class="how-step">Step 02</div>
-        <div class="how-icon hi-t">📚</div>
+        <div class="how-icon hi-t"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 7v14"/><path d="M3 18a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h5a4 4 0 0 1 4 4 4 4 0 0 1 4-4h5a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1h-6a3 3 0 0 0-3 3 3 3 0 0 0-3-3z"/></svg></div>
         <h3 class="how-h3">Level Up Your Skills</h3>
         <p class="how-p">Find free and affordable training programs, certifications, and apprenticeships that employers actually want. From OSHA cards to CompTIA A+, we surface what's worth your time.</p>
       </div>
       <div class="how-card rv d3" data-n="03">
         <div class="how-step">Step 03</div>
-        <div class="how-icon hi-g">🚀</div>
+        <div class="how-icon hi-g"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="m16.24 7.76-1.804 5.411a2 2 0 0 1-1.265 1.265L7.76 16.24l1.804-5.411a2 2 0 0 1 1.265-1.265z"/></svg></div>
         <h3 class="how-h3">Apply With Confidence</h3>
         <p class="how-p">One-click applications, direct employer contact, and real-time status updates. We also connect you with coaching support if you need help navigating your next move.</p>
       </div>
@@ -435,10 +437,10 @@ const db=createClient(SUPABASE_URL,SUPABASE_ANON);
       <a href="learn.html" class="btn-amber">Start Your Career Plan →</a>
     </div>
     <div class="ai-feats">
-      <div class="ai-feat"><div class="af-icon">🎯</div><div><div class="af-title">Skills Gap Analysis</div><div class="af-desc">See exactly what's between you and your target role — and how to close it in 90 days.</div></div></div>
-      <div class="ai-feat"><div class="af-icon">🗺️</div><div><div class="af-title">Custom Career Roadmap</div><div class="af-desc">A personalized plan with milestones, training resources, and job targets — not generic advice.</div></div></div>
-      <div class="ai-feat"><div class="af-icon">📄</div><div><div class="af-title">Resume & Interview Prep</div><div class="af-desc">Tailored review and mock coaching built around your specific target jobs.</div></div></div>
-      <div class="ai-feat"><div class="af-icon">📊</div><div><div class="af-title">Labor Market Intelligence</div><div class="af-desc">Real-time salary data, hiring trends, and in-demand skills for your region.</div></div></div>
+      <div class="ai-feat"><div class="af-icon"><svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg></div><div><div class="af-title">Skills Gap Analysis</div><div class="af-desc">See exactly what's between you and your target role — and how to close it in 90 days.</div></div></div>
+      <div class="ai-feat"><div class="af-icon"><svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.106 5.553a2 2 0 0 0 1.788 0l3.659-1.83A1 1 0 0 1 21 4.619v12.764a1 1 0 0 1-.553.894l-4.553 2.277a2 2 0 0 1-1.788 0l-4.212-2.106a2 2 0 0 0-1.788 0l-3.659 1.83A1 1 0 0 1 3 19.381V6.618a1 1 0 0 1 .553-.894l4.553-2.277a2 2 0 0 1 1.788 0z"/><path d="M15 5.764v15"/><path d="M9 3.236v15"/></svg></div><div><div class="af-title">Custom Career Roadmap</div><div class="af-desc">A personalized plan with milestones, training resources, and job targets — not generic advice.</div></div></div>
+      <div class="ai-feat"><div class="af-icon"><svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 22a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h8a2.4 2.4 0 0 1 1.704.706l3.588 3.588A2.4 2.4 0 0 1 20 8v12a2 2 0 0 1-2 2z"/><path d="M14 2v5a1 1 0 0 0 1 1h5"/><path d="M10 9H8"/><path d="M16 13H8"/><path d="M16 17H8"/></svg></div><div><div class="af-title">Resume & Interview Prep</div><div class="af-desc">Tailored review and mock coaching built around your specific target jobs.</div></div></div>
+      <div class="ai-feat"><div class="af-icon"><svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 3v16a2 2 0 0 0 2 2h16"/><path d="M18 17V9"/><path d="M13 17V5"/><path d="M8 17v-3"/></svg></div><div><div class="af-title">Labor Market Intelligence</div><div class="af-desc">Real-time salary data, hiring trends, and in-demand skills for your region.</div></div></div>
     </div>
   </div>
 </div>
