@@ -149,6 +149,9 @@
   // --- Footer template (shared marketing + member; admin uses minimal). ---
   var FOOTER_FULL =
     '<footer>' +
+      '<div class="mission-band"><div class="mission-band-inner">' +
+        '<p><strong>Coach-led career adaptation</strong> for displaced and pivoting knowledge workers. Built by a practitioner who&rsquo;s lived this &mdash; free to start.</p>' +
+      '</div></div>' +
       '<div class="footer-grid">' +
         '<div>' +
           '<div class="fb">Workforce<span class="dot">for</span>Humans</div>' +
