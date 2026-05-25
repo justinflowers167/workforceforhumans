@@ -249,7 +249,7 @@ async function renderHome() {
     html += articleRow(a, cat);
   });
   if (!articles || articles.length === 0) {
-    html += `<div class="empty-state"><div class="icon">📚</div><h3>Articles coming soon</h3><p>We're building out our knowledge base. Check back shortly!</p></div>`;
+    html += `<div class="empty-state"><div class="icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 7v14"/><path d="M3 18a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h5a4 4 0 0 1 4 4 4 4 0 0 1 4-4h5a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1h-6a3 3 0 0 0-3 3 3 3 0 0 0-3-3z"/></svg></div><h3>Articles coming soon</h3><p>We're building out our knowledge base. Check back shortly!</p></div>`;
   }
   html += `</div>`;
 
@@ -276,7 +276,7 @@ async function renderCategory(slug) {
   if (articles && articles.length) {
     articles.forEach(a => { html += articleRow(a, cat); });
   } else {
-    html += `<div class="empty-state"><div class="icon">📝</div><h3>No articles yet</h3><p>We're working on content for ${cat.name}. Check back soon!</p></div>`;
+    html += `<div class="empty-state"><div class="icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z"/><path d="m15 5 4 4"/></svg></div><h3>No articles yet</h3><p>We're working on content for ${cat.name}. Check back soon!</p></div>`;
   }
   html += `</div>`;
   content.innerHTML = html;
@@ -291,7 +291,7 @@ async function renderArticle(slug) {
 
   const { data: a } = await db.from('kb_articles').select('*').eq('slug', slug).eq('status', 'published').single();
   if (!a) {
-    content.innerHTML = `<div class="empty-state" style="margin-top:3rem"><div class="icon">🔍</div><h3>Article not found</h3><p>This article may have been moved or removed.</p></div>`;
+    content.innerHTML = `<div class="empty-state" style="margin-top:3rem"><div class="icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.34-4.34"/></svg></div><h3>Article not found</h3><p>This article may have been moved or removed.</p></div>`;
     return;
   }
 
@@ -402,7 +402,7 @@ async function renderSearch(query) {
       html += articleRow(a, cat);
     });
   } else {
-    html += `<div class="empty-state"><div class="icon">🔍</div><h3>No results found</h3><p>Try different keywords or <a href="#/" style="color:var(--amber)">browse by topic</a>.</p></div>`;
+    html += `<div class="empty-state"><div class="icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.34-4.34"/></svg></div><h3>No results found</h3><p>Try different keywords or <a href="#/" style="color:var(--amber)">browse by topic</a>.</p></div>`;
   }
   html += `</div>`;
   content.innerHTML = html;

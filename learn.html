@@ -129,6 +129,13 @@
   display:flex;align-items:center;justify-content:space-between;
   padding-top:0.75rem;border-top:1px solid var(--stone);}
 .ps-arrow::after{content:'→';}
+.ph-eyebrow svg{width:16px;height:16px;display:inline-block;vertical-align:-3px;color:#b89ff0;}
+.pt-tab svg{width:18px;height:18px;display:inline-block;vertical-align:-4px;flex-shrink:0;}
+.fp-badge svg{width:14px;height:14px;display:inline-block;vertical-align:-2px;color:var(--amber-dk);}
+.cert-icon svg{width:24px;height:24px;display:block;color:var(--navy);}
+.pb-badge svg{width:14px;height:14px;display:inline-block;vertical-align:-2px;color:var(--amber);}
+.pb-visual svg{width:80px;height:80px;color:rgba(255,255,255,0.4);stroke-width:1.5;}
+.ps-icon svg{width:32px;height:32px;color:var(--navy);}
 
 /* RESOURCE LIBRARY */
 .resources-section{background:var(--stone);padding:4rem 0;}
@@ -279,7 +286,7 @@ const db=createClient(SUPABASE_URL,SUPABASE_ANON);
   <div class="ph-grid"></div>
   <div class="ph-content">
     <div>
-      <div class="ph-eyebrow">📚 Learning & Development</div>
+      <div class="ph-eyebrow"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 7v14"/><path d="M3 18a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h5a4 4 0 0 1 4 4 4 4 0 0 1 4-4h5a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1h-6a3 3 0 0 0-3 3 3 3 0 0 0-3-3z"/></svg> Learning & Development</div>
       <h1 class="ph-h1">Level up the skills<br/>employers are <em>paying for</em><br/>right now.</h1>
       <p class="ph-sub">Curated learning paths, free resources, and certification guides — built for career changers, not people who already have it figured out.</p>
       <div class="path-search-box">
@@ -299,13 +306,13 @@ const db=createClient(SUPABASE_URL,SUPABASE_ANON);
 <!-- PATH TABS -->
 <div class="path-tabs" id="healthcare">
   <div class="pt-inner">
-    <a href="#healthcare" class="pt-tab active">🏥 Healthcare</a>
-    <a href="#tech" class="pt-tab">💻 Technology</a>
-    <a href="#trades" class="pt-tab">⚙️ Skilled Trades</a>
-    <a href="#energy" class="pt-tab">🌱 Green Energy</a>
-    <a href="jobs.html?q=logistics" class="pt-tab">📦 Logistics</a>
-    <a href="jobs.html?q=finance" class="pt-tab">💼 Finance</a>
-    <a href="#coaching" class="pt-tab">🎯 Career Coaching</a>
+    <a href="#healthcare" class="pt-tab active"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 12h-2.48a2 2 0 0 0-1.93 1.46l-2.35 8.36a.5.5 0 0 1-.96 0L9.24 3.18a.5.5 0 0 0-.96 0l-2.35 8.36A2 2 0 0 1 4 13H2"/></svg>Healthcare</a>
+    <a href="#tech" class="pt-tab"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 16V7a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v9m16 0H4m16 0 1.28 2.55a1 1 0 0 1-.9 1.45H3.62a1 1 0 0 1-.9-1.45L4 16"/></svg>Technology</a>
+    <a href="#trades" class="pt-tab"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>Skilled Trades</a>
+    <a href="#energy" class="pt-tab"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19.2 2.96c.84 1.96 1.79 4.94 1.79 7.34a8 8 0 0 1-7.99 7.7"/><path d="M2 21c0-3 1.85-5.36 5.08-6"/></svg>Green Energy</a>
+    <a href="jobs.html?q=logistics" class="pt-tab"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 21.73a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73z"/><path d="M12 22V12"/><path d="m3.3 7 7.703 4.734a2 2 0 0 0 1.994 0L20.7 7"/><path d="m7.5 4.27 9 5.15"/></svg>Logistics</a>
+    <a href="jobs.html?q=finance" class="pt-tab"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="3" x2="21" y1="22" y2="22"/><line x1="6" x2="6" y1="18" y2="11"/><line x1="10" x2="10" y1="18" y2="11"/><line x1="14" x2="14" y1="18" y2="11"/><line x1="18" x2="18" y1="18" y2="11"/><polygon points="12 2 20 7 4 7"/></svg>Finance</a>
+    <a href="#coaching" class="pt-tab"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>Career Coaching</a>
   </div>
 </div>
 
@@ -313,7 +320,7 @@ const db=createClient(SUPABASE_URL,SUPABASE_ANON);
 <div class="feat-path">
   <div class="fp-inner container">
     <div class="rv">
-      <div class="fp-badge">🏥 Most In-Demand Path</div>
+      <div class="fp-badge"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 12h-2.48a2 2 0 0 0-1.93 1.46l-2.35 8.36a.5.5 0 0 1-.96 0L9.24 3.18a.5.5 0 0 0-.96 0l-2.35 8.36A2 2 0 0 1 4 13H2"/></svg> Most In-Demand Path</div>
       <h2 class="fp-h2">Healthcare & Wellness — Start Earning in 90 Days</h2>
       <p class="fp-p">Healthcare is the fastest-growing major sector in the US with 1.3M+ unfilled jobs. Entry points are accessible, training is affordable, and employers will often pay your cert costs if you commit.</p>
       <div class="fp-outcomes">
@@ -328,25 +335,25 @@ const db=createClient(SUPABASE_URL,SUPABASE_ANON);
       <div style="font-size:0.82rem;font-weight:600;color:var(--slate-lt);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:1rem;">Top Certifications to Get Started</div>
       <div class="fp-certs">
         <a href="https://www.redcross.org/take-a-class/cna" target="_blank" rel="noopener" class="cert-card">
-          <div class="cert-icon">🏥</div>
+          <div class="cert-icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 12h-2.48a2 2 0 0 0-1.93 1.46l-2.35 8.36a.5.5 0 0 1-.96 0L9.24 3.18a.5.5 0 0 0-.96 0l-2.35 8.36A2 2 0 0 1 4 13H2"/></svg></div>
           <div class="cert-name">CNA (Certified Nursing Assistant)</div>
           <div class="cert-time">4–12 weeks</div>
           <div class="cert-cost">$500–$2,000 · Often employer-sponsored</div>
         </a>
         <a href="https://www.nhanow.com/certifications/medical-assistant" target="_blank" rel="noopener" class="cert-card">
-          <div class="cert-icon">🩺</div>
+          <div class="cert-icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 2v2"/><path d="M5 2v2"/><path d="M5 3H4a2 2 0 0 0-2 2v4a6 6 0 0 0 12 0V5a2 2 0 0 0-2-2h-1"/><path d="M8 15a6 6 0 0 0 12 0v-3"/><circle cx="20" cy="10" r="2"/></svg></div>
           <div class="cert-name">CCMA (Medical Assistant)</div>
           <div class="cert-time">6–12 months</div>
           <div class="cert-cost">$150–$400 exam · Training varies</div>
         </a>
         <a href="https://www.nhanow.com/certifications/phlebotomy-technician" target="_blank" rel="noopener" class="cert-card">
-          <div class="cert-icon">🩸</div>
+          <div class="cert-icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 22a7 7 0 0 0 7-7c0-2-1-3.9-3-5.5s-3.5-4-4-6.5c-.5 2.5-2 4.9-4 6.5C6 11.1 5 13 5 15a7 7 0 0 0 7 7z"/></svg></div>
           <div class="cert-name">Phlebotomy Technician (CPT)</div>
           <div class="cert-time">2–8 weeks</div>
           <div class="cert-cost">Free–$1,200 · Community colleges</div>
         </a>
         <a href="https://www.aapc.com/training/medical-coding-courses.aspx" target="_blank" rel="noopener" class="cert-card">
-          <div class="cert-icon">💻</div>
+          <div class="cert-icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg></div>
           <div class="cert-name">Medical Coder (CPC)</div>
           <div class="cert-time">3–6 months</div>
           <div class="cert-cost">$399–$1,500 · Remote work friendly</div>
@@ -367,7 +374,7 @@ const db=createClient(SUPABASE_URL,SUPABASE_ANON);
     <div class="paths-grid">
       <a href="#tech" class="path-big rv" style="background:linear-gradient(135deg,#1a2a4a,#243d70);">
         <div class="pb-content">
-          <div class="pb-badge">⚡ High Growth</div>
+          <div class="pb-badge"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 14a1 1 0 0 1-.78-1.63l9.9-10.2a.5.5 0 0 1 .86.46l-1.92 6.02A1 1 0 0 0 13 10h7a1 1 0 0 1 .78 1.63l-9.9 10.2a.5.5 0 0 1-.86-.46l1.92-6.02A1 1 0 0 0 11 14z"/></svg> High Growth</div>
           <div class="pb-title">Technology & IT</div>
           <div class="pb-desc">Break into tech without a CS degree. CompTIA certifications are the industry standard entry path — fully accessible to motivated career changers.</div>
           <div class="pb-pills">
@@ -377,38 +384,38 @@ const db=createClient(SUPABASE_URL,SUPABASE_ANON);
             <span class="pb-pill">Security+</span>
           </div>
         </div>
-        <div class="pb-visual">💻</div>
+        <div class="pb-visual"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 16V7a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v9m16 0H4m16 0 1.28 2.55a1 1 0 0 1-.9 1.45H3.62a1 1 0 0 1-.9-1.45L4 16"/></svg></div>
       </a>
       <a href="#trades" class="path-sm rv d1">
-        <div class="ps-icon">⚙️</div>
+        <div class="ps-icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg></div>
         <div class="ps-title">Skilled Trades</div>
         <div class="ps-meta">489 open roles · avg $28/hr</div>
         <div class="ps-tags"><span class="ps-tag">OSHA 10</span><span class="ps-tag">Electrical</span><span class="ps-tag">Plumbing</span><span class="ps-tag">HVAC</span></div>
         <div class="ps-arrow">Explore Path</div>
       </a>
       <a href="#energy" class="path-sm rv d2">
-        <div class="ps-icon">🌱</div>
+        <div class="ps-icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19.2 2.96c.84 1.96 1.79 4.94 1.79 7.34a8 8 0 0 1-7.99 7.7"/><path d="M2 21c0-3 1.85-5.36 5.08-6"/></svg></div>
         <div class="ps-title">Green Energy & Climate</div>
         <div class="ps-meta">156 open roles · avg $24/hr</div>
         <div class="ps-tags"><span class="ps-tag">Solar NABCEP</span><span class="ps-tag">Wind Tech</span><span class="ps-tag">Energy Audit</span></div>
         <div class="ps-arrow">Explore Path</div>
       </a>
       <a href="jobs.html?q=logistics" class="path-sm rv">
-        <div class="ps-icon">📦</div>
+        <div class="ps-icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 21.73a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73z"/><path d="M12 22V12"/><path d="m3.3 7 7.703 4.734a2 2 0 0 0 1.994 0L20.7 7"/><path d="m7.5 4.27 9 5.15"/></svg></div>
         <div class="ps-title">Logistics & Supply Chain</div>
         <div class="ps-meta">274 open roles · avg $19/hr</div>
         <div class="ps-tags"><span class="ps-tag">Forklift Cert</span><span class="ps-tag">CDL</span><span class="ps-tag">APICS</span></div>
         <div class="ps-arrow">Explore Path</div>
       </a>
       <a href="jobs.html?q=finance" class="path-sm rv d1">
-        <div class="ps-icon">💼</div>
+        <div class="ps-icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="3" x2="21" y1="22" y2="22"/><line x1="6" x2="6" y1="18" y2="11"/><line x1="10" x2="10" y1="18" y2="11"/><line x1="14" x2="14" y1="18" y2="11"/><line x1="18" x2="18" y1="18" y2="11"/><polygon points="12 2 20 7 4 7"/></svg></div>
         <div class="ps-title">Finance & Accounting</div>
         <div class="ps-meta">132 open roles · avg $30/hr</div>
         <div class="ps-tags"><span class="ps-tag">QuickBooks</span><span class="ps-tag">Bookkeeping</span><span class="ps-tag">Tax Prep</span></div>
         <div class="ps-arrow">Explore Path</div>
       </a>
       <a href="index.html#employers" class="path-sm rv d2" style="background:var(--navy);border-color:var(--navy);">
-        <div class="ps-icon">🤝</div>
+        <div class="ps-icon" style="color:#fff;"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m11 17 2 2a1 1 0 1 0 3-3"/><path d="m14 14 2.5 2.5a1 1 0 1 0 3-3l-3.88-3.88a3 3 0 0 0-4.24 0l-.88.88a1 1 0 1 1-3-3l2.81-2.81a5.79 5.79 0 0 1 7.06-.87l.47.28a2 2 0 0 0 1.42.25L21 4"/><path d="m21 3 1 11h-2"/><path d="M3 3 2 14l6.5 6.5a1 1 0 1 0 3-3"/><path d="M3 4h8"/></svg></div>
         <div class="ps-title" style="color:#fff;">Don't see your field?</div>
         <div class="ps-meta" style="color:rgba(255,255,255,0.45);">We're adding paths every month</div>
         <div class="ps-tags"><span class="ps-tag" style="background:rgba(255,255,255,0.08);border-color:rgba(255,255,255,0.12);color:rgba(255,255,255,0.5);">Request a path →</span></div>
@@ -449,15 +456,15 @@ const db=createClient(SUPABASE_URL,SUPABASE_ANON);
       <p class="c-p">Our AI coaching system asks the right questions, identifies your real skill gaps, and produces a custom 90-day action plan — not generic advice you've already seen. It's a tool, not a replacement for human support. But it's available at 2am when you need it.</p>
       <div style="display:flex;flex-direction:column;gap:1rem;margin-bottom:2rem;">
         <div style="display:flex;align-items:flex-start;gap:1rem;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.08);border-radius:12px;padding:1rem 1.25rem;">
-          <div style="font-size:1.25rem;flex-shrink:0;">🎯</div>
+          <div style="flex-shrink:0;color:var(--amber);"><svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg></div>
           <div><div style="font-size:0.88rem;font-weight:600;color:#fff;margin-bottom:3px;">Skills Gap Analysis</div><div style="font-size:0.8rem;color:rgba(255,255,255,0.45);line-height:1.5;">Tell us your background and target. We'll show you the delta and how to close it.</div></div>
         </div>
         <div style="display:flex;align-items:flex-start;gap:1rem;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.08);border-radius:12px;padding:1rem 1.25rem;">
-          <div style="font-size:1.25rem;flex-shrink:0;">📄</div>
+          <div style="flex-shrink:0;color:var(--amber);"><svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 22a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h8a2.4 2.4 0 0 1 1.704.706l3.588 3.588A2.4 2.4 0 0 1 20 8v12a2 2 0 0 1-2 2z"/><path d="M14 2v5a1 1 0 0 0 1 1h5"/><path d="M10 9H8"/><path d="M16 13H8"/><path d="M16 17H8"/></svg></div>
           <div><div style="font-size:0.88rem;font-weight:600;color:#fff;margin-bottom:3px;">Resume Review</div><div style="font-size:0.8rem;color:rgba(255,255,255,0.45);line-height:1.5;">Paste your resume. Get line-by-line feedback matched to real job descriptions.</div></div>
         </div>
         <div style="display:flex;align-items:flex-start;gap:1rem;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.08);border-radius:12px;padding:1rem 1.25rem;">
-          <div style="font-size:1.25rem;flex-shrink:0;">🗺️</div>
+          <div style="flex-shrink:0;color:var(--amber);"><svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.106 5.553a2 2 0 0 0 1.788 0l3.659-1.83A1 1 0 0 1 21 4.619v12.764a1 1 0 0 1-.553.894l-4.553 2.277a2 2 0 0 1-1.788 0l-4.212-2.106a2 2 0 0 0-1.788 0l-3.659 1.83A1 1 0 0 1 3 19.381V6.618a1 1 0 0 1 .553-.894l4.553-2.277a2 2 0 0 1 1.788 0z"/><path d="M15 5.764v15"/><path d="M9 3.236v15"/></svg></div>
           <div><div style="font-size:0.88rem;font-weight:600;color:#fff;margin-bottom:3px;">90-Day Action Plan</div><div style="font-size:0.8rem;color:rgba(255,255,255,0.45);line-height:1.5;">Walk away with a week-by-week plan: what to study, what certs to get, when to apply.</div></div>
         </div>
       </div>
