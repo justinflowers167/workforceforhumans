@@ -721,15 +721,24 @@ Cluster B (the F1/F2/F7 homepage rewrite) bundled with three strategy-doc surfac
 - Pathway page copy is first-draft (written in WFH voice but not founder-reviewed); founder should sweep over the next week. Pages take copy edits without re-architecting.
 - F5 pt 2 (icon sweep across the rest of the site), F8 (about.html voice rewrite), F18 (mission band on every seeker page) are still open and tracked separately as Cluster A tail.
 
-### §A — PostHog funnel instrumentation (1-2 hours, code)
+### §A — PostHog funnel instrumentation (shipped 2026-05-25)
 
-Pre-requisite to the tester campaign so feedback is measurable, not just anecdotal. The existing PostHog snippet in `assets/site.js` (autocapture: false, person_profiles: 'identified_only') captures 3 events today (`CTA: employer-checkout-start`, `Event: resume-upload`, `Event: find-matches`). Phase 15 §A extends with 5-7 funnel events covering the seeker journey:
+Pre-requisite to the tester campaign so feedback is measurable, not just anecdotal. The existing PostHog snippet in `assets/site.js` (autocapture: false, person_profiles: 'identified_only') already captured 3 events (`CTA: employer-checkout-start`, `Event: resume-upload`, `Event: find-matches`); §A adds 5 funnel events covering the seeker journey.
 
-- `funnel:signup-start`, `funnel:signup-complete` (magic-link sent / verified)
-- `funnel:resume-parse-start`, `funnel:resume-parse-complete` (already partially covered by `Event: resume-upload`)
-- `funnel:match-card-click` (member clicks a match)
-- `funnel:match-disclosure-open` (member opens the "Claude's read" disclosure — proxy for engagement with coach brief)
-- `funnel:match-apply-click` (member clicks the apply CTA)
+**Shipped:**
+
+- `funnel:signup-start` — fires in `member.html` after `signInWithOtp` returns no error (the magic-link email send was accepted). Does NOT pass email as a property — PostHog `person_profiles: 'identified_only'` posture preserved; session stitching is enough for single-session funnel charts.
+- `funnel:signup-complete` — fires in `member.html` `onAuthStateChange` when `event === 'SIGNED_IN'`. Fires every sign-in (returning visits too), which is intentional — splitting "first signup" vs "return" can be derived from session start vs sign-in delta in PostHog.
+- `funnel:resume-parse-start` — fires in `resume.html` `runFlow()` immediately after seeker-id check, before the upload spinner. Sits parallel to the existing `Event: resume-upload` (which fires inside `callParse`, slightly later) — kept both so existing dashboards keep working.
+- `funnel:resume-parse-complete` — fires in `resume.html` `runFlow()` after a successful `callParse(resume.id)`, before `renderReview`.
+- `funnel:match-disclosure-open` — fires in `member.html` `loadMatches()` after match-card render; a `toggle` event listener on every `details.match-why` element captures only the opens (`d.open` check), not the closes.
+
+**Deferred (require small product changes before they have an anchor):**
+
+- `funnel:match-card-click` — match cards on `member.html` are currently display-only; they don't link to `jobs.html?id=<uuid>`. To enable this event we'd add a "View posting →" link on each card. Queued for Phase 15 §C product-deltas pass.
+- `funnel:match-apply-click` — there's no apply CTA on the match card today. Per `feedback_coach_not_doer.md` this would be a navigate-to-posting link, not an in-product apply flow. Queued with match-card-click.
+
+**Privacy hygiene:** `privacy.html` updated in the same PR (both the bullet list and the third-party processor table row) to name the new event categories (magic-link send + coach-brief disclosure open) so the legal surface matches what the code actually captures.
 
 **Done when:** PostHog dashboard shows a funnel chart for the seeker path; one day of test data confirms events fire correctly.
 

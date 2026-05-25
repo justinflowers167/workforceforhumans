@@ -190,12 +190,16 @@ button.ghost:hover{border-color:var(--amber);color:var(--amber-dk);}
     const { error } = await db.auth.signInWithOtp({
       email, options: { emailRedirectTo: window.location.origin + '/member.html' }
     });
+    if (!error && window.posthog) window.posthog.capture('funnel:signup-start');
     $('auth-msg').textContent = error ? ('Error: ' + error.message) : 'Check your email for a sign-in link.';
   };
 
   $('signout').onclick = async () => { await db.auth.signOut(); location.reload(); };
 
-  db.auth.onAuthStateChange((_e, _s) => { boot(); });
+  db.auth.onAuthStateChange((event, _s) => {
+    if (event === 'SIGNED_IN' && window.posthog) window.posthog.capture('funnel:signup-complete');
+    boot();
+  });
 
   async function loadDashboard(user) {
     $('hi').textContent = 'Welcome' + (user.email ? ', ' + user.email.split('@')[0] : '');
@@ -400,6 +404,15 @@ button.ghost:hover{border-color:var(--amber);color:var(--amber-dk);}
         ${why}
       </div>`;
     }).join('');
+
+    // Phase 15 §A: funnel:match-disclosure-open fires when a member opens
+    // the per-match coach brief. Native <details> toggle event fires once
+    // per state change — gate on .open so we only count opens, not closes.
+    $('matches').querySelectorAll('.match-why').forEach(function(d) {
+      d.addEventListener('toggle', function() {
+        if (d.open && window.posthog) window.posthog.capture('funnel:match-disclosure-open');
+      });
+    });
   }
 
   $('rescore').onclick = async () => {

@@ -124,7 +124,7 @@ article code{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:.88rem;
 <h3>Usage data</h3>
 <ul>
   <li>Aggregated page views, referrer, country, device category — collected via <a href="https://www.cloudflare.com/web-analytics/" rel="noopener" target="_blank">Cloudflare Web Analytics</a>, which is cookieless and does not store IP addresses or track individuals across sites.</li>
-  <li>Intentional interaction events (e.g. clicking the employer-checkout CTA, uploading a resume, requesting new matches) — collected via <a href="https://posthog.com/privacy" rel="noopener" target="_blank">PostHog</a>. PostHog stores a minimal first-party identifier so a single browsing session can be stitched together; we do not link this identifier to your account, and we do not enable cross-site tracking, session recording, or general autocapture.</li>
+  <li>Intentional interaction events (e.g. clicking the employer-checkout CTA, sending a magic-link, uploading a resume, opening the per-match coach brief, requesting new matches) — collected via <a href="https://posthog.com/privacy" rel="noopener" target="_blank">PostHog</a>. PostHog stores a minimal first-party identifier so a single browsing session can be stitched together; we do not link this identifier to your account, and we do not enable cross-site tracking, session recording, or general autocapture.</li>
 </ul>
 
 <h2 id="how-we-use-it">3. How we use it</h2>
@@ -175,7 +175,7 @@ article code{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:.88rem;
     <tr>
       <td><a href="https://posthog.com/privacy" rel="noopener" target="_blank">PostHog</a></td>
       <td>Custom-event analytics for product-improvement decisions (US Cloud region).</td>
-      <td>Intentional interaction events only (CTA clicks, resume upload, match request). Minimal first-party session identifier; no autocapture, no session recording, no cross-site tracking.</td>
+      <td>Intentional interaction events only (CTA clicks, magic-link send, resume upload, coach-brief disclosure open, match request). Minimal first-party session identifier; no autocapture, no session recording, no cross-site tracking.</td>
     </tr>
     <tr>
       <td>USAJobs.gov</td>

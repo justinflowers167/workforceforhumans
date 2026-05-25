@@ -173,12 +173,14 @@ button.add{background:transparent;color:var(--terra);border:1px dashed var(--sto
 
   async function runFlow(resumePayload, btn) {
     if (!seekerId) { setStatus('No profile — refresh or sign in again.', 'err'); return; }
+    if (window.posthog) window.posthog.capture('funnel:resume-parse-start');
     btn.disabled = true;
     try {
       setStatus('Saving your assessment…');
       const resume = await createResume(resumePayload);
       setStatus('Your coach is reading — about a minute…');
       const out = await callParse(resume.id);
+      if (window.posthog) window.posthog.capture('funnel:resume-parse-complete');
       setStatus('Done. Your read is below; pathway + matches are on your dashboard.', 'ok');
       renderReview(out);
     } catch (e) {
