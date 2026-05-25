@@ -693,6 +693,27 @@ Founder commitment 2026-05-09: a linear sequence rather than a menu. Each sub-ph
 
 **Why this sequence:** acquisition is the named bottleneck (0 new seekers in 14 days as of 2026-05-09 health check). But adding employer traffic before validating seeker UX with friendly testers is worse than a quiet site. Plan: instrument first → measure tester behavior → fix highest-leverage friction → only then drive employer-side acquisition.
 
+### Cluster B + strategy-doc fold-in (shipped 2026-05-10)
+
+Founder approved a surgical fold-in of the [WorkforceForHumans-Website-Strategy.md](../AppData/Roaming/Claude/local-agent-mode-sessions/…/WorkforceForHumans-Website-Strategy.md) doc into Cluster B on 2026-05-10 (see memory file `project_adaptation_platform_positioning.md`). Rationale: Cluster B is the hero rewrite — landing both the F1/F2/F7 fixes and the strategy-doc positioning shifts in the same PR avoids paying for the hero rewrite twice. Three strategy-doc surfaces folded in (Assessment rename, Pathway pages, adaptation-platform wedge); three deferred (Quarterly Adaptation Index, long-form Story profiles, repositioned For Employers — all require resources Phase 15 §D will surface).
+
+**Shipped this PR:**
+
+- **F1 — CTA hierarchy inverted on `index.html`.** Search-box hero (Indeed-like) replaced with seeker-first activation: primary CTA "Start your adaptation plan →" → `/resume.html`; secondary "See the pathways" → `/pathways/`. Old `goSearch()` JS removed (dead reference after the search box came out).
+- **F2 — wedge sharpened to adaptation-platform frame.** Hero eyebrow now reads "The adaptation platform"; H1 "A real plan for the next version of your career"; subhead "We coach you to use AI so you become the candidate employers want — and place you when you're ready." How-it-works rewritten as Assess → Plan → Move (was Browse → Level Up → Apply).
+- **F7 — proof point in first 10 seconds.** New trust line under the hero CTAs: "Read by 15,000+ this month. New market briefing every week from Justin Flowers — a practitioner who's lived this." Uses real numbers from `project_traffic_signal.md`; cadence reflects existing `content/market-pulse/` weekly briefings.
+- **Adaptation Assessment rename on `resume.html`.** Title, meta description, H1, subhead, all three submit-CTAs, status messages, and review-output header now speak as the Adaptation Assessment. No flow logic changes — the underlying parse-resume → match-jobs pipeline (Phases 7 + 13) is unchanged; this is positioning surface only.
+- **Pathway pages live at `/pathways/`.** Index page + 3 named pathway pages (AI-Augmented Operations Analyst, Federal Program Analyst, AI-Augmented Project Coordinator). Each follows the strategy-doc structure: archetype, target roles, hiring-signal claim, 5-step journey with named weeks, cost honesty, "what this is not" block, final CTA. All static HTML, no new infra. `sitemap.xml` updated; new pages added with `0.8` priority for the role pages, `0.9` for the index.
+- **Homepage pathway preview.** Three-card section between How-it-works and Find Work links to the new pathway pages with the same archetype + meta-chip rendering as the pathways index.
+
+**Strategy-doc surfaces explicitly deferred (NOT this PR):**
+
+- **Quarterly Adaptation Index report** — content/research lift; revisit after Phase 15 §C tells us if authority is the conversion gap.
+- **Long-form Story profiles** — need a real transitioned user willing to be profiled. Phase 15 §B/§D is the natural source.
+- **Repositioned For Employers (pipeline-build vs. self-serve)** — gated on Phase 15 §D pipeline data anyway. Self-serve $499/mo stays as-is.
+
+**Slipped:** none on shipped scope. Founder writing time on pathway copy (~2-3 days expected) compressed into the bundled PR via first-draft pathway content written in WFH voice; founder should review and tighten over the next week — none of the pathway pages need re-architecting to take edits, just copy adjustments.
+
 ### §A — PostHog funnel instrumentation (1-2 hours, code)
 
 Pre-requisite to the tester campaign so feedback is measurable, not just anecdotal. The existing PostHog snippet in `assets/site.js` (autocapture: false, person_profiles: 'identified_only') captures 3 events today (`CTA: employer-checkout-start`, `Event: resume-upload`, `Event: find-matches`). Phase 15 §A extends with 5-7 funnel events covering the seeker journey:
