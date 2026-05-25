@@ -55,11 +55,11 @@
         '<div class="nav-inner">' +
           '<a href="index.html" class="nav-logo">Workforce<span class="dot">for</span>Humans</a>' +
           '<ul class="nav-links">' +
+            '<li><a href="/pathways/" data-match="pathways">Pathways</a></li>' +
             '<li><a href="jobs.html" data-match="jobs.html">Find Jobs</a></li>' +
             '<li><a href="learn.html" data-match="learn.html">Level Up</a></li>' +
             '<li><a href="feed.html" data-match="feed.html">Intelligence</a></li>' +
             '<li><a href="kb.html" data-match="kb.html">Resources</a></li>' +
-            '<li><a href="resume.html" data-match="resume.html">Resume AI</a></li>' +
             '<li><a href="index.html#employers">For Employers</a></li>' +
           '</ul>' +
           '<div class="nav-actions">' +
@@ -72,11 +72,11 @@
       '<div class="nav-scrim" aria-hidden="true"></div>' +
       '<aside class="nav-drawer" id="nav-drawer" aria-hidden="true" inert>' +
         '<ul class="drawer-links">' +
+          '<li><a href="/pathways/" data-match="pathways">Pathways</a></li>' +
           '<li><a href="jobs.html" data-match="jobs.html">Find Jobs</a></li>' +
           '<li><a href="learn.html" data-match="learn.html">Level Up</a></li>' +
           '<li><a href="feed.html" data-match="feed.html">Intelligence</a></li>' +
           '<li><a href="kb.html" data-match="kb.html">Resources</a></li>' +
-          '<li><a href="resume.html" data-match="resume.html">Resume AI</a></li>' +
           '<li><a href="index.html#employers">For Employers</a></li>' +
         '</ul>' +
         '<div class="drawer-cta">' +

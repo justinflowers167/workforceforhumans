@@ -3,9 +3,9 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>Resume Builder & Reviewer — Workforce for Humans</title>
+<title>Start your adaptation plan — Workforce for Humans</title>
 <meta name="robots" content="noindex, nofollow"/>
-<meta name="description" content="Paste, upload, or build your resume. Get an AI review with concrete rewrites and skill gap analysis."/>
+<meta name="description" content="The Adaptation Assessment: upload your resume, get a coach's read in about a minute, see the pathway to your next role."/>
 <link rel="stylesheet" href="/assets/site.css"/>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
@@ -41,11 +41,11 @@ button.add{background:transparent;color:var(--terra);border:1px dashed var(--sto
 <noscript><nav><div class="nav-inner"><a href="index.html" class="nav-logo">Workforce<span class="dot">for</span>Humans</a></div></nav></noscript>
 
 <main>
-  <h1>Resume builder & AI review</h1>
-  <p class="sub">Paste your resume, upload a PDF/DOCX, or build from scratch. Our coach reads your resume to extract skills, flag gaps, and recommend bullet rewrites.</p>
+  <h1>The Adaptation Assessment</h1>
+  <p class="sub">Drop in your resume. We read it like a coach would — naming what's strong, what's stale, and where the work is shifting underneath you. About a minute to a clear read; the matched pathway lands on your dashboard right after.</p>
 
   <div id="signed-out" class="card hidden">
-    <p>Please <a href="/member.html">sign in</a> first to save your resume.</p>
+    <p>Please <a href="/member.html">sign in</a> first so we can save your assessment.</p>
   </div>
 
   <div id="main-card" class="card hidden">
@@ -58,13 +58,13 @@ button.add{background:transparent;color:var(--terra);border:1px dashed var(--sto
     <div id="tab-paste">
       <label>Paste your resume text</label>
       <textarea id="paste-text" placeholder="Paste your current resume here — plain text is fine."></textarea>
-      <div style="margin-top:1rem;"><button class="primary" id="submit-paste">Review my resume</button></div>
+      <div style="margin-top:1rem;"><button class="primary" id="submit-paste">Start my adaptation plan</button></div>
     </div>
 
     <div id="tab-upload" class="hidden">
       <label>Upload PDF or DOCX (max 4MB)</label>
       <input type="file" id="upload-file" accept=".pdf,.docx"/>
-      <div style="margin-top:1rem;"><button class="primary" id="submit-upload">Upload & review</button></div>
+      <div style="margin-top:1rem;"><button class="primary" id="submit-upload">Start my adaptation plan</button></div>
     </div>
 
     <div id="tab-build" class="hidden">
@@ -93,15 +93,15 @@ button.add{background:transparent;color:var(--terra);border:1px dashed var(--sto
       <label style="margin-top:1rem;">Skills (comma-separated)</label>
       <input type="text" id="b-skills" placeholder="customer service, scheduling, Excel"/>
 
-      <div style="margin-top:1rem;"><button class="primary" id="submit-build">Build & review</button></div>
+      <div style="margin-top:1rem;"><button class="primary" id="submit-build">Start my adaptation plan</button></div>
     </div>
 
     <div id="status" class="status info hidden"></div>
   </div>
 
   <div id="review-out" class="card hidden">
-    <h2 style="font-family:var(--font-d);font-size:1.3rem;margin-bottom:.5rem;">Review</h2>
-    <p class="muted">You can see the full review and save further changes on <a href="/member.html">your dashboard</a>.</p>
+    <h2 style="font-family:var(--font-d);font-size:1.3rem;margin-bottom:.5rem;">Your coach's read</h2>
+    <p class="muted">Your matched pathway and the full match list are on <a href="/member.html">your dashboard</a>.</p>
     <div id="review-body" style="margin-top:1rem;"></div>
   </div>
 </main>
@@ -175,11 +175,11 @@ button.add{background:transparent;color:var(--terra);border:1px dashed var(--sto
     if (!seekerId) { setStatus('No profile — refresh or sign in again.', 'err'); return; }
     btn.disabled = true;
     try {
-      setStatus('Saving resume…');
+      setStatus('Saving your assessment…');
       const resume = await createResume(resumePayload);
-      setStatus('Our coach is reviewing — this takes ~10 seconds…');
+      setStatus('Your coach is reading — about a minute…');
       const out = await callParse(resume.id);
-      setStatus('Done. Review below and on your dashboard.', 'ok');
+      setStatus('Done. Your read is below; pathway + matches are on your dashboard.', 'ok');
       renderReview(out);
     } catch (e) {
       setStatus('Error: ' + (e.message || e), 'err');
