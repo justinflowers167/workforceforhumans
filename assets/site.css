@@ -209,8 +209,24 @@ body.nav-open .nav-scrim{opacity:1;pointer-events:auto;}
 }
 .btn-amber:hover{background:var(--amber-dk);transform:translateY(-1px);}
 
+/* ─── MISSION BAND (F18) ─── */
+#site-footer .mission-band{
+  background:linear-gradient(180deg,rgba(245,166,35,0.04) 0%,rgba(245,166,35,0.10) 100%);
+  border-top:1px solid rgba(245,166,35,0.22);
+  border-bottom:1px solid rgba(255,255,255,0.04);
+}
+#site-footer .mission-band-inner{
+  max-width:780px;margin:0 auto;padding:1.6rem 5vw;text-align:center;
+}
+#site-footer .mission-band p{
+  font-family:var(--font-b);font-size:0.95rem;color:rgba(255,255,255,0.78);
+  font-weight:400;line-height:1.65;margin:0;
+}
+#site-footer .mission-band p strong{color:#fff;font-weight:600;}
+
 /* ─── FOOTER ─── */
-#site-footer footer{background:#0a1120;padding:4rem 0 2rem;}
+#site-footer footer{background:#0a1120;padding:0 0 2rem;}
+#site-footer footer .footer-grid{padding-top:4rem;}
 .footer-grid{
   max-width:1280px;margin:0 auto;padding:0 5vw;
   display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:3rem;margin-bottom:3rem;
