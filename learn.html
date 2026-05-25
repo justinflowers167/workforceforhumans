@@ -202,35 +202,36 @@
 .dot-anim:nth-child(3){animation-delay:0.4s;}
 @keyframes dotbounce{0%,60%,100%{transform:translateY(0);}30%{transform:translateY(-5px);}}
 
-/* PLANS */
+/* WHAT'S INCLUDED + SUPPORT (launch-quarter free model) */
 .plans-section{padding:4rem 0;}
-.plans-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1.5rem;margin-top:2.5rem;}
-.plan-card{background:#fff;border:1px solid var(--stone);border-radius:20px;padding:2rem;
-  position:relative;transition:all 0.3s;}
-.plan-card:hover{box-shadow:var(--sh-md);}
-.plan-card.featured{border:2px solid var(--amber);box-shadow:0 0 0 4px rgba(245,166,35,0.1);}
-.plan-badge{position:absolute;top:-12px;left:50%;transform:translateX(-50%);
-  background:var(--amber);color:var(--navy);border-radius:100px;padding:4px 14px;
-  font-size:0.72rem;font-weight:700;white-space:nowrap;}
-.plan-name{font-size:0.82rem;font-weight:600;text-transform:uppercase;letter-spacing:0.08em;
-  color:var(--slate-lt);margin-bottom:0.75rem;}
-.plan-price{font-family:var(--font-d);font-size:2.5rem;font-weight:900;color:var(--navy);
-  margin-bottom:0.25rem;line-height:1;}
-.plan-price .plan-curr{font-family:var(--font-b);font-size:1.1rem;font-weight:400;color:var(--slate);
-  vertical-align:super;}
-.plan-per{font-size:0.8rem;color:var(--slate-lt);margin-bottom:1.5rem;}
-.plan-feats{list-style:none;margin-bottom:1.75rem;}
-.plan-feats li{font-size:0.88rem;color:var(--slate);padding:0.5rem 0;
-  border-bottom:1px solid var(--stone);display:flex;align-items:flex-start;gap:0.6rem;}
-.plan-feats li:last-child{border-bottom:none;}
-.plan-feats li::before{content:'✓';color:var(--green);font-weight:700;font-size:0.8rem;flex-shrink:0;margin-top:2px;}
-.plan-btn{width:100%;padding:0.85rem;border-radius:10px;font-family:var(--font-b);
-  font-size:0.92rem;font-weight:600;cursor:pointer;transition:all 0.2s;text-align:center;
-  display:block;text-decoration:none;}
-.plan-btn.primary{background:var(--amber);color:var(--navy);border:none;}
-.plan-btn.primary:hover{background:var(--amber-dk);}
-.plan-btn.secondary{background:none;border:1px solid var(--stone);color:var(--navy);}
-.plan-btn.secondary:hover{border-color:var(--amber);color:var(--amber);}
+.free-card{background:#fff;border:1px solid var(--stone-dk);border-radius:20px;padding:2.5rem 2.5rem 2rem;
+  max-width:780px;margin:3rem auto 1.5rem;position:relative;box-shadow:var(--sh-md);}
+.free-badge{display:inline-flex;align-items:center;gap:0.4rem;background:rgba(45,122,58,0.1);
+  border:1px solid rgba(45,122,58,0.3);border-radius:100px;padding:0.3rem 0.9rem;
+  font-size:0.72rem;font-weight:600;color:var(--green);letter-spacing:0.08em;
+  text-transform:uppercase;margin-bottom:1.25rem;}
+.free-h3{font-family:var(--font-d);font-size:1.5rem;color:var(--navy);font-weight:700;
+  line-height:1.2;margin-bottom:1.5rem;}
+.free-feats{list-style:none;margin-bottom:1.75rem;padding:0;}
+.free-feats li{font-size:0.92rem;color:var(--slate);padding:0.7rem 0;line-height:1.65;
+  border-bottom:1px solid var(--stone);display:flex;align-items:flex-start;gap:0.65rem;font-weight:300;}
+.free-feats li:last-child{border-bottom:none;}
+.free-feats li::before{content:'';width:18px;height:18px;border-radius:50%;
+  background:rgba(45,122,58,0.12);flex-shrink:0;margin-top:3px;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%231f6b35' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M20 6 9 17l-5-5'/%3E%3C/svg%3E");
+  background-size:12px 12px;background-position:center;background-repeat:no-repeat;}
+.free-feats li strong{color:var(--navy);font-weight:600;}
+.free-cta-row{margin-top:1.25rem;display:flex;flex-wrap:wrap;gap:0.75rem;align-items:center;}
+.support-card{background:var(--cream);border:1px solid var(--stone);border-radius:18px;
+  padding:2rem 2.5rem;max-width:780px;margin:1.5rem auto 0;}
+.support-eyebrow{font-family:var(--font-m);font-size:0.72rem;font-weight:500;
+  color:var(--terra);letter-spacing:0.08em;text-transform:uppercase;margin-bottom:0.75rem;}
+.support-h3{font-family:var(--font-d);font-size:1.2rem;color:var(--navy);font-weight:700;
+  line-height:1.3;margin-bottom:0.9rem;}
+.support-p{font-size:0.9rem;color:var(--slate);font-weight:300;line-height:1.7;margin-bottom:1rem;}
+.support-link{font-size:0.9rem;font-weight:600;color:var(--amber-txt);text-decoration:none;
+  border-bottom:1px solid rgba(245,166,35,0.4);padding-bottom:1px;}
+.support-link:hover{border-bottom-color:var(--amber);}
 
 /* NEWSLETTER */
 .nl-sec{background:var(--navy);padding:4rem 0;}
@@ -253,14 +254,14 @@
   .path-big{grid-column:span 2;}
   .resources-grid{grid-template-columns:1fr 1fr;}
   .coach-inner{grid-template-columns:1fr;}
-  .plans-grid{grid-template-columns:1fr 1fr;}
   .fp-inner{grid-template-columns:1fr;}
 }
 @media(max-width:960px){
   .paths-grid,.path-big{grid-column:span 1 !important;grid-template-columns:1fr !important;}
   .path-big{display:block;}
   .pb-visual{display:none;}
-  .resources-grid,.plans-grid{grid-template-columns:1fr;}
+  .resources-grid{grid-template-columns:1fr;}
+  .free-card,.support-card{padding:2rem 1.5rem;}
   .nl-form{flex-direction:column;}
   .fp-certs{grid-template-columns:1fr;}
 }
@@ -488,57 +489,34 @@ const db=createClient(SUPABASE_URL,SUPABASE_ANON);
   </div>
 </section>
 
-<!-- PLANS -->
+<!-- WHAT'S INCLUDED -->
 <section class="plans-section" id="energy">
   <div class="container">
-    <div class="rv" style="text-align:center;max-width:540px;margin:0 auto;">
-      <div class="eye" style="justify-content:center;">Coaching Plans</div>
-      <h2 class="sec-h2">Get the support you<br/>actually need.</h2>
-      <p class="sec-sub" style="margin:0 auto;">Start free. Upgrade when you need more than a plan — you need a person.</p>
+    <div class="rv" style="text-align:center;max-width:620px;margin:0 auto;">
+      <div class="eye" style="justify-content:center;">What's included &middot; free</div>
+      <h2 class="sec-h2">Everything WFH offers, at<br/><em>zero cost.</em></h2>
+      <p class="sec-sub" style="margin:0 auto;">I'm a solo founder building this around a day job. Paid coaching is paused while I can't deliver it the way it deserves to be delivered. What's below is what you get &mdash; free during our launch quarter &mdash; and it's what stays free as the platform grows.</p>
     </div>
-    <div class="plans-grid" style="margin-top:3rem;">
-      <div class="plan-card rv">
-        <div class="plan-name">Self-Guided</div>
-        <div class="plan-price"><span class="plan-curr">$</span>0</div>
-        <div class="plan-per">Free forever</div>
-        <ul class="plan-feats">
-          <li>AI skills gap analysis</li>
-          <li>Job search on platform</li>
-          <li>All free learning resources</li>
-          <li>Job alert emails</li>
-          <li>Resume tips & templates</li>
-        </ul>
-        <a href="jobs.html" class="plan-btn secondary">Get Started Free</a>
+    <div class="free-card rv d1">
+      <div class="free-badge">Launch quarter &middot; free for everyone</div>
+      <h3 class="free-h3">Your full Workforce for Humans toolkit</h3>
+      <ul class="free-feats">
+        <li><strong>Adaptation Assessment.</strong> Upload your resume, get a coach's read in about a minute &mdash; what's strong, what's stale, where the work is shifting.</li>
+        <li><strong>Named pathways.</strong> AI-Augmented Operations Analyst, Federal Program Analyst, AI-Augmented Project Coordinator. Real target roles with measurable hiring signal, weeks-paced journeys, cost honesty.</li>
+        <li><strong>Per-match coach brief.</strong> For every match: how to tailor your resume for that role, the single most-leveraged AI skill to learn next, and how to apply with the right angle.</li>
+        <li><strong>Curated learning paths.</strong> Free and low-cost certs and training across healthcare, tech, trades, energy, logistics, finance &mdash; the ones that actually move the needle, not the ones that pay affiliate fees.</li>
+        <li><strong>Weekly market briefing.</strong> What's shifting in your industry, who's hiring, and what to learn next. Delivered to your inbox.</li>
+        <li><strong>Friday match digest.</strong> Fresh roles scored against your pathway, with the coach brief on each.</li>
+      </ul>
+      <div class="free-cta-row">
+        <a href="/resume.html" class="btn-amber" style="padding:0.95rem 1.8rem;font-size:0.95rem;text-decoration:none;display:inline-block;">Start your adaptation plan &rarr;</a>
       </div>
-      <div class="plan-card featured rv d1">
-        <div class="plan-badge">Most Popular</div>
-        <div class="plan-name">Career Boost</div>
-        <div class="plan-price"><span class="plan-curr">$</span>79</div>
-        <div class="plan-per">one-time · 90-day access</div>
-        <ul class="plan-feats">
-          <li>Everything in Free</li>
-          <li>Full AI coaching program</li>
-          <li>Custom 90-day action plan</li>
-          <li>Resume review (2 rounds)</li>
-          <li>Mock interview prep</li>
-          <li>Priority job matching</li>
-        </ul>
-        <a href="mailto:hello@workforceforhumans.com" class="plan-btn primary">Get Started →</a>
-      </div>
-      <div class="plan-card rv d2">
-        <div class="plan-name">1:1 Coaching</div>
-        <div class="plan-price"><span class="plan-curr">$</span>249</div>
-        <div class="plan-per">per month · min 2 months</div>
-        <ul class="plan-feats">
-          <li>Everything in Career Boost</li>
-          <li>2× 60-min 1:1 sessions/mo</li>
-          <li>Real human career coach</li>
-          <li>Job application support</li>
-          <li>Negotiation coaching</li>
-          <li>Ongoing check-ins</li>
-        </ul>
-        <a href="mailto:coaching@workforceforhumans.com" class="plan-btn secondary">Apply for Coaching</a>
-      </div>
+    </div>
+    <div class="support-card rv d2">
+      <div class="support-eyebrow">Support the work</div>
+      <h3 class="support-h3">If WFH helps you land &mdash; or you just want this thing to exist &mdash; you can help keep it free.</h3>
+      <p class="support-p">No paywall, no upsell tier, no "premium" upgrade. The AI costs &mdash; resume parsing, match scoring, weekly intelligence &mdash; come out of my pocket while we build market credibility. If you've got the means and the platform's helped you, dropping a note is the entire ask. A donation page is on the way; for now, an email starts the conversation.</p>
+      <a href="mailto:hello@workforceforhumans.com?subject=I%20want%20to%20support%20WFH" class="support-link">Email Justin about supporting the work &rarr;</a>
     </div>
   </div>
 </section>
