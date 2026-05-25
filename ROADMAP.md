@@ -766,6 +766,35 @@ Pre-requisite to the tester campaign so feedback is measurable, not just anecdot
 
 **Done when:** PostHog dashboard shows a funnel chart for the seeker path; one day of test data confirms events fire correctly.
 
+### Strategic shift — launch-quarter free + Adaptation Index thesis (shipped 2026-05-25)
+
+Triggered by a 2026-05-25 live-data check that surfaced the brutal truth: **after 7 months and ~15k monthly organic views, zero paying employers, zero feedback submissions, zero real seeker signups (the 1 record is the founder's test account).** The marketplace-fee model (`$99` Basic / `$199` Featured / `$499/mo` Employer) has not converted a single non-test customer. Founder's spouse independently surfaced the same instinct the May 10 strategy doc and `project_adaptation_platform_positioning.md` named as Phase 16 horizon work: stop selling marketplace seats; start positioning as a workforce-data producer with enterprises as the paying side, free coach product on the seeker side. Morgan Reeves (CSO advisor frame) pressure-tested it and ratified the direction with a "stack, don't pivot" caveat — keep the coach product running, run a parallel enterprise-discovery sprint, drop the listing fees that are contradicting the new hero anyway, and re-prioritize the Quarterly Adaptation Index from Phase 16 horizon to a Q3 2026 commitment.
+
+**Shipped in this PR (claude/employer-fees-free-launch):**
+
+- **Homepage `#employers` section repriced to free.** The 3-tier pricing block ($99 / $199 / $499) on `index.html` replaced with a single "List a role free while we build market credibility" CTA that routes to `mailto:employers@workforceforhumans.com` with a pre-filled subject + body template. Verified-employer badge included; no card, no subscription, no per-application fee.
+- **Adaptation Index Q3 2026 teaser added** below the free-posting CTA. One-paragraph product description ("Quarterly workforce intelligence on what displaced knowledge workers are pivoting into — pathway demand, AI-skill gaps, federal-vs-private movement, all sourced from the seeker journeys WFH coaches every day") + waitlist `mailto:hello@workforceforhumans.com?subject=Adaptation%20Index%20Q3%202026%20waitlist` link.
+- **Value-prop contradiction fixed.** The "Transparent flat-fee pricing" employer feature on the left column was rewritten to "Free during launch quarter — No listing fees, no subscription. Direct support from the founder while we build market credibility." Same icon container; semantic icon swapped to wrench-and-pencil.
+- **PostHog events updated** to track interest under the new model: `CTA: employer-list-role-launch` (mailto click on the free-posting CTA) and `CTA: adaptation-index-waitlist` (mailto click on the Adaptation Index teaser). The legacy `CTA: employer-checkout-start` event was retired with its UI; existing PostHog dashboards keep working since the historical data is untouched.
+- **Dead JS removed.** `selectPlan()` + `startCheckout()` deleted from `index.html`; their UI (the `.pricing` / `.price-opt` block) deleted in the same edit. Replaced inline with a comment that documents the shift and points future readers at the still-deployed Edge Functions.
+
+**Deliberately NOT touched (re-pricing is a copy-only flip back):**
+
+- `supabase/functions/create-checkout` and `supabase/functions/stripe-webhook` remain deployed. The code works; deleting it would mean rebuilding it later. Stripe customer + product + price metadata in their dashboard are untouched.
+- `employer.html` (the gated dashboard) is unchanged. Existing employer accounts can still sign in and manage listings; the 12 test-data employer rows (5 seed companies + 7 QA accounts) keep their access.
+- `privacy.html` + `terms.html` unchanged. Pricing isn't named there explicitly; the existing language ("paid employer postings") doesn't contradict the launch-quarter free framing.
+
+**Founder-owned next moves (Morgan recommendation #2 — gates the actual pivot):**
+
+- **5 enterprise data-buyer discovery conversations this week.** HR / workforce-planning leaders at mid-market (200–2000-employee) companies plus 1–2 government workforce boards. Not pitching — *listening.* Ask: "Who do you buy workforce data from today? What question can you never get answered? What would you pay for if someone built it?" Demand validation before building. ~5 hours founder time.
+- **Q3 2026 Adaptation Index v0 outline.** Even if the discovery sprint comes back lukewarm, a free public Q3 PDF report is brand-building work that compounds. Outline: which displaced-worker archetypes are pivoting where (sourced from USAJobs cron + pathway data + match scores), the top AI-skill gaps, federal-vs-private movement, one practitioner interpretation per chart in Justin's voice. Lightweight; not a full Lightcast competitor.
+
+**Linked horizon work (Phase 16 + later):**
+
+- The 2026-05-10 strategy-doc's 2 still-deferred surfaces (Quarterly Adaptation Index report + long-form Story profiles) are now both directly relevant. The Index just got promoted; Stories need a real transitioned tester (Phase 15 §B can source).
+- Phase 15 §D ("Client (employer) campaign") in its original framing — drive paid employer traffic to a $499/mo subscription — is **superseded by this shift.** Don't follow the original §D playbook; revisit §D once enterprise-data validation is in.
+- The fee re-introduction has no fixed date. Reconsider when: (a) 3+ enterprise discovery conversations validate willingness to pay $25K+ for the Adaptation Index, OR (b) seeker acquisition hits a sustained baseline (e.g. >20 new signups/week for 4 weeks) such that paid-employer demand can plausibly find liquidity.
+
 ### §B — Tester feedback campaign (founder-driven outreach)
 
 Closed-beta-style: founder reaches out to 10-25 warm contacts (laid-off PMs, career-changers, recruiters trusted), invites them to use the platform, asks for 1 honest line of feedback each. Code support is light:
