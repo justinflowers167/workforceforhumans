@@ -39,6 +39,9 @@
 /* TABS */
 .tab-bar{max-width:1200px;margin:1.5rem auto 0;padding:0 5vw;display:flex;gap:.5rem;flex-wrap:wrap}
 .tab-btn{padding:.55rem 1.2rem;border:1px solid var(--stone);background:#fff;border-radius:10px;font-family:var(--font-b);font-size:.85rem;font-weight:500;cursor:pointer;color:var(--slate);transition:all .2s;display:inline-flex;align-items:center;gap:.4rem}
+.tab-btn svg{width:16px;height:16px;flex-shrink:0}
+.empty-state .icon svg{width:40px;height:40px;color:var(--slate-lt);display:block;margin:0 auto}
+.fcard-title svg{width:16px;height:16px;display:inline-block;vertical-align:-3px;margin-right:.3rem;flex-shrink:0}
 .tab-btn:hover{border-color:var(--amber);color:var(--amber)}
 .tab-btn.active{background:var(--navy);color:#fff;border-color:var(--navy)}
 .tab-btn .badge{font-size:.7rem;background:rgba(245,166,35,.2);color:var(--amber-dk);padding:1px 6px;border-radius:8px;font-weight:600}
@@ -175,9 +178,9 @@
 
 <!-- TABS -->
 <div class="tab-bar" id="tab-bar">
-  <button class="tab-btn active" onclick="switchTab('layoffs')">📡 Layoff Feed <span class="badge" id="tab-layoff-count">—</span></button>
-  <button class="tab-btn" onclick="switchTab('agencies')">🏛️ Agencies <span class="badge" id="tab-agency-count">—</span></button>
-  <button class="tab-btn" onclick="switchTab('training')">📚 Training <span class="badge" id="tab-training-count">—</span></button>
+  <button class="tab-btn active" onclick="switchTab('layoffs')"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.55a11 11 0 0 1 14.08 0"/><path d="M1.42 9a16 16 0 0 1 21.16 0"/><path d="M8.53 16.11a6 6 0 0 1 6.95 0"/><line x1="12" x2="12.01" y1="20" y2="20"/></svg>Layoff Feed <span class="badge" id="tab-layoff-count">—</span></button>
+  <button class="tab-btn" onclick="switchTab('agencies')"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="3" x2="21" y1="22" y2="22"/><line x1="6" x2="6" y1="18" y2="11"/><line x1="10" x2="10" y1="18" y2="11"/><line x1="14" x2="14" y1="18" y2="11"/><line x1="18" x2="18" y1="18" y2="11"/><polygon points="12 2 20 7 4 7"/></svg>Agencies <span class="badge" id="tab-agency-count">—</span></button>
+  <button class="tab-btn" onclick="switchTab('training')"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 7v14"/><path d="M3 18a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h5a4 4 0 0 1 4 4 4 4 0 0 1 4-4h5a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1h-6a3 3 0 0 0-3 3 3 3 0 0 0-3-3z"/></svg>Training <span class="badge" id="tab-training-count">—</span></button>
 </div>
 
 <!-- CONTENT -->
@@ -328,12 +331,19 @@ function renderLayoffs() {
   });
 
   if (filtered.length === 0) {
-    html += `<div class="empty-state"><div class="icon">🔍</div><h3>No matching items</h3><p>Try adjusting your filters.</p></div>`;
+    html += `<div class="empty-state"><div class="icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.34-4.34"/></svg></div><h3>No matching items</h3><p>Try adjusting your filters.</p></div>`;
   } else {
     filtered.forEach(item => {
       const daysAgo = Math.floor((Date.now() - new Date(item.published_at)) / 86400000);
       const dateLabel = daysAgo === 0 ? 'Today' : daysAgo === 1 ? 'Yesterday' : `${daysAgo}d ago`;
-      const typeEmoji = {layoff:'🔴',['hiring-surge']:'🟢',['industry-news']:'📰',['policy-change']:'📋',opportunity:'💡'}[item.item_type] || '📌';
+      const TYPE_ICON = {
+        layoff: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="#c85f3e" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>',
+        'hiring-surge': '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="#2d7a3a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>',
+        'industry-news': '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="#5b3fa0" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 22h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v16a2 2 0 0 1-2 2"/><path d="M18 14h-8"/><path d="M15 18h-5"/><path d="M10 6h8v4h-8z"/></svg>',
+        'policy-change': '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="#8a5a00" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"/></svg>',
+        opportunity: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="#f5a623" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5"/><path d="M9 18h6"/><path d="M10 22h4"/></svg>',
+      };
+      const typeIcon = TYPE_ICON[item.item_type] || '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 17v5"/><path d="M9 10.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24V16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V7a1 1 0 0 1 1-1 2 2 0 0 0 0-4H8a2 2 0 0 0 0 4 1 1 0 0 1 1 1z"/></svg>';
 
       const sev = ['low','medium','high','critical'].includes(item.severity) ? item.severity : 'medium';
       const srcUrl = safeUrl(item.source_url);
@@ -347,7 +357,7 @@ function renderLayoffs() {
           ${imgUrl ? `<img class="fc-thumb" src="${esc(imgUrl)}" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer" onerror="this.parentElement.classList.remove('has-image');this.remove();"/>` : ''}
           <div class="fc-body">
             <div class="fc-top">
-              <div class="fcard-title">${typeEmoji} ${esc(item.title)}</div>
+              <div class="fcard-title">${typeIcon} ${esc(item.title)}</div>
               <span class="fc-severity ${sev}">${sev}</span>
             </div>
             ${item.summary ? `<div class="fc-summary">${esc(item.summary)}</div>` : ''}
@@ -476,7 +486,7 @@ function renderTraining() {
   });
 
   if (filtered.length === 0) {
-    html += `<div class="empty-state" style="grid-column:1/-1"><div class="icon">📚</div><h3>No matching resources</h3><p>Try adjusting your filters.</p></div>`;
+    html += `<div class="empty-state" style="grid-column:1/-1"><div class="icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 7v14"/><path d="M3 18a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h5a4 4 0 0 1 4 4 4 4 0 0 1 4-4h5a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1h-6a3 3 0 0 0-3 3 3 3 0 0 0-3-3z"/></svg></div><h3>No matching resources</h3><p>Try adjusting your filters.</p></div>`;
   } else {
     filtered.forEach(t => {
       const srcUrl = safeUrl(t.source_url);
