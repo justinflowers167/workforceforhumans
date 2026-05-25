@@ -693,18 +693,21 @@ Founder commitment 2026-05-09: a linear sequence rather than a menu. Each sub-ph
 
 **Why this sequence:** acquisition is the named bottleneck (0 new seekers in 14 days as of 2026-05-09 health check). But adding employer traffic before validating seeker UX with friendly testers is worse than a quiet site. Plan: instrument first → measure tester behavior → fix highest-leverage friction → only then drive employer-side acquisition.
 
-### Cluster B + strategy-doc fold-in (shipped 2026-05-10)
+### Cluster B + strategy-doc fold-in (shipped 2026-05-24)
 
-Founder approved a surgical fold-in of the [WorkforceForHumans-Website-Strategy.md](../AppData/Roaming/Claude/local-agent-mode-sessions/…/WorkforceForHumans-Website-Strategy.md) doc into Cluster B on 2026-05-10 (see memory file `project_adaptation_platform_positioning.md`). Rationale: Cluster B is the hero rewrite — landing both the F1/F2/F7 fixes and the strategy-doc positioning shifts in the same PR avoids paying for the hero rewrite twice. Three strategy-doc surfaces folded in (Assessment rename, Pathway pages, adaptation-platform wedge); three deferred (Quarterly Adaptation Index, long-form Story profiles, repositioned For Employers — all require resources Phase 15 §D will surface).
+Cluster B (the F1/F2/F7 homepage rewrite) bundled with three strategy-doc surfaces (Assessment rename, Pathway pages, adaptation-platform wedge) per `project_adaptation_platform_positioning.md`. Rationale for bundling: Cluster B is the hero rewrite — landing the positioning shifts in the same PR avoided paying for the hero rewrite twice. Three other strategy-doc surfaces deferred (Quarterly Adaptation Index, long-form Story profiles, repositioned For Employers) — all gated on resources Phase 15 §D will surface.
+
+**Timeline note:** initial draft completed 2026-05-10 in a worktree but never committed or PR'd; recovered during a 2026-05-24 worktree cleanup and shipped after a Karen-conversion review pass + four polish fixes (mobile breakpoint for the homepage pathway preview, Pathways link added to shared nav, dead search-box CSS removed, this ROADMAP entry rewritten for accuracy).
 
 **Shipped this PR:**
 
-- **F1 — CTA hierarchy inverted on `index.html`.** Search-box hero (Indeed-like) replaced with seeker-first activation: primary CTA "Start your adaptation plan →" → `/resume.html`; secondary "See the pathways" → `/pathways/`. Old `goSearch()` JS removed (dead reference after the search box came out).
+- **F1 — CTA hierarchy inverted on `index.html`.** Search-box hero (Indeed-like) replaced with seeker-first activation: primary CTA "Start your adaptation plan →" → `/resume.html`; secondary "See the pathways" → `/pathways/`. Old `goSearch()` JS and `.hero-search-box` CSS removed.
 - **F2 — wedge sharpened to adaptation-platform frame.** Hero eyebrow now reads "The adaptation platform"; H1 "A real plan for the next version of your career"; subhead "We coach you to use AI so you become the candidate employers want — and place you when you're ready." How-it-works rewritten as Assess → Plan → Move (was Browse → Level Up → Apply).
 - **F7 — proof point in first 10 seconds.** New trust line under the hero CTAs: "Read by 15,000+ this month. New market briefing every week from Justin Flowers — a practitioner who's lived this." Uses real numbers from `project_traffic_signal.md`; cadence reflects existing `content/market-pulse/` weekly briefings.
 - **Adaptation Assessment rename on `resume.html`.** Title, meta description, H1, subhead, all three submit-CTAs, status messages, and review-output header now speak as the Adaptation Assessment. No flow logic changes — the underlying parse-resume → match-jobs pipeline (Phases 7 + 13) is unchanged; this is positioning surface only.
 - **Pathway pages live at `/pathways/`.** Index page + 3 named pathway pages (AI-Augmented Operations Analyst, Federal Program Analyst, AI-Augmented Project Coordinator). Each follows the strategy-doc structure: archetype, target roles, hiring-signal claim, 5-step journey with named weeks, cost honesty, "what this is not" block, final CTA. All static HTML, no new infra. `sitemap.xml` updated; new pages added with `0.8` priority for the role pages, `0.9` for the index.
-- **Homepage pathway preview.** Three-card section between How-it-works and Find Work links to the new pathway pages with the same archetype + meta-chip rendering as the pathways index.
+- **Homepage pathway preview.** Three-card section between How-it-works and Find Work links to the new pathway pages with the same archetype + meta-chip rendering as the pathways index. Mobile breakpoints (3→2 at 1200px, 2→1 at 960px) added during the polish pass.
+- **Shared nav updated** in `assets/site.js` — "Pathways" link added as the first marketing nav item (desktop + mobile drawer) so visitors on jobs/learn/feed/kb can jump to pathways without going home first.
 
 **Strategy-doc surfaces explicitly deferred (NOT this PR):**
 
@@ -712,7 +715,11 @@ Founder approved a surgical fold-in of the [WorkforceForHumans-Website-Strategy.
 - **Long-form Story profiles** — need a real transitioned user willing to be profiled. Phase 15 §B/§D is the natural source.
 - **Repositioned For Employers (pipeline-build vs. self-serve)** — gated on Phase 15 §D pipeline data anyway. Self-serve $499/mo stays as-is.
 
-**Slipped:** none on shipped scope. Founder writing time on pathway copy (~2-3 days expected) compressed into the bundled PR via first-draft pathway content written in WFH voice; founder should review and tighten over the next week — none of the pathway pages need re-architecting to take edits, just copy adjustments.
+**Open follow-ups (not blocking ship):**
+
+- Nav still says "Resume AI" → `/resume.html` is wrong target (the page now reads "The Adaptation Assessment"). Kept "Resume AI" out of nav entirely in this PR; the primary CTA in the hero handles the activation path. Revisit if PostHog §A funnel data shows the hero CTA isn't catching click-through.
+- Pathway page copy is first-draft (written in WFH voice but not founder-reviewed); founder should sweep over the next week. Pages take copy edits without re-architecting.
+- F5 pt 2 (icon sweep across the rest of the site), F8 (about.html voice rewrite), F18 (mission band on every seeker page) are still open and tracked separately as Cluster A tail.
 
 ### §A — PostHog funnel instrumentation (1-2 hours, code)
 
