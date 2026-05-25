@@ -693,6 +693,30 @@ Founder commitment 2026-05-09: a linear sequence rather than a menu. Each sub-ph
 
 **Why this sequence:** acquisition is the named bottleneck (0 new seekers in 14 days as of 2026-05-09 health check). But adding employer traffic before validating seeker UX with friendly testers is worse than a quiet site. Plan: instrument first → measure tester behavior → fix highest-leverage friction → only then drive employer-side acquisition.
 
+### Cluster A — surface voice (shipped 2026-05-10 → 2026-05-25)
+
+Five-finding cluster from `docs/site-review-findings-2026-05-10.md` aimed at flipping the seeker-facing surface from "AI-aggregator" voice to "WFH-coach" voice via low-LOC, high-leverage brand work. Sequenced before Cluster B per the §A go/no-go gate; landed across four PRs over ~2 weeks.
+
+**Shipped:**
+
+- **F4 — de-Claude rebrand in product UX** (PR #49, 2026-05-10). Product surface strings on `member.html`, `resume.html`, and `about.html` re-voiced as "Workforce's read" / "Our coach" rather than naming Claude directly. Legal surface (`terms.html`, `privacy.html`) keeps its Claude/Anthropic disclosure unchanged per `feedback_claude_is_plumbing.md`.
+- **F5 pt 1 — Lucide SVG icons on `index.html` how-it-works + AI features** (PR #50, 2026-05-10). Established the inline-Lucide pattern the rest of the sweep follows.
+- **F5 pt 2 — `index.html` icon sweep + cross-site mission band** (PR #52, 2026-05-25). 16 emoji icons on the homepage (hero stat cards, path cards, AI pill, employer features, Featured Listing star) replaced with semantic Lucide SVGs; matching CSS sizing rules added. Bonus: stripped a stray U+008F control byte hiding next to the gear emoji on the Skilled Trades path card.
+- **F18 — cross-site mission band** (PR #52, 2026-05-25). Thin amber-tinted band injected above `footer-grid` in the shared `FOOTER_FULL` template (renders on every seeker-facing page, NOT admin). Copy: *"Coach-led career adaptation for displaced and pivoting knowledge workers. Built by a practitioner who's lived this — free to start."* Paired with the F2 hero wedge for voice cohesion.
+- **F5 pt 3 — `learn.html` / `feed.html` / `kb.html` / `jobs.html` icon sweep** (PR #54, 2026-05-25). ~40 more emoji replaced with semantic Lucide icons across the remaining seeker surfaces. `feed.html`'s `typeEmoji` map refactored into a `TYPE_ICON` map with per-category stroke colors (layoff → alert-triangle in terra, hiring-surge → trending-up in green, etc.) so the practitioner-curation cue stays semantic. `assets/site.css` got a shared `.empty-state .icon svg` rule so kb/jobs/feed empty states all render at consistent visual weight.
+
+**Still open (founder-owned, NOT code-side):**
+
+- **F8 — `about.html` voice rewrite.** Needs a 15-30 min voice-extraction conversation (scars, decisions, opinions) before I can do this without falling into AI-slop per `feedback_no_ai_slop_visuals.md`. Tracked separately when founder is ready.
+
+**Deliberately out of scope of the icon sweep (functional, low Karen-impact):**
+
+- `jobs.html` job-card meta-chip emoji (📍💰🌐🌱🔭⭐) inside JS template literals — functional UI affordances, not trust-leak signals
+- `feed.html` agency-card `.ag-location` 📍🌐 chips (same reasoning)
+- Inline ✓ glyphs in CSS `::before` pseudos and subscribe-success toasts
+
+**Verification gate met:** Karen-conversion four-test review on the polished snapshot before PR #51 merge confirmed all four cross-cutting tests pass (10-sec wedge, hope+path, practitioner voice, LinkedIn-clone anti-pattern). Founder spot-check across the icon sweep PRs (#52, #54) recommended via the Cloudflare Pages preview URL after merge.
+
 ### Cluster B + strategy-doc fold-in (shipped 2026-05-24)
 
 Cluster B (the F1/F2/F7 homepage rewrite) bundled with three strategy-doc surfaces (Assessment rename, Pathway pages, adaptation-platform wedge) per `project_adaptation_platform_positioning.md`. Rationale for bundling: Cluster B is the hero rewrite — landing the positioning shifts in the same PR avoided paying for the hero rewrite twice. Three other strategy-doc surfaces deferred (Quarterly Adaptation Index, long-form Story profiles, repositioned For Employers) — all gated on resources Phase 15 §D will surface.
@@ -719,7 +743,7 @@ Cluster B (the F1/F2/F7 homepage rewrite) bundled with three strategy-doc surfac
 
 - Nav still says "Resume AI" → `/resume.html` is wrong target (the page now reads "The Adaptation Assessment"). Kept "Resume AI" out of nav entirely in this PR; the primary CTA in the hero handles the activation path. Revisit if PostHog §A funnel data shows the hero CTA isn't catching click-through.
 - Pathway page copy is first-draft (written in WFH voice but not founder-reviewed); founder should sweep over the next week. Pages take copy edits without re-architecting.
-- F5 pt 2 (icon sweep across the rest of the site), F8 (about.html voice rewrite), F18 (mission band on every seeker page) are still open and tracked separately as Cluster A tail.
+- F8 (about.html voice rewrite) still open — needs founder voice-extraction session. F5 pt 2 and F18 shipped in PR #52; F5 pt 3 shipped in PR #54. Cluster A is otherwise closed.
 
 ### §A — PostHog funnel instrumentation (shipped 2026-05-25)
 
