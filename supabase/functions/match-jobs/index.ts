@@ -7,7 +7,10 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2?target=deno
 // can override values per-case (module-level reads happen once at import
 // time and can't be re-stubbed). Edge runtime cost is negligible.
 
-const MODEL = "claude-sonnet-4-6";
+// 2026-06-10: claude-sonnet-4-6 → claude-fable-5. The coach brief is the
+// product's moat surface; it rides the top-tier model. ~3.3× per-run cost
+// (see runbook §6 lever 0 for the one-line revert if budget alerts fire).
+const MODEL = "claude-fable-5";
 const MAX_JOBS_TO_SCORE = 50;
 const TOP_N = 10;
 
@@ -165,12 +168,11 @@ export async function handle(req: Request): Promise<Response> {
     // Phase 14 §B (2026-05-09): pass globalThis.fetch so tests can
     // intercept the Anthropic SDK's HTTP call. Production unchanged.
     const client = new Anthropic({ apiKey: anthropicKey, fetch: globalThis.fetch });
-    // Prompt-cache the system block. Phase 13 (2026-04-28) extended the
-    // system prompt with three new field specs (resume_tailoring,
-    // skill_gap_plan, application_strategy); the prompt is now well past
-    // Anthropic's 1024-token minimum cacheable prefix so this marker is
-    // no longer a no-op — the second invocation in any 5-minute window
-    // reads from cache at 10% of standard input rate.
+    // Prompt-cache the system block. claude-fable-5's minimum cacheable
+    // prefix is 2048 tokens and this prompt is ~1.2k, so the marker is a
+    // silent no-op — harmless, and live again if the prompt grows past
+    // the floor (second invocation in any 5-minute window would then read
+    // from cache at 10% of standard input rate).
     const resp = await client.messages.create({
       model: MODEL,
       // 8000 (Phase 13) up from 6000 — three new prose fields × 10 matches

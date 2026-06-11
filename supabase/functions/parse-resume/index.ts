@@ -23,7 +23,11 @@ import { encodeBase64 } from "https://deno.land/std@0.224.0/encoding/base64.ts";
 // can override values per-case (module-level reads happen once at import
 // time and can't be re-stubbed). Edge runtime cost is negligible.
 
-const MODEL = "claude-sonnet-4-6";
+// 2026-06-10: claude-sonnet-4-6 → claude-fable-5. The review block
+// (strengths/gaps/rewrites/market_notes) is member-facing coach prose, and
+// parse quality feeds skills sync + matching downstream. ~3× per-parse cost
+// (see runbook §6 lever 0 for the one-line revert if budget alerts fire).
+const MODEL = "claude-fable-5";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -89,7 +93,7 @@ async function getResumeUserMessage(
 
   if (lower.endsWith(".pdf")) {
     // Send the PDF directly to Claude as a document content block.
-    // Sonnet 4.6 reads PDFs natively and we avoid pdf-parse's known
+    // Claude reads PDFs natively and we avoid pdf-parse's known
     // Deno cold-start crashes.
     const base64 = encodeBase64(buf);
     return [
@@ -183,8 +187,8 @@ export async function handle(req: Request): Promise<Response> {
     // intercept the Anthropic SDK's HTTP call. Production unchanged.
     const client = new Anthropic({ apiKey: anthropicKey, fetch: globalThis.fetch });
     // Prompt-cache the system block. No-op today: SYSTEM_PROMPT is below
-    // Anthropic's 1024-token minimum cacheable prefix, so the marker is
-    // ignored silently. Forward-compatible.
+    // claude-fable-5's 2048-token minimum cacheable prefix, so the marker
+    // is ignored silently. Forward-compatible.
     const resp = await client.messages.create({
       model: MODEL,
       max_tokens: 4000,
