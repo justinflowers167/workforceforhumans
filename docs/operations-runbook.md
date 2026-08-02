@@ -95,7 +95,8 @@ Total: 60 min.
 - **Cron failure (digest, refresh-jobs, or prune)** → §8.6 SQL to inspect the latest `net._http_response` for that job. If status_code 5xx, check edge-function logs (Supabase dashboard → Edge Functions → [function] → Logs). If 401, the secret in Vault and Edge Function env got out of sync — see §10.1 rotate.
 - **Stripe webhook 4xx/5xx** → §10.2 procedure to diagnose and retry.
 - **Anthropic budget alert / monthly spend crossing $20** → ranked levers (cheapest first). Items 1, 2, 4 shipped 2026-04-26 in Phase 10 §A; remaining items are standby:
-  1. ✅ ~~**Add prompt caching** to `match-jobs` and `parse-resume`~~ — Shipped 2026-04-26. `cache_control: { type: "ephemeral" }` markers added to the system block on all three Anthropic call sites. Honest caveat: current system prompts are below Anthropic's 1024-token minimum cacheable prefix, so the markers are no-ops today; forward-compatible when prompts grow.
+  0. **Revert member-facing model `claude-fable-5` → `claude-sonnet-4-6`** — one-line `MODEL` const in `supabase/functions/match-jobs/index.ts` and `supabase/functions/parse-resume/index.ts`, then `supabase functions deploy match-jobs` + `supabase functions deploy parse-resume`. Undoes the 2026-06-10 quality upgrade (~3× per-run cost) with zero schema/UI impact — the prose fields just get a bit less sharp. **This is now the cheapest lever**; pull it before anything below.
+  1. ✅ ~~**Add prompt caching** to `match-jobs` and `parse-resume`~~ — Shipped 2026-04-26. `cache_control: { type: "ephemeral" }` markers added to the system block on all three Anthropic call sites. Honest caveat: current system prompts are below `claude-fable-5`'s 2048-token minimum cacheable prefix, so the markers are no-ops today; forward-compatible when prompts grow.
   2. ✅ ~~**Lower `PRE_FILTER_MAX`** in `refresh-jobs/index.ts` from 200 → 100~~ — Shipped 2026-04-26. Halves Claude calls per cron run from ~20 batches → ~10.
   3. **Lower `CLAUDE_BATCH`** from 10 → 5 — fewer tokens per Claude call but doubles the number of calls; small token-spend reduction at the cost of more Anthropic API rate-limit pressure. Marginal. **Standby.**
   4. ✅ ~~**Switch `refresh-jobs` filter model** from `claude-sonnet-4-6` → `claude-haiku-4-5`~~ — Shipped 2026-04-26. ~5× cheaper input + output. Filter is binary keep/reject; well within Haiku's range. Combined with item 2, expected cron Anthropic spend drops ~10× (~$3/mo → ~$0.30/mo).
@@ -113,7 +114,7 @@ Total: 60 min.
 
 | Service | Free-tier limit | Current burn (approx) | When to act |
 |---|---|---|---|
-| Anthropic | Pay-as-you-go ($10 deposit, monthly cap set 2026-04-25) | ~$0.10/refresh-jobs run = ~$3/mo cron alone; ~$0.025/parse-resume PDF; ~$0.05–$0.10/match-jobs run | See §6 trigger for the 6-step cost-reduction lever ranking. Prompt caching is the biggest unrealized win. |
+| Anthropic | Pay-as-you-go ($10 deposit, monthly cap set 2026-04-25) | ~$0.30/mo refresh-jobs cron (Haiku); ~$0.15–$0.25/parse-resume PDF (Fable 5); ~$0.40–$0.50/match-jobs run (Fable 5 + Phase 13 payload) | See §6 trigger for the lever ranking — lever 0 (revert Fable → Sonnet on the two member-facing functions) is the cheapest and undoes ~3× of the per-run cost. |
 | Supabase DB | 500 MB | ~5 MB | Comfortable for months |
 | Supabase egress | 5 GB/mo | trivial | Alert at 4 GB |
 | Supabase edge invocations | 500k/mo | ~30 daily refresh + ~52/yr digest + ~52/yr prune + member traffic | Comfortable |
