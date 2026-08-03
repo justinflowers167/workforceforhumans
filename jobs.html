@@ -4,21 +4,21 @@
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>Find Jobs — Workforce for Humans</title>
-<meta name="description" content="Browse thousands of jobs in healthcare, trades, tech, green energy, logistics, and more. Entry-level welcome. No degree required."/>
-<link rel="canonical" href="https://workforceforhumans.com/jobs.html"/>
+<meta name="description" content="Curated federal and verified-employer roles for displaced and pivoting knowledge workers. Onsite, hybrid, and remote. Skills over credentials."/>
+<link rel="canonical" href="https://workforceforhumans.com/jobs"/>
 <link rel="icon" type="image/svg+xml" href="/assets/favicon.svg"/>
 <meta name="theme-color" content="#0f1829"/>
 <meta property="og:type" content="website"/>
 <meta property="og:site_name" content="Workforce for Humans"/>
 <meta property="og:title" content="Find Jobs — Workforce for Humans"/>
-<meta property="og:description" content="Browse thousands of jobs in healthcare, trades, tech, green energy, logistics, and more. Entry-level welcome. No degree required."/>
-<meta property="og:url" content="https://workforceforhumans.com/jobs.html"/>
+<meta property="og:description" content="Curated federal and verified-employer roles for displaced and pivoting knowledge workers. Onsite, hybrid, and remote. Skills over credentials."/>
+<meta property="og:url" content="https://workforceforhumans.com/jobs"/>
 <meta property="og:image" content="https://workforceforhumans.com/assets/og-default.svg"/>
 <meta property="og:image:width" content="1200"/>
 <meta property="og:image:height" content="630"/>
 <meta name="twitter:card" content="summary_large_image"/>
 <meta name="twitter:title" content="Find Jobs — Workforce for Humans"/>
-<meta name="twitter:description" content="Browse thousands of jobs in healthcare, trades, tech, green energy, logistics, and more. Entry-level welcome. No degree required."/>
+<meta name="twitter:description" content="Curated federal and verified-employer roles for displaced and pivoting knowledge workers. Onsite, hybrid, and remote. Skills over credentials."/>
 <meta name="twitter:image" content="https://workforceforhumans.com/assets/og-default.svg"/>
 <link rel="stylesheet" href="/assets/site.css"/>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -538,7 +538,7 @@ async function loadJobs() {
 // Since there's no per-job detail page, @id uses jobs.html?id=<uuid> as a surrogate URL.
 function emitJobPostings(jobs) {
   document.querySelectorAll('script[data-jobposting]').forEach(s => s.remove());
-  const base = 'https://workforceforhumans.com/jobs.html';
+  const base = 'https://workforceforhumans.com/jobs';
   const DAY = 86400000;
   jobs.forEach(j => {
     const posted = j.posted_at ? new Date(j.posted_at).toISOString().split('T')[0] : undefined;

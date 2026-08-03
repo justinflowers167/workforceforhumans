@@ -21,7 +21,7 @@
 <meta name="twitter:description" content="A real plan for the next version of your career. Coach-led adaptation for displaced and pivoting knowledge workers — pathways, AI fluency, and placement."/>
 <meta name="twitter:image" content="https://workforceforhumans.com/assets/og-default.svg"/>
 <script type="application/ld+json">{"@context":"https://schema.org","@type":"Organization","name":"Workforce for Humans","url":"https://workforceforhumans.com/","logo":"https://workforceforhumans.com/assets/og-default.svg","email":"hello@workforceforhumans.com"}</script>
-<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebSite","name":"Workforce for Humans","url":"https://workforceforhumans.com/","potentialAction":{"@type":"SearchAction","target":{"@type":"EntryPoint","urlTemplate":"https://workforceforhumans.com/jobs.html?q={search_term_string}"},"query-input":"required name=search_term_string"}}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebSite","name":"Workforce for Humans","url":"https://workforceforhumans.com/","potentialAction":{"@type":"SearchAction","target":{"@type":"EntryPoint","urlTemplate":"https://workforceforhumans.com/jobs?q={search_term_string}"},"query-input":"required name=search_term_string"}}</script>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
 <link rel="stylesheet" href="/assets/site.css"/>
@@ -589,15 +589,25 @@ function mkCard(j){
   const bc=j.is_entry_level_highlighted||j.is_senior_friendly?'gr':'';
   return `<a class="mini-card${j.is_featured?' feat':''}" href="jobs.html"><div class="mc-top"><div><div class="mc-title">${j.title}</div><div class="mc-emp">${j.employer_name||''}</div></div>${b?`<span class="mc-badge ${bc}">${b}</span>`:''}</div><div class="mc-meta"><span class="mc-chip">📍 ${l}</span><span class="mc-chip">${(j.employment_type||'').replace('-',' ')}</span>${p?`<span class="mc-chip pay">💰 ${p}</span>`:''}</div></a>`;
 }
+// 2026-08-02: the supabase-js client RESOLVES with {error} rather than
+// throwing, so the old bare `await` + try/catch reported "✓ Subscribed!" on
+// every failed write — the catch could never fire. Check `error` explicitly.
+//
+// KNOWN GAP (founder decision, not a code fix): nothing currently reads
+// `newsletter_subscribers`. send-match-digest mails from job_seekers +
+// match_scores; no function or cron consumes this table, so a row here is
+// never mailed anything. The copy below deliberately no longer promises a
+// digest on a schedule we don't yet keep. Wire a sender or drop the form.
 async function doSubscribe(e){
   e.preventDefault();
   const email=document.getElementById('nl-email').value.trim();
   const msg=document.getElementById('nl-msg');
   try{
-    await db.from('newsletter_subscribers').upsert({email,is_active:true},{onConflict:'email'});
-    msg.textContent='✓ Subscribed! First digest coming soon.';msg.style.color='#6bcf85';
+    const {error}=await db.from('newsletter_subscribers').upsert({email,is_active:true},{onConflict:'email'});
+    if(error)throw error;
+    msg.textContent='✓ You\'re on the list. We\'ll be in touch.';msg.style.color='#6bcf85';
     document.getElementById('nl-email').value='';
-  }catch{msg.textContent='Please try again.';}
+  }catch{msg.textContent='That didn\'t go through — please try again.';msg.style.color='';}
 }
 // ─── EMPLOYER FLOW ─────────────────────────────────
 // Launch-quarter shift (PR claude/employer-fees-free-launch, 2026-05-25):

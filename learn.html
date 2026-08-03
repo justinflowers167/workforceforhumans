@@ -5,14 +5,14 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>Level Up — Workforce for Humans</title>
 <meta name="description" content="Free and affordable training programs, certifications, and learning paths matched to in-demand jobs. Built for career changers."/>
-<link rel="canonical" href="https://workforceforhumans.com/learn.html"/>
+<link rel="canonical" href="https://workforceforhumans.com/learn"/>
 <link rel="icon" type="image/svg+xml" href="/assets/favicon.svg"/>
 <meta name="theme-color" content="#0f1829"/>
 <meta property="og:type" content="website"/>
 <meta property="og:site_name" content="Workforce for Humans"/>
 <meta property="og:title" content="Level Up — Workforce for Humans"/>
 <meta property="og:description" content="Free and affordable training programs, certifications, and learning paths matched to in-demand jobs. Built for career changers."/>
-<meta property="og:url" content="https://workforceforhumans.com/learn.html"/>
+<meta property="og:url" content="https://workforceforhumans.com/learn"/>
 <meta property="og:image" content="https://workforceforhumans.com/assets/og-default.svg"/>
 <meta property="og:image:width" content="1200"/>
 <meta property="og:image:height" content="630"/>
@@ -609,15 +609,19 @@ function sendMsg(){
 }
 
 // Newsletter
+// 2026-08-02: same fix as index.html doSubscribe() — supabase-js resolves
+// with {error} instead of throwing, so this reported success on every failed
+// write. See the note there re: nothing consuming `newsletter_subscribers`.
 async function doSub(e){
   e.preventDefault();
   const email=document.getElementById('nl-e').value.trim();
   const msg=document.getElementById('nl-m');
   try{
-    await db.from('newsletter_subscribers').upsert({email,is_active:true,interests:['learning','jobs']},{onConflict:'email'});
-    msg.textContent='✓ You\'re in! First digest coming soon.';msg.style.color='#6bcf85';
+    const {error}=await db.from('newsletter_subscribers').upsert({email,is_active:true,interests:['learning','jobs']},{onConflict:'email'});
+    if(error)throw error;
+    msg.textContent='✓ You\'re on the list. We\'ll be in touch.';msg.style.color='#6bcf85';
     document.getElementById('nl-e').value='';
-  }catch{msg.textContent='Please try again.';}
+  }catch{msg.textContent='That didn\'t go through — please try again.';msg.style.color='';}
 }
 
 // Tab highlight on scroll (only in-page anchor sections)

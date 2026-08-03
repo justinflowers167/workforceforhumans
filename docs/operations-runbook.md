@@ -253,6 +253,40 @@ supabase functions deploy <function-name>
 
 **Trigger this check** (per §6): after merging any PR that touches `supabase/functions/`, verify each modified function's deployed version reflects the merge before declaring the PR shipped.
 
+### 8.10 Anon-callable SECURITY DEFINER functions (run after every migration that adds a function)
+
+The 2026-08-02 market-readiness audit found `public.upsert_usajobs(rows jsonb)` — a `SECURITY DEFINER` function that writes rows into `public.jobs` — with `EXECUTE` granted to `anon`. Since the anon key ships in every page's HTML by design, anyone could POST to `/rest/v1/rpc/upsert_usajobs` and inject active listings with their own `title`, `description`, and `apply_url`, bypassing RLS entirely. Against a displaced-worker audience that's a phishing channel, not just a data-integrity bug.
+
+**The trap:** Postgres grants `EXECUTE` on new functions to `PUBLIC` by default, and Supabase exposes everything in the `public` schema over PostgREST. A migration that just says `create function ... security definer` is anon-callable the moment it lands — you have to revoke explicitly.
+
+```sql
+-- Any SECURITY DEFINER function in the exposed schema that anon or
+-- authenticated can call. Expect only deliberate ones (create_job_listing /
+-- update_job_listing for authenticated — they do their own ownership checks).
+select p.proname,
+       pg_get_function_identity_arguments(p.oid) as args,
+       coalesce(array_to_string(p.proacl::text[], ' | '), 'DEFAULT(PUBLIC)') as acl
+from pg_proc p
+join pg_namespace n on n.oid = p.pronamespace
+where n.nspname = 'public'
+  and p.prosecdef
+  and (p.proacl is null
+       or exists (select 1 from unnest(p.proacl::text[]) a
+                  where a like 'anon=%' or a like 'authenticated=%' or a like '=%'))
+order by p.proname;
+```
+
+Anything unexpected in that list gets the same treatment as the 2026-08-02 migration:
+
+```sql
+revoke all on function public.<name>(<args>) from anon, authenticated, public;
+grant execute on function public.<name>(<args>) to service_role;
+```
+
+Trigger functions (`flip_other_current_resumes`, `handle_new_auth_user`, the `protect_*` guards) should be revoked from everything — triggers fire as the table owner regardless of `EXECUTE` grants, so revoking never breaks them.
+
+**Trigger this check** (per §6): after applying any migration that creates or replaces a function, and as part of the quarterly ritual (§5) alongside the advisor sweep.
+
 ---
 
 ## 9. Dashboards index (bookmark these)
