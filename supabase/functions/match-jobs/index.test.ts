@@ -258,6 +258,69 @@ Deno.test("happy path: returns matches with all 5 prose fields and inserts to ma
   }
 });
 
+// ─── focus_ai_skill allowlist (2026-08-02) ───────────────────────────
+// The model picks one AI skill per match and member.html joins on it to
+// show training. A slug outside the curated vocabulary finds no training
+// and renders identically to "no skill chosen", so a hallucinated value
+// would be invisible in the UI and painful to trace. These two cases pin
+// the normalization on both sides of the allowlist.
+
+function focusSkillTest(name: string, modelValue: unknown, expected: string | null) {
+  Deno.test(`focus_ai_skill: ${name}`, async () => {
+    let insertBody: string | null = null;
+    const fakeMatch = {
+      job_id: "job-1",
+      score: 71,
+      rationale: "Your analyst background transfers.",
+      reasons: ["skills overlap"],
+      growth_note: "Adding prompt engineering is the next edge.",
+      resume_tailoring: "Lead with the reporting automation outcome.",
+      skill_gap_plan: "You bring analysis. Start with a free prompting course.",
+      application_strategy: "Mirror the JD language into the questionnaire.",
+      focus_ai_skill: modelValue,
+    };
+
+    const t = setupTest({
+      routes: [
+        { match: "/auth/v1/user", handler: () => authUserResp("user-x", "u@x.com") },
+        { match: "/rest/v1/job_seeker_skills", handler: () => pgRows([{ skills: { name: "Excel" } }]) },
+        { match: "/rest/v1/job_seekers", handler: () => pgRow({ id: "seeker-1", headline: "Analyst" }) },
+        { match: "/rest/v1/resumes", handler: () => pgRow({ raw_text: "Analyst resume", parsed_json: {} }) },
+        { match: "/rest/v1/jobs", handler: () => pgRows([{ id: "job-1", title: "Program Analyst" }]) },
+        { match: "/rest/v1/job_skills", handler: () => pgRows([]) },
+        { match: "anthropic.com", handler: () => anthropicMessage(JSON.stringify({ matches: [fakeMatch] })) },
+        {
+          match: "/rest/v1/match_scores",
+          handler: async (req) => {
+            if (req.method === "DELETE") return new Response(null, { status: 204 });
+            if (req.method === "POST") {
+              insertBody = await req.text();
+              return jsonResponse([{ id: "ms-1" }], 201);
+            }
+            return new Response("unexpected method", { status: 500 });
+          },
+        },
+      ],
+    });
+
+    try {
+      const resp = await handle(matchReq());
+      await assertJsonResponse(resp, { status: 200 });
+      const inserted = JSON.parse(insertBody!);
+      const row = Array.isArray(inserted) ? inserted[0] : inserted;
+      assertEquals(row.focus_ai_skill, expected);
+    } finally {
+      t.restore();
+    }
+  });
+}
+
+focusSkillTest("curated slug is stored", "prompt-engineering", "prompt-engineering");
+focusSkillTest("casing and whitespace are normalized", "  Prompt-Engineering  ", "prompt-engineering");
+focusSkillTest("slug outside the vocabulary degrades to null", "vibe-coding", null);
+focusSkillTest("explicit null stays null", null, null);
+focusSkillTest("omitted field stays null", undefined, null);
+
 // ─── Malformed Claude JSON ───────────────────────────────────────────
 Deno.test("malformed Claude response returns 500", async () => {
   const t = setupTest({

@@ -14,6 +14,24 @@ const MODEL = "claude-fable-5";
 const MAX_JOBS_TO_SCORE = 50;
 const TOP_N = 10;
 
+// The curated AI vocabulary from 20260427_phase12_ai_skills_training_link.sql
+// (skills where is_ai_skill = true). Mirrored here to allowlist the model's
+// focus_ai_skill before it reaches the DB — see the insert below for why.
+// If a slug is ever added to that migration, add it here too; an unlisted
+// slug degrades to null rather than failing, so the drift is silent.
+const AI_SKILL_SLUGS = new Set([
+  "prompt-engineering",
+  "agent-frameworks",
+  "rag",
+  "llm-evaluation",
+  "vector-databases",
+  "ai-safety",
+  "fine-tuning",
+  "embeddings",
+  "ai-product",
+  "ai-tooling",
+]);
+
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
@@ -25,7 +43,7 @@ Score each job (0-100) for this candidate based on fit: skills overlap, desired 
 
 Return ONLY valid JSON:
 
-{"matches":[{"job_id":string,"score":integer,"rationale":string,"reasons":string[],"growth_note":string,"resume_tailoring":string,"skill_gap_plan":string,"application_strategy":string}]}
+{"matches":[{"job_id":string,"score":integer,"rationale":string,"reasons":string[],"growth_note":string,"resume_tailoring":string,"skill_gap_plan":string,"application_strategy":string,"focus_ai_skill":string|null}]}
 
 Match this voice: direct, empathetic without saccharine, action verbs over adjectives, validates struggle without dwelling. Practitioner-coach, not motivational poster. Examples of the Workforce for Humans voice:
 - "Whether you've been laid off, need a career change, or are starting from zero — we connect real people with employers who are actively hiring. No degree gatekeeping. No runaround."
@@ -36,9 +54,10 @@ Field specs:
 - score: integer 0-100.
 - rationale: 2-3 sentences. Name what about THIS candidate's profile fits THIS job. Second person ("you"). Concrete, not generic. No hedging ("might", "could possibly").
 - reasons: 2-4 short tags like "skills overlap", "remote ok", "pay match".
-- growth_note: 1-2 sentences. The NEXT EDGE — what the candidate would sharpen into this role. Start with verbs: "Sharpening...", "Adding...", "Naming...", "A small portfolio piece in...". Never "you lack", "missing", "weakness". If the fit is already tight, name the stretch inside the role itself, not a gap in the profile. WHEN the job specifies ai_skills_required and the candidate's skills_have lacks one or more, the growth_note MUST name the single most-leveraged AI skill to learn first (highest reuse across the role's daily work). Don't list multiple — pick one and be specific. The platform shows curated free training for that exact skill below the match card.
+- growth_note: 1-2 sentences. The NEXT EDGE — what the candidate would sharpen into this role. Start with verbs: "Sharpening...", "Adding...", "Naming...", "A small portfolio piece in...". Never "you lack", "missing", "weakness". If the fit is already tight, name the stretch inside the role itself, not a gap in the profile. Whenever you set focus_ai_skill (see below), the growth_note MUST name that same skill in plain language — not the slug — as the single most-leveraged thing to learn first. Don't list multiple; pick one and be specific. The platform shows curated free training for that exact skill below the match card, so the prose and the panel have to agree.
 - resume_tailoring: 2-3 sentences. CONCRETE edits to the resume bullets the seeker already has, not generic advice. Reference real lines from resume_raw_text or resume_parsed when possible (e.g. "Lead your summary with the Acme migration outcome — that's the systems-integration signal this role's screening for"). If the resume is thin or absent, say what to ADD to the top of the resume that this role would screen for. Never "make your resume better"; always "do X with bullet Y because role wants Z".
-- skill_gap_plan: 2-4 sentences as a short ordered path. Format: name 1-2 things the seeker already brings (from skills_have or resume_parsed), then the 1-2 things the role wants that they don't yet have, then the FIRST step to close it (a free course, a portfolio piece, a side project — be specific). Same coach voice as growth_note: never "you lack" / "missing"; frame as "the next edge" / "to grow into this you'd add". When ai_skills_required has items and skills_have is missing them, the FIRST step MUST be the same single AI skill named in growth_note (consistency: training panel shows one skill).
+- skill_gap_plan: 2-4 sentences as a short ordered path. Format: name 1-2 things the seeker already brings (from skills_have or resume_parsed), then the 1-2 things the role wants that they don't yet have, then the FIRST step to close it (a free course, a portfolio piece, a side project — be specific). Same coach voice as growth_note: never "you lack" / "missing"; frame as "the next edge" / "to grow into this you'd add". Whenever focus_ai_skill is set, the FIRST step MUST be that same skill, so growth_note, skill_gap_plan, and the training panel all point at one thing.
+- focus_ai_skill: the ONE AI skill this seeker should learn first for this role, as a slug from exactly this list: prompt-engineering, agent-frameworks, rag, llm-evaluation, vector-databases, ai-safety, fine-tuning, embeddings, ai-product, ai-tooling. It MUST be the same skill you named in growth_note and made the first step of skill_gap_plan — the platform shows curated free training for this exact slug under the match card, so a mismatch shows the seeker training for a skill your prose didn't recommend. Most roles in this feed are federal or administrative and won't list AI skills at all; that is expected, and you should still pick the skill that would most raise this seeker's leverage in THIS role's daily work. Default to prompt-engineering or ai-tooling for generalist analyst and coordinator roles — those transfer everywhere and are the realistic first rung. Use null only if an AI skill genuinely has no bearing on the role.
 - application_strategy: 2-3 sentences. The angle to lead with — cover letter opener, what to over-index on in the application, what NOT to over-emphasize. For federal roles (source = usajobs), include the "mirror the JD keywords into the resume + questionnaire" advice — federal HR systems screen on exact phrase matches. For private-sector roles, focus on the warm-intro / hiring-manager-LinkedIn angle when relevant. Always actionable today.
 
 Only include jobs scoring 40 or higher. Sort descending by score. Cap at 10. Return ONLY the JSON object — no prose before or after.`;
@@ -198,6 +217,7 @@ export async function handle(req: Request): Promise<Response> {
       resume_tailoring?: string;
       skill_gap_plan?: string;
       application_strategy?: string;
+      focus_ai_skill?: string | null;
     }> = parsed.matches || [];
     const top = matches.slice(0, TOP_N);
 
@@ -224,6 +244,14 @@ export async function handle(req: Request): Promise<Response> {
         resume_tailoring: m.resume_tailoring ?? null,
         skill_gap_plan: m.skill_gap_plan ?? null,
         application_strategy: m.application_strategy ?? null,
+        // 2026-08-02: allowlisted rather than trusted. A hallucinated slug
+        // would silently render no training (the join finds nothing), which
+        // looks identical to "model returned null" and would be miserable to
+        // debug. Normalizing here means member.html can assume the column is
+        // either a real curated slug or null.
+        focus_ai_skill: AI_SKILL_SLUGS.has(String(m.focus_ai_skill || "").trim().toLowerCase())
+          ? String(m.focus_ai_skill).trim().toLowerCase()
+          : null,
       }));
       await admin.from("match_scores").insert(rows);
     }

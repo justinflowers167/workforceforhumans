@@ -20,6 +20,8 @@
 <meta name="twitter:title" content="Find Jobs — Workforce for Humans"/>
 <meta name="twitter:description" content="Curated federal and verified-employer roles for displaced and pivoting knowledge workers. Onsite, hybrid, and remote. Skills over credentials."/>
 <meta name="twitter:image" content="https://workforceforhumans.com/assets/og-default.svg"/>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
 <link rel="stylesheet" href="/assets/site.css"/>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
@@ -593,7 +595,7 @@ function renderJobCard(j) {
   return `
   <a class="job-card${j.is_featured ? ' featured':''}" href="#" onclick="openModal('${esc(j.id)}');return false;">
     <div class="card-top">
-      <div class="employer-logo">${safeLogo ? `<img src="${safeLogo}" alt="${employerNameEsc}"/>` : esc(initials)}</div>
+      <div class="employer-logo">${safeLogo ? `<img src="${safeLogo}" alt="${employerNameEsc}" width="48" height="48" loading="lazy" decoding="async"/>` : esc(initials)}</div>
       <div class="card-title-block">
         <div class="job-title">${esc(j.title)}</div>
         <div class="employer-name">${employerNameEsc}${j.employer_verified ? '<span class="verified-badge">✓ Verified</span>':''}</div>
@@ -649,8 +651,29 @@ async function openModal(jobId) {
   const applyHref = safeUrl(j.apply_url) || (j.apply_email ? `mailto:${encodeURIComponent(j.apply_email)}` : '#');
   applyBtn.href = applyHref;
 
-  // Increment view count
-  db.from('jobs').update({ view_count: (j.view_count||0)+1 }).eq('id', jobId);
+  // Phase 15 §C: funnel:match-apply-click — the last of the two events §A
+  // deferred. It lives here rather than on the member.html match card
+  // because this is where an application actually starts, regardless of
+  // whether the member arrived from a match or from search. `from_match`
+  // separates the two paths without needing a second event. onclick is
+  // reassigned (not addEventListener) because openJob runs once per modal
+  // open and would otherwise stack a listener per open.
+  applyBtn.onclick = function () {
+    if (window.posthog) {
+      window.posthog.capture('funnel:match-apply-click', {
+        from_match: new URLSearchParams(location.search).get('from') === 'match',
+      });
+    }
+  };
+
+  // Increment view count via the bump_job_view RPC (migration
+  // 20260802_view_count_increment_rpc.sql). The previous direct
+  // .update() had never worked: `jobs` has no UPDATE policy reachable by
+  // anon, so RLS rejected every call, and because this is fire-and-forget
+  // it failed silently — view_count sat at 0 across all 2,757 rows since
+  // launch. The RPC also makes it atomic; the old read-then-write let
+  // concurrent readers clobber each other's increment.
+  db.rpc('bump_job_view', { p_job_id: jobId });
 
   document.getElementById('modal').classList.add('open');
   document.body.style.overflow = 'hidden';

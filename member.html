@@ -6,6 +6,8 @@
 <title>My Workforce — Workforce for Humans</title>
 <meta name="robots" content="noindex, nofollow"/>
 <meta name="description" content="Your member dashboard: resume review, job matches, and recruiter opt-in."/>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
 <link rel="stylesheet" href="/assets/site.css"/>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
@@ -37,7 +39,32 @@ button.ghost:hover{border-color:var(--amber);color:var(--amber-dk);}
 .match{border:1px solid var(--stone);border-radius:10px;padding:1rem 1.1rem;margin-bottom:.75rem;}
 .match .t{font-weight:600;}
 .match .m{color:var(--slate);font-size:.88rem;margin:4px 0;}
+/* Phase 15 §B: early-member note. Shown until dismissed, then remembered
+   in localStorage. Deliberately quiet — it sits above the dashboard, not
+   over it, because a modal on first sign-in is the fastest way to lose the
+   tester you just recruited. */
+.tester-note{display:flex;gap:.85rem;align-items:flex-start;background:var(--amber-lt);
+  border:1px solid var(--amber);border-radius:10px;padding:.9rem 1rem;margin-bottom:1.25rem;}
+.tester-note .tn-body{flex:1;min-width:0;}
+.tester-note p{font-size:.88rem;line-height:1.55;color:var(--navy);margin:0;}
+.tester-note .tn-lead{font-weight:600;margin-bottom:.2rem;}
+.tn-act{background:none;border:none;padding:0;font:inherit;font-size:.88rem;font-weight:600;
+  color:var(--amber-txt);text-decoration:underline;cursor:pointer;}
+.tn-act:hover{color:var(--terra-dk);}
+.tn-x{background:none;border:none;font-size:1.25rem;line-height:1;color:var(--slate);
+  cursor:pointer;padding:0 .15rem;flex-shrink:0;}
+.tn-x:hover{color:var(--navy);}
+.tn-x:focus-visible,.tn-act:focus-visible{outline:2px solid var(--amber);outline-offset:2px;}
+
 .match .s{font-size:.78rem;color:var(--mist);}
+/* Phase 15 §C: match cards were display-only, which both dead-ended the
+   member and left funnel:match-card-click with nothing to bind to. */
+.match-actions{margin-top:.65rem;}
+.match-view{display:inline-flex;align-items:center;gap:.35rem;font-size:.82rem;font-weight:600;
+  color:var(--amber-txt);text-decoration:none;padding:.4rem .75rem;border:1px solid var(--stone);
+  border-radius:8px;transition:border-color .15s,background .15s;}
+.match-view:hover{border-color:var(--amber);background:var(--cream);}
+.match-view:focus-visible{outline:2px solid var(--amber);outline-offset:2px;}
 .match details{margin-top:.75rem;border-top:1px solid var(--stone);padding-top:.6rem;}
 .match summary{cursor:pointer;font-size:.75rem;font-weight:600;color:var(--terra);text-transform:uppercase;letter-spacing:.08em;list-style:none;display:flex;align-items:center;gap:.4rem;}
 .match summary::-webkit-details-marker{display:none;}
@@ -85,7 +112,10 @@ button.ghost:hover{border-color:var(--amber);color:var(--amber-dk);}
   <!-- SIGNED OUT -->
   <section id="auth-view" class="hidden">
     <h1>Sign in</h1>
-    <p class="sub">Get your resume reviewed by AI, see personalized job matches, and let verified employers reach you.</p>
+    <!-- 2026-08-02: was "Get your resume reviewed by AI…". Leading the
+         signed-out surface with "AI" is the exact aggregator signal the
+         Cluster A voice work was meant to strip out. -->
+    <p class="sub">Get a coach's read on your resume, see roles scored against your pathway, and let verified employers reach you.</p>
     <div class="card" style="max-width:440px;">
       <label for="email">Email address</label>
       <input type="email" id="email" placeholder="you@email.com" autocomplete="email"/>
@@ -98,6 +128,14 @@ button.ghost:hover{border-color:var(--amber);color:var(--amber-dk);}
   <section id="dash-view" class="hidden">
     <h1 id="hi">Welcome</h1>
     <p class="sub">Your profile, resume review, and matches.</p>
+
+    <div class="tester-note" id="tester-note" hidden>
+      <div class="tn-body">
+        <p class="tn-lead">You're early — and that's useful to me.</p>
+        <p>I'm building this around a day job, and you're among the first people through the door. If something is confusing, wrong, or just doesn't land, I want to hear it more than I want a polite review. <button type="button" class="tn-act" id="tn-open">Tell me what's not working →</button></p>
+      </div>
+      <button type="button" class="tn-x" id="tn-dismiss" aria-label="Dismiss this note">&times;</button>
+    </div>
 
     <!-- Resume status -->
     <div class="card">
@@ -176,10 +214,36 @@ button.ghost:hover{border-color:var(--amber);color:var(--amber-dk);}
   const show = (id) => $(id).classList.remove('hidden');
   const hide = (id) => $(id).classList.add('hidden');
 
+  // Phase 15 §B: early-member note. localStorage rather than a DB column —
+  // this is a presentation preference, not member data worth a migration or
+  // a retention policy. Wrapped because Safari private mode throws on
+  // localStorage access, and a storage error must never block the dashboard.
+  const TESTER_NOTE_KEY = 'wfh_tester_note_dismissed';
+  function initTesterNote() {
+    const note = $('tester-note');
+    if (!note) return;
+    let dismissed = false;
+    try { dismissed = localStorage.getItem(TESTER_NOTE_KEY) === '1'; } catch (_) {}
+    if (dismissed) return;
+    note.hidden = false;
+    $('tn-dismiss').onclick = () => {
+      note.hidden = true;
+      try { localStorage.setItem(TESTER_NOTE_KEY, '1'); } catch (_) {}
+    };
+    // Open the shared feedback widget from site.js rather than building a
+    // second form here — one inbox, one code path.
+    $('tn-open').onclick = () => {
+      const pill = document.getElementById('wfh-fb-pill');
+      if (pill) pill.click();
+      if (window.posthog) window.posthog.capture('funnel:tester-note-feedback');
+    };
+  }
+
   async function boot() {
     const { data: { session } } = await db.auth.getSession();
     if (!session) { show('auth-view'); hide('dash-view'); return; }
     show('dash-view'); hide('auth-view');
+    initTesterNote();
     await loadDashboard(session.user);
   }
 
@@ -316,6 +380,9 @@ button.ghost:hover{border-color:var(--amber);color:var(--amber-dk);}
     // training_skills with embedded training_resources rows.
     const jobAiSkills = new Map(); // job_id -> [{id,name}]
     const trainingsBySkill = new Map(); // skill_id -> [training row]
+    const slugToSkillId = new Map(); // ai-skill slug -> skills.id
+    // Declared out here, not inside the try: the render pass below reads all
+    // three, and a const inside the try block wouldn't be in scope for it.
     try {
       const { data: links } = await db.from('job_skills')
         .select('job_id, skill_id, skills!inner(id,name,is_ai_skill)')
@@ -329,6 +396,21 @@ button.ghost:hover{border-color:var(--amber);color:var(--amber-dk);}
         jobAiSkills.set(r.job_id, arr);
         skillIds.add(sk.id);
       }
+      // 2026-08-02: also pull training for each match's focus_ai_skill — the
+      // one skill the coach brief tells this seeker to learn first. The
+      // original design keyed only off job_skills (what the job REQUIRES),
+      // but that substrate doesn't exist: job_skills is empty and only 5 of
+      // 2,757 active jobs mention AI at all. Keying off the seeker's gap
+      // matches the product thesis anyway — the pitch is about becoming
+      // competitive for roles that don't list AI skills yet. job_skills stays
+      // in the union so employer-tagged roles still work when they appear.
+      const focusSlugs = Array.from(new Set(ms.map(m => m.focus_ai_skill).filter(Boolean)));
+      if (focusSlugs.length) {
+        const { data: fs } = await db.from('skills')
+          .select('id,slug').in('slug', focusSlugs).eq('is_ai_skill', true);
+        for (const s of fs || []) { slugToSkillId.set(s.slug, s.id); skillIds.add(s.id); }
+      }
+
       if (skillIds.size) {
         const { data: tlinks } = await db.from('training_skills')
           .select('skill_id, training_resources!inner(id,title,provider,is_free,source_url,recommend_count,view_count)')
@@ -365,14 +447,29 @@ button.ghost:hover{border-color:var(--amber);color:var(--amber-dk);}
       // Build the training-recommendation panel: union of trainings tied
       // to this job's AI skills, dedup by training id, sort by
       // recommend_count desc then view_count desc, take top 3.
-      const aiSkillsForJob = jobAiSkills.get(j.id) || [];
+      // Focus skill first (what the coach brief told THIS seeker to learn),
+      // then any skills the job itself tags. Insertion order carries through
+      // the Map, so when both exist the focus-skill training leads.
       const trainingMap = new Map();
+      const focusSkillId = m.focus_ai_skill ? slugToSkillId.get(m.focus_ai_skill) : null;
+      if (focusSkillId) {
+        for (const t of trainingsBySkill.get(focusSkillId) || []) {
+          if (!trainingMap.has(t.id)) trainingMap.set(t.id, { ...t, _focus: true });
+        }
+      }
+      const aiSkillsForJob = jobAiSkills.get(j.id) || [];
       for (const sk of aiSkillsForJob) {
         const list = trainingsBySkill.get(sk.id) || [];
         for (const t of list) if (!trainingMap.has(t.id)) trainingMap.set(t.id, t);
       }
+      // Focus-skill training outranks job-tagged training regardless of
+      // counts — it's the skill the brief just told this seeker to learn, so
+      // burying it under a more-popular unrelated course would contradict
+      // the prose directly above it. Counts break ties within each group.
       const topTrainings = Array.from(trainingMap.values())
-        .sort((a,b)=> (b.recommend_count||0) - (a.recommend_count||0) || (b.view_count||0) - (a.view_count||0))
+        .sort((a,b)=> (b._focus?1:0) - (a._focus?1:0)
+          || (b.recommend_count||0) - (a.recommend_count||0)
+          || (b.view_count||0) - (a.view_count||0))
         .slice(0,3);
       const trainingHtml = topTrainings.length
         ? `<div class="match-training">
@@ -396,11 +493,24 @@ button.ghost:hover{border-color:var(--amber);color:var(--amber-dk);}
       const why = (fit || tailor || gap || edge || strategy || trainingHtml)
         ? `<details class="match-why"><summary>Workforce's read on this match</summary>${fit}${tailor}${gap}${edge}${strategy}${trainingHtml}</details>`
         : '';
+      // Phase 15 §C: the card now links through to the posting on jobs.html,
+      // which already supports ?id=<uuid> deep-linking and owns the apply
+      // CTA. Routing through our own detail page rather than straight to the
+      // employer keeps the member somewhere we can give them context — and
+      // it's where bump_job_view fires, so match traffic finally shows up in
+      // view_count. Per feedback_coach_not_doer this is a navigate link, not
+      // an in-product apply flow.
+      // `from=match` lets jobs.html tag funnel:match-apply-click with
+      // from_match, so match-driven applications are separable from search-
+      // driven ones without a second event. jobs.html's history.replaceState
+      // rebuilds from location.search, so the param survives the modal open.
+      const view = `<div class="match-actions"><a class="match-view" href="/jobs.html?id=${encodeURIComponent(j.id)}&amp;from=match" data-job-id="${esc(j.id)}">View posting <span aria-hidden="true">→</span></a></div>`;
       return `<div class="match">
         <span class="score">${m.score||Math.round((m.similarity||0)*100)}</span>
         <div class="t">${esc(j.title)}</div>
         <div class="m">${esc(j.employers?.name||'')} · ${esc(loc)} ${pay?'· '+esc(pay):''}</div>
         <div class="s">${(m.match_reasons||[]).map(r=>esc(r)).join(' · ')}</div>
+        ${view}
         ${why}
       </div>`;
     }).join('');
@@ -411,6 +521,17 @@ button.ghost:hover{border-color:var(--amber);color:var(--amber-dk);}
     $('matches').querySelectorAll('.match-why').forEach(function(d) {
       d.addEventListener('toggle', function() {
         if (d.open && window.posthog) window.posthog.capture('funnel:match-disclosure-open');
+      });
+    });
+
+    // Phase 15 §C: funnel:match-card-click. Deferred in §A because match
+    // cards had no link to bind to — the "View posting" link above is that
+    // anchor. The companion funnel:match-apply-click now lives on the apply
+    // button in jobs.html, which is where applying actually happens whether
+    // the member arrived from a match or from search.
+    $('matches').querySelectorAll('.match-view').forEach(function(a) {
+      a.addEventListener('click', function() {
+        if (window.posthog) window.posthog.capture('funnel:match-card-click');
       });
     });
   }
