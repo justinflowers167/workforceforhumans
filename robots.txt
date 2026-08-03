@@ -1,11 +1,24 @@
 User-agent: *
 Allow: /
 
+# 2026-08-02: Cloudflare Pages serves extensionless URLs (/member, /kb-admin,
+# …) and 308-redirects the .html forms to them. The old rules only listed the
+# .html paths, so none of them matched the URLs crawlers actually reach. Both
+# forms are listed now.
+#
+# /resume is deliberately NOT disallowed any more — it's the homepage hero CTA
+# target ("Start your adaptation plan"), i.e. the front door of the funnel. It
+# also carried a `noindex, nofollow` meta until 2026-08-02; that's gone too.
+
+Disallow: /kb-admin
 Disallow: /kb-admin.html
+Disallow: /member
 Disallow: /member.html
+Disallow: /employer
 Disallow: /employer.html
-Disallow: /resume.html
+Disallow: /success
 Disallow: /success.html
+Disallow: /cancel
 Disallow: /cancel.html
 
 Sitemap: https://workforceforhumans.com/sitemap.xml

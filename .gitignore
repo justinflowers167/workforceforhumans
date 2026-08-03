@@ -1,0 +1,17 @@
+# Everything in this repo root is deployed as a public static asset by
+# Cloudflare Pages. A file committed here is a file published on the web —
+# so working documents stay out of git entirely rather than sitting untracked
+# and waiting for someone to `git add -A`.
+
+# Founder working documents (never for publication)
+*.pdf
+!docs/**/*.pdf
+
+# Deno test coverage output (see deno.json `exclude`)
+cov/
+cov.lcov
+
+# OS / editor noise
+.DS_Store
+Thumbs.db
+*.swp

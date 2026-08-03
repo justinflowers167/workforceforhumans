@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Page not found — Workforce for Humans</title>
+<meta name="robots" content="noindex, follow"/>
+<link rel="icon" type="image/svg+xml" href="/assets/favicon.svg"/>
+<meta name="theme-color" content="#0f1829"/>
+<link rel="stylesheet" href="/assets/site.css"/>
+<style>
+body{min-height:100vh;display:flex;flex-direction:column;}
+.main{flex:1;display:flex;align-items:center;justify-content:center;padding:4rem 5vw;}
+.card{background:#fff;border:1px solid var(--stone);border-radius:24px;padding:3rem 3.5rem;max-width:620px;width:100%;}
+.icon{width:44px;height:44px;color:var(--amber);margin-bottom:1.25rem;}
+.icon svg{width:100%;height:100%;}
+.eyebrow{font-family:var(--font-b);font-size:0.78rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--slate);margin-bottom:0.5rem;}
+.card h1{font-family:var(--font-d);font-size:clamp(1.6rem,3.5vw,2rem);color:var(--navy);margin-bottom:0.75rem;line-height:1.25;}
+.card p{color:var(--slate);font-weight:300;line-height:1.75;margin-bottom:1.75rem;font-size:0.95rem;}
+.links{display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;}
+.lk{display:block;padding:0.9rem 1.1rem;border:1px solid var(--stone);border-radius:10px;text-decoration:none;transition:border-color 0.2s,transform 0.2s;}
+.lk:hover{border-color:var(--amber);transform:translateY(-1px);}
+.lk-t{font-family:var(--font-b);font-size:0.95rem;font-weight:700;color:var(--navy);display:block;margin-bottom:0.15rem;}
+.lk-d{font-size:0.82rem;color:var(--slate);font-weight:300;line-height:1.5;}
+.lk.primary{background:var(--amber);border-color:var(--amber);}
+.lk.primary .lk-d{color:var(--navy);opacity:0.75;}
+@media(max-width:640px){.links{grid-template-columns:1fr;}.card{padding:2rem 1.75rem;}}
+</style>
+</head>
+<body data-nav="marketing">
+<div id="site-nav"></div>
+<script src="/assets/site.js"></script>
+<noscript><nav><div class="nav-inner"><a href="/" class="nav-logo">Workforce<span class="dot">for</span>Humans</a></div></nav></noscript>
+
+<div class="main">
+  <div class="card">
+    <div class="icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/><path d="M11 8v3"/><path d="M11 14h.01"/></svg></div>
+    <p class="eyebrow">404 — page not found</p>
+    <h1>That page moved, or never existed.</h1>
+    <p>Not a dead end. Here's where most people are actually headed — pick the one that matches where you are right now.</p>
+    <div class="links">
+      <a class="lk primary" href="/resume">
+        <span class="lk-t">Start your adaptation plan →</span>
+        <span class="lk-d">Upload a resume, get a coach's read in about a minute.</span>
+      </a>
+      <a class="lk" href="/pathways/">
+        <span class="lk-t">See the pathways</span>
+        <span class="lk-d">Named target roles and the route into each one.</span>
+      </a>
+      <a class="lk" href="/jobs">
+        <span class="lk-t">Browse open roles</span>
+        <span class="lk-d">Curated federal and verified-employer listings.</span>
+      </a>
+      <a class="lk" href="/kb">
+        <span class="lk-t">Knowledge base</span>
+        <span class="lk-d">Free guides on layoffs, transitions, and rebuilding.</span>
+      </a>
+    </div>
+  </div>
+</div>
+
+<div id="site-footer"></div>
+</body>
+</html>
