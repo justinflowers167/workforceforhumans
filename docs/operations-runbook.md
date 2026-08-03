@@ -285,6 +285,15 @@ grant execute on function public.<name>(<args>) to service_role;
 
 Trigger functions (`flip_other_current_resumes`, `handle_new_auth_user`, the `protect_*` guards) should be revoked from everything — triggers fire as the table owner regardless of `EXECUTE` grants, so revoking never breaks them.
 
+**Sanctioned exceptions — these SHOULD appear in that query.** Don't "fix" them:
+
+| Function | Callable by | Why it's safe |
+|---|---|---|
+| `create_job_listing`, `update_job_listing` | `authenticated` | `employer.html` calls them directly; they do their own ownership checks internally. Not granted to `anon`. |
+| `bump_job_view`, `bump_kb_article_view` | `anon`, `authenticated` | Added 2026-08-02 so the view counters work at all. Input is a row id and nothing else — UPDATE only, one column, `+ 1` only, scoped by a `WHERE` the caller can't widen, returns void. Worst case is an inflated counter on a real row, which a refresh loop already achieves. |
+
+The test for a new anon-callable `SECURITY DEFINER` function is not "is it convenient" but **"what is the worst thing a caller can write through it?"** `upsert_usajobs` failed that test because the caller supplied the row contents; the `bump_*` pair passes it because the caller supplies only which row gets `+ 1`.
+
 **Trigger this check** (per §6): after applying any migration that creates or replaces a function, and as part of the quarterly ritual (§5) alongside the advisor sweep.
 
 ---
@@ -395,19 +404,33 @@ select net.http_post(
 
 Then poll `net._http_response` for the row with that `id`. Expected response shape: `{ok:true, mode:"delete_resumes_by_ids", requested:N, found:M, resumes_deleted:K, storage_files_deleted:L, storage_files_skipped:S}`. The Sunday cron (default mode, empty body) is unaffected — same secret, different body.
 
-### 10.7 Map training resources to AI skills (Phase 12 §C — hand-curation)
+### 10.7 Add training resources and map them to AI skills
 
-After Phase 12 §C migrations applied, the `training_skills` link table is empty and the "Recommended training to grow into this role" panel under each match card renders nothing until you map. ~30 min of curated SQL inserts maps existing `training_resources` to the seeded AI skills (see ROADMAP §C1 for the seed list).
+**Status: done for the initial set (2026-08-02), but two things about it are worth knowing before you touch this again.**
 
-Find candidates per skill:
+This section used to say the job was ~30 min of SQL mapping *existing* `training_resources` to the AI skills. That turned out to be impossible. All 10 original rows are trade and general-career training — CPR/First Aid, CDL, ServSafe, OSHA 10, financial literacy, HubSpot, freeCodeCamp, Google IT Support, Google PM, Google Analytics. None of them teach prompt engineering, RAG, embeddings or anything else in the AI vocabulary, so there was nothing honest to map. `20260802_ai_skill_training_seed.sql` seeded 12 AI-era resources first; all 10 skills now have coverage.
+
+**These 12 publish as WFH recommendations in your voice and are not founder-vetted.** `is_verified` is deliberately `false` on all of them. Read the list, flip `is_verified = true` per row as you confirm each one, and delete anything you wouldn't put your name on:
 
 ```sql
--- Look at the training catalog and pick the rows that genuinely teach a given AI skill.
+select title, provider, source_url, is_verified
+from public.training_resources
+where 'ai' = any(tags) or 'free' = any(tags)
+order by is_verified, title;
+```
+
+**Second thing: the panel no longer keys off `job_skills`.** It originally showed training for the AI skills a *job requires*. That substrate doesn't exist — `job_skills` is empty, and of 2,757 active jobs only 5 mention AI at all with zero mentioning prompt engineering, LLMs, RAG or embeddings. It now keys off `match_scores.focus_ai_skill`, the one skill `match-jobs` tells that seeker to learn for that match. `job_skills` is still unioned in, so employer-tagged roles work when they appear.
+
+Consequence for curation: **coverage of all 10 skills matters more than depth on any one**, because the model can pick any slug for any match. A skill with zero mapped trainings means the panel silently renders nothing for every match that picks it.
+
+To add a resource:
+
+```sql
+-- Check the link resolves before inserting it. A dead link in a coach
+-- recommendation costs more trust than a missing one.
 select id, title, provider, source_url, tags, category_slug
 from public.training_resources
-where tags && array['AI','prompt','llm','agent','rag','vector','embedding','fine-tune','ai-tooling']
-   or title ilike any (array['%prompt%','%llm%','%agent%','%rag%','%vector%','%embedding%','%fine-tun%'])
-order by recommend_count desc, title;
+order by created_at desc;
 ```
 
 Map a training row to one or more AI skills:
@@ -433,7 +456,9 @@ group by s.id, s.name, s.slug
 order by mapped_count asc, s.name;
 ```
 
-Skills with `mapped_count = 0` won't drive any training recommendation — fill those first.
+Skills with `mapped_count = 0` won't drive any training recommendation — fill those first. As of 2026-08-02 every skill has at least one; `vector-databases` and `ai-safety` have exactly one each, so they're the thinnest.
+
+If `match-jobs` starts returning a slug that isn't in the curated ten, it degrades to `null` silently by design (the function allowlists it before insert). Adding a skill therefore means editing **two** places: the `skills` row, and `AI_SKILL_SLUGS` in `supabase/functions/match-jobs/index.ts`. Miss the second and the new skill will never be chosen.
 
 ### 10.8 Diagnose magic-link not arriving
 
