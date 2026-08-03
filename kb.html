@@ -21,6 +21,8 @@
 <meta name="twitter:description" content="Free guides, tips, and resources to help you find work, level up your skills, and move forward in your career."/>
 <meta name="twitter:image" content="https://workforceforhumans.com/assets/og-default.svg"/>
 <script type="application/ld+json">{"@context":"https://schema.org","@type":"WebSite","name":"Workforce for Humans Knowledge Base","url":"https://workforceforhumans.com/kb","potentialAction":{"@type":"SearchAction","target":{"@type":"EntryPoint","urlTemplate":"https://workforceforhumans.com/kb#search/{search_term_string}"},"query-input":"required name=search_term_string"}}</script>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
 <link rel="stylesheet" href="/assets/site.css"/>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
@@ -314,8 +316,14 @@ async function renderArticle(slug) {
   ld.textContent = JSON.stringify(schema);
   document.head.appendChild(ld);
 
-  // Increment view count (fire-and-forget)
-  db.from('kb_articles').update({ view_count: (a.view_count || 0) + 1 }).eq('id', a.id);
+  // Increment view count (fire-and-forget) via the bump_kb_article_view RPC
+  // (migration 20260802_view_count_increment_rpc.sql). The previous direct
+  // .update() had never worked: kb_articles allows UPDATE only to
+  // authenticated editors on the kb_editor_emails allowlist, so RLS rejected
+  // every reader's increment and the silent failure left every article at 0
+  // views — which then rendered as "0 views" on each card. The RPC is also
+  // atomic, unlike the old read-then-write.
+  db.rpc('bump_kb_article_view', { p_article_id: a.id });
 
   const cat = kbCategories.find(c => c.id === a.category_id);
   const pubDate = a.published_at ? new Date(a.published_at).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }) : '';
@@ -337,7 +345,7 @@ async function renderArticle(slug) {
         <div class="av-meta">
           <span class="read-time">${a.reading_time_min || 3} min read</span>
           <span>${pubDate}</span>
-          <span>${(a.view_count || 0).toLocaleString()} views</span>
+          ${(a.view_count || 0) > 0 ? `<span>${(a.view_count).toLocaleString()} views</span>` : ``}
         </div>
       </div>
       <div class="article-body">${a.body}</div>
@@ -430,7 +438,7 @@ function articleCard(a, cat) {
       <div class="ac-meta">
         <span class="read-time">${a.reading_time_min || 3} min read</span>
         <span>${pubDate}</span>
-        <span>${(a.view_count || 0).toLocaleString()} views</span>
+        ${(a.view_count || 0) > 0 ? `<span>${(a.view_count).toLocaleString()} views</span>` : ``}
       </div>
     </a>`;
 }
@@ -445,7 +453,7 @@ function articleRow(a, cat) {
       </div>
       <div class="ar-meta">
         <span class="read-time">${a.reading_time_min || 3} min</span>
-        <span>${(a.view_count || 0).toLocaleString()} views</span>
+        ${(a.view_count || 0) > 0 ? `<span>${(a.view_count).toLocaleString()} views</span>` : ``}
       </div>
     </a>`;
 }
