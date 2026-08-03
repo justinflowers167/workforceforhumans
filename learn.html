@@ -507,10 +507,7 @@ const db=createClient(SUPABASE_URL,SUPABASE_ANON);
         <li><strong>Named pathways.</strong> AI-Augmented Operations Analyst, Federal Program Analyst, AI-Augmented Project Coordinator. Real target roles with measurable hiring signal, weeks-paced journeys, cost honesty.</li>
         <li><strong>Per-match coach brief.</strong> For every match: how to tailor your resume for that role, the single most-leveraged AI skill to learn next, and how to apply with the right angle.</li>
         <li><strong>Curated learning paths.</strong> Free and low-cost certs and training across healthcare, tech, trades, energy, logistics, finance &mdash; the ones that actually move the needle, not the ones that pay affiliate fees.</li>
-        <!-- 2026-08-02: was "Weekly market briefing … Delivered to your inbox."
-             The cadence lapsed after 2026-04-18, and nothing reads
-             newsletter_subscribers, so nothing was delivered either. Reworded
-             to match the solo-founder honesty already on this page. -->
+        <!-- Copy updated 2026-08-02; see git history. -->
         <li><strong>Market briefing.</strong> What's shifting in your industry, who's hiring, and what to learn next &mdash; sent when there's something worth your inbox, not on a schedule I can't keep.</li>
         <li><strong>Friday match digest.</strong> Fresh roles scored against your pathway, with the coach brief on each.</li>
       </ul>
@@ -615,9 +612,9 @@ function sendMsg(){
 }
 
 // Newsletter
-// 2026-08-02: same fix as index.html doSubscribe() — supabase-js resolves
-// with {error} instead of throwing, so this reported success on every failed
-// write. See the note there re: nothing consuming `newsletter_subscribers`.
+// Same fix as index.html doSubscribe() — supabase-js resolves with {error}
+// instead of throwing, so a bare `await` reported success on every failed
+// write. (Fixed 2026-08-02; see git history.)
 async function doSub(e){
   e.preventDefault();
   const email=document.getElementById('nl-e').value.trim();

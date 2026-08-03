@@ -112,9 +112,6 @@ button.ghost:hover{border-color:var(--amber);color:var(--amber-dk);}
   <!-- SIGNED OUT -->
   <section id="auth-view" class="hidden">
     <h1>Sign in</h1>
-    <!-- 2026-08-02: was "Get your resume reviewed by AI…". Leading the
-         signed-out surface with "AI" is the exact aggregator signal the
-         Cluster A voice work was meant to strip out. -->
     <p class="sub">Get a coach's read on your resume, see roles scored against your pathway, and let verified employers reach you.</p>
     <div class="card" style="max-width:440px;">
       <label for="email">Email address</label>
@@ -396,14 +393,11 @@ button.ghost:hover{border-color:var(--amber);color:var(--amber-dk);}
         jobAiSkills.set(r.job_id, arr);
         skillIds.add(sk.id);
       }
-      // 2026-08-02: also pull training for each match's focus_ai_skill — the
-      // one skill the coach brief tells this seeker to learn first. The
-      // original design keyed only off job_skills (what the job REQUIRES),
-      // but that substrate doesn't exist: job_skills is empty and only 5 of
-      // 2,757 active jobs mention AI at all. Keying off the seeker's gap
-      // matches the product thesis anyway — the pitch is about becoming
-      // competitive for roles that don't list AI skills yet. job_skills stays
-      // in the union so employer-tagged roles still work when they appear.
+      // Also pull training for each match's focus_ai_skill — the one skill the
+      // coach brief tells this seeker to learn first. Training is keyed off
+      // the seeker's gap rather than the job's stated requirements; job_skills
+      // stays in the union so employer-tagged roles work too. Rationale in
+      // runbook §10.7. (2026-08-02)
       const focusSlugs = Array.from(new Set(ms.map(m => m.focus_ai_skill).filter(Boolean)));
       if (focusSlugs.length) {
         const { data: fs } = await db.from('skills')

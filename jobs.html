@@ -666,13 +666,10 @@ async function openModal(jobId) {
     }
   };
 
-  // Increment view count via the bump_job_view RPC (migration
-  // 20260802_view_count_increment_rpc.sql). The previous direct
-  // .update() had never worked: `jobs` has no UPDATE policy reachable by
-  // anon, so RLS rejected every call, and because this is fire-and-forget
-  // it failed silently — view_count sat at 0 across all 2,757 rows since
-  // launch. The RPC also makes it atomic; the old read-then-write let
-  // concurrent readers clobber each other's increment.
+  // Increment via the bump_job_view RPC, not a direct .update(): `jobs` has
+  // no UPDATE policy reachable by anon, so RLS silently rejects a client-side
+  // write here. The RPC is also atomic, unlike a read-then-write.
+  // See migration 20260802_view_count_increment_rpc.sql.
   db.rpc('bump_job_view', { p_job_id: jobId });
 
   document.getElementById('modal').classList.add('open');
