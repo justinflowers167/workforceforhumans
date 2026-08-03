@@ -52,15 +52,38 @@ PostHog `$pageview` counts (capture is on — `capture_pageview: true` in
 
 That's ~300× off. The 45/month figure is also far more consistent with the rest
 of the live data than 15,000 is: 1 job seeker (the founder's test account), 0
-newsletter subscribers ever, 0 feedback submissions.
+newsletter subscribers ever, 0 feedback submissions, 0 assessment submissions,
+0 applications, 0 job alerts, 1 lead — across nine months.
 
-Either the number is wrong, or PostHog is missing ~99.7% of traffic — and if
-it's the latter, every funnel event shipped in Phase 15 §A is measuring
-nothing, which is its own P0. Worth reconciling against Cloudflare Web
-Analytics before deciding which. Until it's reconciled, the claim shouldn't be
-on the page: it's the single trust line under the hero CTA, and it's the one
-thing on the site a skeptical visitor can't verify but a journalist or investor
-absolutely will ask about.
+**Resolved 2026-08-02: founder's read is that PostHog is correct.** The
+Cloudflare figure most likely counted bots, with some ad-blocker skew in the
+other direction (PostHog is on common blocklists; `cloudflareinsights.com` less
+so). The exact number stays unresolved, but it doesn't need resolving for the
+decision — "15,000+ readers" isn't defensible either way, and it was the single
+trust line under the hero CTA: the one claim a visitor can't verify but a
+journalist or investor absolutely will ask about.
+
+**Copy fixed** — hero trust line now names what's true and checkable (who
+builds it, what it costs) instead of borrowed scale.
+
+**A caution for anyone re-running this analysis:** `jobs.view_count` and
+`kb_articles.view_count` are both **0 across all 2,757 jobs and 18 articles**,
+and that is *not* evidence of zero traffic. See #14 — the counters have never
+worked. PostHog remains the only functioning measurement on the site.
+
+### 2a. The strategic consequence — the bottleneck was misdiagnosed
+
+Phase 15's whole sequence was built on "acquisition is the named bottleneck (0
+new seekers in 14 days)" with the implied model of meaningful traffic that
+wasn't converting. At ~45 pageviews/month that model is wrong. There is no
+conversion problem to fix, because there is almost nobody arriving to convert.
+
+That re-orders the remaining plan. Tester recruiting (§B) and funnel cleanup
+(§C) are both premature against a funnel this empty — and the §A funnel
+instrumentation, while correctly wired, will not produce a readable chart at
+this volume for a long time. The binding constraint is distribution: nothing
+currently brings a stranger to the site. Worth naming explicitly before more
+build effort goes into surfaces nobody reaches.
 
 ---
 
@@ -183,6 +206,35 @@ and the member.html rendering, but the hand-curation step (runbook §10.7, ~30
 min of SQL) was never done — so the training panel under every match card is
 permanently empty. Shipped feature, invisible in production.
 
+### 14. View counters have never worked — RLS silently rejects every increment
+
+`jobs.view_count` is 0 across all 2,757 rows. `kb_articles.view_count` is 0
+across all 18 published articles. Neither has ever been incremented.
+
+The increment code exists — [kb.html:318](../kb.html) and
+[jobs.html:653](../jobs.html) both fire a client-side
+`update({ view_count: n + 1 })`. But the writes are rejected by RLS:
+
+- `kb_articles` has exactly one UPDATE policy, `KB editors can update`, scoped
+  to `authenticated` and gated on the `kb_editor_emails` allowlist.
+- `jobs` has **no** UPDATE policy reachable by `anon` at all.
+
+Both calls are fire-and-forget (no `await`, no error check), so the rejection
+is completely silent. Two consequences:
+
+1. Every KB article card renders **"0 views"** to any visitor who does arrive —
+   an active anti-trust signal on the content surface.
+2. There is no server-side traffic measurement on the site. PostHog is the only
+   instrument, which is precisely why #2 had nothing to triangulate against.
+
+**Recommended fix (not applied — needs a call):** a narrowly-scoped
+`SECURITY DEFINER` RPC that does `update … set view_count = view_count + 1
+where id = $1` and nothing else, granted to `anon` deliberately. That also fixes
+the non-atomic read-then-write that `CLAUDE.md` already flags. Holding it
+because it adds anon-callable surface in the same session that #1 closed some —
+worth a deliberate yes rather than a silent one. If added, log it in runbook
+§8.10 as a sanctioned exception so the next audit doesn't flag it as a repeat.
+
 ### 13. Still-open founder gates
 
 - Social proof section hidden — `WFH_TESTIMONIALS` / `WFH_EMPLOYER_LOGOS` both
@@ -227,17 +279,28 @@ permanently empty. Shipped feature, invisible in production.
 `learn.html`'s "Level Up" title was left alone on inspection — it matches its
 own H1 and reads on-voice, so renaming it would be churn rather than a fix.
 
+- **Traffic claims cut.** Founder confirmed PostHog is the accurate source, so
+  "Read by 15,000+ this month" and the weekly-briefing promise came off
+  `index.html` (hero trust line + how-it-works) and `learn.html` (free toolkit).
+  The homepage newsletter block no longer promises a weekly cadence it has no
+  sender for; it routes anyone wanting matched roles to the assessment, which
+  genuinely does feed the Friday digest. The Friday digest claim stayed — that
+  cron is real and green.
+
 ## Still open
 
-1. **Reconcile PostHog vs. Cloudflare traffic**, then fix or cut the 15k claim
-   (#2). Needs a decision, not a patch — and it determines whether the Phase 15
-   funnel instrumentation is measuring anything at all.
-2. **The weekly-briefing promise** (#3) and **the newsletter dead end** (#10)
-   are one decision: restart the cadence and wire a sender, or cut both claims.
-3. **Legal banners** (#4) — blocked on counsel review.
-4. **Curate `training_skills`** (#12) so a shipped feature stops rendering
+1. **The newsletter dead end** (#10) — copy no longer over-promises, but
+   nothing still reads `newsletter_subscribers`. Wire a sender or drop the
+   forms.
+2. **Restart the market briefing**, or retire the concept. `content/market-pulse/`
+   has had no entry since 2026-04-18 and there's no renderer for it either.
+3. **View counters** (#14) — decide on the increment RPC.
+4. **Distribution** (#2a) — the real constraint. Phase 15 §B/§C assume a funnel
+   with people in it; at ~45 pageviews/month that assumption doesn't hold.
+5. **Legal banners** (#4) — blocked on counsel review.
+6. **Curate `training_skills`** (#12) so a shipped feature stops rendering
    empty. ~30 min of SQL, runbook §10.7.
-5. **Leaked-password protection** (#13) — one dashboard click.
+7. **Leaked-password protection** (#13) — one dashboard click.
 
 Internal `href`s still point at `.html` paths and take a 308 hop on every
 navigation. Harmless, and not worth a 16-file diff today, but worth folding

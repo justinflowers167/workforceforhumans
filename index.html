@@ -357,7 +357,14 @@ const db=createClient(SUPABASE_URL,SUPABASE_ANON);
         <a href="/resume.html" class="btn-hero-primary">Start your adaptation plan →</a>
         <a href="/pathways/" class="btn-hero-secondary">See the pathways</a>
       </div>
-      <p class="hero-trust">Read by 15,000+ this month. New <a href="/feed.html">market briefing</a> every week from <a href="/about.html">Justin Flowers</a> — a practitioner who's lived this.</p>
+      <!-- 2026-08-02: replaced "Read by 15,000+ this month. New market briefing
+           every week…". Both halves were false. PostHog measured 45 pageviews in
+           July / 62 in June / 125 in May; the 15k came from a Cloudflare figure
+           that never reconciled and is most likely bots. The weekly briefing
+           lapsed after 2026-04-18 and the link pointed at /feed.html — the RSS
+           aggregator, not a briefing. Replaced with claims that are true today
+           and verifiable: who builds it, and what it costs. -->
+      <p class="hero-trust">Built and run by <a href="/about.html">Justin Flowers</a> — a practitioner who's lived this, not a recruiter reselling your data. Free while it's early: no fees, no upsell, no resume black hole.</p>
     </div>
     <div class="hero-right">
       <div class="stat-card"><div class="stat-icon a"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 20V4a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/><rect width="20" height="14" x="2" y="6" rx="2"/></svg></div><div><div class="stat-num" id="s-jobs">—</div><div class="stat-lbl">Live opportunities</div></div><div class="stat-badge">↑ Live</div></div>
@@ -392,7 +399,10 @@ const db=createClient(SUPABASE_URL,SUPABASE_ANON);
         <div class="how-step">Step 03 — Move</div>
         <div class="how-icon hi-g"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="m16.24 7.76-1.804 5.411a2 2 0 0 1-1.265 1.265L7.76 16.24l1.804-5.411a2 2 0 0 1 1.265-1.265z"/></svg></div>
         <h3 class="how-h3">Apply, learn, repeat</h3>
-        <p class="how-p">Real listings from verified employers and curated federal roles. You apply, you learn, you get the weekly market briefing — and a Friday digest with fresh matches scored against your pathway.</p>
+        <!-- 2026-08-02: dropped "you get the weekly market briefing" (lapsed
+             after 2026-04-18). The Friday digest is real — send-match-digest
+             fires weekly via pg_cron and is green — so that claim stays. -->
+        <p class="how-p">Real listings from verified employers and curated federal roles. You apply, you learn — and a Friday digest brings fresh matches scored against your pathway, each with its own coach brief.</p>
       </div>
     </div>
   </div>
@@ -536,8 +546,15 @@ const db=createClient(SUPABASE_URL,SUPABASE_ANON);
 <section class="nl-sec">
   <div class="nl-inner">
     <div class="rv">
-      <h2 class="nl-h2">Jobs to your inbox,<br/>every week.</h2>
-      <p class="nl-p">Get the best new listings matched to your skills and location. No spam. Unsubscribe anytime.</p>
+      <!-- 2026-08-02: was "Jobs to your inbox, every week." Nothing reads
+           newsletter_subscribers — send-match-digest mails from job_seekers +
+           match_scores, so a row here has never been mailed anything. Rather
+           than promise a cadence with no sender, this now reads as an
+           occasional list and routes anyone wanting matched roles to the
+           assessment, which is what actually feeds the Friday digest.
+           Founder decision still open: wire a sender, or drop the form. -->
+      <h2 class="nl-h2">Get on<br/>the list.</h2>
+      <p class="nl-p">New pathways, hiring shifts worth knowing about, and the market briefing. No fixed schedule — I send when there's something worth your inbox. For roles matched to your profile, <a href="/resume.html">start the assessment</a> instead; that's what feeds the Friday digest.</p>
       <form class="nl-form" onsubmit="doSubscribe(event)">
         <input type="email" id="nl-email" placeholder="your@email.com" required/>
         <button type="submit" class="btn-amber">Subscribe</button>
